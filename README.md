@@ -1,3 +1,10 @@
 # Savanna_structure_GEDI
 
-Travail statistique exploratoire des données GEDI dans le cadre du début de projet forêt-savane.
+Statistical work about the GEDI data parallel to the savana-forest project.
+
+# Folders organisation
+
+- Data (raw)
+- outputs
+- figures
+- Documents (for pdf)
