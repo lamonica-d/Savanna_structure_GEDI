@@ -7,3 +7,5 @@ Statistical work about the GEDI data parallel to the savanna-forest project.
 - Data (raw)
 - outputs
 - figures
+
+yes
