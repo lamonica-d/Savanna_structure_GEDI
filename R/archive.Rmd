@@ -1,0 +1,67 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r}
+# For the accents é ù û etc
+options(Encoding="latin1")
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R",encoding="latin1")
+# Setting the current path
+path_to_R_folder = file.path(
+                             path_to_Savanna_structure_GEDI_folder,
+                             "R"
+                             )
+setwd(path_to_R_folder)
+getwd()
+```
+
+```{r}
+# Raw GEDI tables loading
+library(fst)
+
+setwd(path_to_GEDI_raw_data)
+
+data_north_congo <- fst::read.fst("Northern_Congolian.fst")
+data_guinee <- fst::read.fst("Guinean_forest-savanna.fst")
+
+setwd(path_to_R_folder)
+# Get back to the R folder
+getwd()
+```
+
+```{r}
+# Visualisation des données manquantes
+
+browseURL("https://cran.r-project.org/web/packages/naniar/vignettes/getting-started-w-naniar.html")
+
+browseURL("https://cran.r-project.org/web/packages/visdat/vignettes/using_visdat.html")
+
+# install.packages("naniar")
+# install.packages("visdat")
+library(naniar)
+library(visdat)
+
+# vis_dat(data_north_congo,warn_large_data = FALSE)
+# vis_miss semble plus intéressant que vis_dat en ce qui nous concerne
+vis_miss(
+         data_north_congo,
+         show_perc = FALSE,
+         warn_large_data =FALSE
+         )
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```

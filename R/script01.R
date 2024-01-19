@@ -1,5 +1,6 @@
 #raw data visualisation
 
+
 data_north_congo <- fst::read.fst("rawdata/Northern_Congolian.fst")
 data_guinee <- fst::read.fst("rawdata/Guinean_forest-savanna.fst")
 
