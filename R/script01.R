@@ -1,8 +1,28 @@
 #raw data visualisation
 
+# For the accents é ù û etc
+options(Encoding="latin1")
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R",encoding="latin1")
+# Setting the current path
+path_to_R_folder = file.path(
+  path_to_Savanna_structure_GEDI_folder,
+  "R"
+)
+setwd(path_to_R_folder)
+getwd()
 
-data_north_congo <- fst::read.fst("rawdata/Northern_Congolian.fst")
-data_guinee <- fst::read.fst("rawdata/Guinean_forest-savanna.fst")
+# Libraries
+library(fst)
+library(ggplot2)
+
+###########
+setwd(path_to_GEDI_raw_data)
+
+data_north_congo <- fst::read.fst("Northern_Congolian.fst")
+data_guinee <- fst::read.fst("Guinean_forest-savanna.fst")
 
 par(mfrow= c(2,2))
 plot(data_north_congo$fire_freq, data_north_congo$rh98, las = 1)

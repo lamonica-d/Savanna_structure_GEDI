@@ -1,0 +1,103 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r}
+# For the accents é ù û etc
+options(Encoding="latin1")
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R",encoding="latin1")
+# Setting the current path
+path_to_R_folder = file.path(
+                             path_to_Savanna_structure_GEDI_folder,
+                             "R"
+                             )
+setwd(path_to_R_folder)
+getwd()
+
+# Libraries
+library(fst)
+library(visdat)
+# install.packages("visdat")
+library(ggplot2)
+
+# Chargement du tableau missing_data_percentages.csv
+
+setwd(file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures"
+                )
+      )
+
+missing_data_percentages <- read.csv("missing_data_percentages.csv",row.names=1)
+
+setwd(path_to_R_folder)
+```
+```{r}
+setwd(path_to_GEDI_raw_data)
+name = dir()[1]
+print(name)
+corresponding_table = fst::read.fst(name)
+```
+
+```{r}
+# Visualisation des données manquantes
+# sur tous les datasets (sauf le Sahel qui MARCHE PAS (trop lourd))
+
+setwd(path_to_GEDI_raw_data)
+
+print(dir())
+print(length(dir()))
+
+for (i in 1:1){
+# for (i in 1:length(dir())){
+  
+  # print(dir()[i])
+  
+  name = dir()[i]
+  print(name)
+  corresponding_table = fst::read.fst(name)
+  size <- nrow(corresponding_table)
+  name <- substr(name, start = 1, stop = nchar(name) - 4)
+  # to get rid of the ".fst" in the graph name
+  
+  start <- Sys.time()
+  
+  glm_result <- glm(
+                    canopy_cover ~ 1 + fire_freq + mean_precip,
+                    family = beta, # ça existe pas youpi !
+                    data = corresponding_table
+                    )
+  
+  duree <- round (Sys.time() - start,1)
+  
+  nb_lignes <- round(nrow(corresponding_table),-3)
+  print(paste("nb_lignes :",nb_lignes))
+  print(duree)
+  
+  print(summary(glm_result))
+}
+
+# Get back to the R folder
+setwd(path_to_R_folder)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
