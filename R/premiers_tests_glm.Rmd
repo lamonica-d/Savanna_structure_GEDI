@@ -24,6 +24,9 @@ library(fst)
 library(visdat)
 # install.packages("visdat")
 library(ggplot2)
+# install.packages("betareg")
+library(betareg)
+# browseURL("https://www.jstatsoft.org/article/view/v034i02")
 
 # Chargement du tableau missing_data_percentages.csv
 
@@ -37,16 +40,81 @@ missing_data_percentages <- read.csv("missing_data_percentages.csv",row.names=1)
 
 setwd(path_to_R_folder)
 ```
+
 ```{r}
+# Normalisation des données sur un exemple
+
 setwd(path_to_GEDI_raw_data)
-name = dir()[1]
-print(name)
+# print(dir())
+
+name = dir()[16]
+# Loading of the table :
 corresponding_table = fst::read.fst(name)
+name <- substr(name, start = 1, stop = nchar(name) - 4)
+# to get rid of the ".fst" in the graph name
+print(name)
+# "Northern_Congolian"
+
+# # Pour avoir le type des données :
+
+# str(corresponding_table)
+# sapply(corresponding_table, class)
+
+# On enlève la variable "ecoregion" pour ne garder que les données numériques :
+corresponding_table <- corresponding_table[,-11]
+# On va même garder seulement ça pour commencer :
+corresponding_table <- corresponding_table[,c("x",
+                                              "y",
+                                              "canopy_cover",
+                                              "fire_freq",
+                                              "mean_precip")
+                                           ]
+# On enlève les valeurs manquantes
+corresponding_table <- na.omit(corresponding_table)
+print(round(
+            missing_data_percentages[name,c("canopy_cover","fire_freq","mean_precip")],
+            2)
+      )
+# Normalisation et standardisation 
+corresponding_table[,c("fire_freq","mean_precip")] <- scale(
+corresponding_table[,c("fire_freq","mean_precip")],
+center=TRUE,scale=TRUE)
+
+# Vérification :
+colMeans(corresponding_table)
+apply(corresponding_table, MARGIN = 2, sd)
+# 2 pour spécifier qu'on fait l'opération sur les colonnes (1 pour ligne)
+
+#########################################################################
+
+# canopy_cover dans [0,1] -> loi beta ?
+# Gadget en ligne pour regarder la densité loi beta :
+# browseURL("https://mathlets.org/mathlets/beta-distribution/")
+
+# Il n'y a pas de loi beta dans glm :
+# glm_result <- glm(
+#                   canopy_cover ~ 1 + fire_freq + mean_precip,
+#                   family = beta, # ça existe pas
+#                   data = corresponding_table
+#                   )
+
+corresponding_table <- as.data.frame(corresponding_table)
 ```
 
 ```{r}
-# Visualisation des données manquantes
-# sur tous les datasets (sauf le Sahel qui MARCHE PAS (trop lourd))
+glm_result <- betareg(
+                      canopy_cover ~ 1 + fire_freq + mean_precip,
+                      link = "logit",
+                      # link function in the mean model (mu)
+                      # logit par défaut ??
+                      data = corresponding_table
+                      )
+# "your dependent variable should take values that are strictly greater than 0 and strictly less than 1; they cannot be equal to 0 or equal to 1" cf :
+# browseURL("https://stats.stackexchange.com/questions/496050/why-is-betareg-giving-invalid-dependent-variable-error")
+```
+
+```{r}
+# Sur tous les jeux de données :
 
 setwd(path_to_GEDI_raw_data)
 
@@ -67,11 +135,7 @@ for (i in 1:1){
   
   start <- Sys.time()
   
-  glm_result <- glm(
-                    canopy_cover ~ 1 + fire_freq + mean_precip,
-                    family = beta, # ça existe pas youpi !
-                    data = corresponding_table
-                    )
+  # glm_result <- ...
   
   duree <- round (Sys.time() - start,1)
   
