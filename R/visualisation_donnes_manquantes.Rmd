@@ -1,0 +1,487 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r}
+# For the accents é ù û etc
+options(Encoding="latin1")
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R",encoding="latin1")
+# Setting the current path
+path_to_R_folder = file.path(
+                             path_to_Savanna_structure_GEDI_folder,
+                             "R"
+                             )
+setwd(path_to_R_folder)
+getwd()
+
+# Libraries
+library(fst)
+library(visdat)
+# install.packages("visdat")
+library(ggplot2)
+```
+
+```{r}
+# Visualisation des données manquantes
+# sur les deux premiers datasets
+
+# install.packages("visdat")
+
+# browseURL("https://cran.r-project.org/web/packages/visdat/vignettes/using_visdat.html")
+
+# Raw GEDI tables loading
+
+setwd(path_to_GEDI_raw_data)
+
+data_north_congo <- fst::read.fst("Northern_Congolian.fst")
+data_guinee <- fst::read.fst("Guinean_forest-savanna.fst")
+
+# vis_dat(data_north_congo,warn_large_data = FALSE)
+# vis_miss semble plus intéressant que vis_dat en ce qui nous concerne
+
+start <- Sys.time()
+
+vis_miss(
+         data_north_congo,
+         show_perc = FALSE,
+         warn_large_data =FALSE
+         )
+
+duree <- Sys.time() - start
+print(duree)
+# Time difference of 12.27327 secs
+
+start <- Sys.time()
+
+plot <- vis_miss(
+                 data_guinee,
+                 show_perc = FALSE,
+                 warn_large_data =FALSE
+                 )
+
+duree <- Sys.time() - start
+nb_lignes <- round(nrow(data_guinee),-3)
+print(paste("nb_lignes :",nb_lignes))
+print(duree)
+# Time difference of 1.804423 mins
+```
+
+```{r}
+# Visualisation des données manquantes
+# sur tous les datasets (sauf le Sahel qui MARCHE PAS (trop lourd))
+
+setwd(path_to_GEDI_raw_data)
+
+print(dir())
+print(length(dir()))
+
+for (i in c(1:16,18:24)){
+# for (i in 1:length(dir())){
+  
+  # print(dir()[i])
+  
+  setwd(path_to_GEDI_raw_data)
+  
+  name = dir()[i]
+  print(name)
+  corresponding_table = fst::read.fst(name)
+  size <- nrow(corresponding_table)
+  
+  setwd(file.path(
+                  path_to_Savanna_structure_GEDI_folder,
+                  "figures",
+                  "NA_percentages_per_column_graphs"
+                  )
+  )
+  
+  start <- Sys.time()
+
+  name <- substr(name, start = 1, stop = nchar(name) - 4)
+  # to get rid of the ".fst" in the graph name
+  
+  plot <- vis_miss(
+                   corresponding_table,
+                   show_perc = FALSE,
+                   warn_large_data =FALSE
+                   )
+  ggsave(
+         paste0(name,"_NA.png"),
+         plot = plot,
+         bg='#ffffff'# pour ne pas avoir un fond gris moche
+         )
+
+  duree <- Sys.time() - start
+  nb_lignes <- round(nrow(corresponding_table),-3)
+  print(paste("nb_lignes :",nb_lignes))
+  print(duree)
+}
+
+# Get back to the R folder
+setwd(path_to_R_folder)
+# Get back to the R folder
+getwd()
+
+# [1] "Sahelian_Acacia.fst"
+# Erreur : impossible d'allouer un vecteur de taille 1.8 Go
+# est-ce mon pc qui n'est pas assez puissant ou bien est-ce que c'est R ?
+```
+
+```{r}
+# En deux fois pour le Sahel
+
+# CA MARCHE PAS
+
+# setwd(path_to_GEDI_raw_data)
+# 
+# Sahelian_Acacia1 = fst::read.fst("Sahelian_Acacia.fst")
+# n = nrow(Sahelian_Acacia1)
+# Sahelian_Acacia2 = Sahelian_Acacia1[(n/2):n,]
+# Sahelian_Acacia1 = Sahelian_Acacia1[1:(n/2),]
+# 
+# setwd(file.path(
+#                 path_to_Savanna_structure_GEDI_folder,
+#                 "figures",
+#                 "NA_percentages_per_column_graphs"
+#                 )
+# )
+# 
+# ###################
+# start <- Sys.time()
+# name <- Sahelian_Acacia1
+# 
+# plot <- vis_miss(
+#                  Sahelian_Acacia1,
+#                  show_perc = FALSE,
+#                  warn_large_data =FALSE
+#                  )
+# ggsave(
+#        paste0(name,"_NA.png"),
+#        plot = plot,
+#        bg='#ffffff'# pour ne pas avoir un fond gris moche
+#        )
+# 
+# duree <- Sys.time() - start
+# nb_lignes <- n/2
+# print(paste("nb_lignes :",nb_lignes))
+# print(duree)
+# 
+# ###################
+# start <- Sys.time()
+# name <- Sahelian_Acacia2
+# 
+# plot <- vis_miss(
+#                  Sahelian_Acacia2,
+#                  show_perc = FALSE,
+#                  warn_large_data =FALSE
+#                  )
+# ggsave(
+#        paste0(name,"_NA.png"),
+#        plot = plot,
+#        bg='#ffffff'# pour ne pas avoir un fond gris moche
+#        )
+# 
+# duree <- Sys.time() - start
+# nb_lignes <- n/2
+# print(paste("nb_lignes :",nb_lignes))
+# print(duree)
+```
+
+```{r}
+# Visualisation sous forme de tableau
+
+setwd(path_to_GEDI_raw_data)
+
+# print(dir())
+# print(length(dir()))
+
+name = dir()[1]
+print(name)
+corresponding_table = fst::read.fst(name)
+
+missing_data_percentages <- data.frame(
+                                       matrix(NA,
+                                       nrow = length(dir()),
+                                       ncol = ncol(corresponding_table))
+                                       )
+
+colnames(missing_data_percentages) <- colnames(corresponding_table)
+  
+for (i in 1:length(dir())){
+  
+  name = dir()[i]
+  print(paste(i,name))
+  corresponding_table = fst::read.fst(name)
+  
+  name <- substr(name, start = 1, stop = nchar(name) - 4)
+  # to get rid of the ".fst" in the graph name
+  
+  missing_data_percentages[i,] <- round(
+                                        colMeans(is.na(corresponding_table)),
+                                        2
+                                        )
+  
+  row.names(missing_data_percentages)[i] <- name
+    
+}
+
+rm(corresponding_table)
+
+View(missing_data_percentages)
+
+# Get back to the R folder
+setwd(path_to_R_folder)
+# Get back to the R folder
+getwd()
+```
+
+```{r}
+# Sauvegarde du tableau
+
+# setwd(file.path(
+#                 path_to_Savanna_structure_GEDI_folder,
+#                 "figures"
+#                 )
+#       )
+# 
+# write.csv(
+#           missing_data_percentages,
+#           "missing_data_percentages.csv",
+#           row.names=TRUE
+#           )
+# 
+# # Get back to the R folder
+# setwd(path_to_R_folder)
+```
+
+```{r}
+# Chargement du tableau
+
+setwd(file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures"
+                )
+      )
+
+missing_data_percentages <- read.csv("missing_data_percentages.csv",row.names=1)
+
+setwd(path_to_R_folder)
+```
+
+```{r}
+# Visualisation des données manquantes de feu
+
+setwd(file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures"
+                )
+      )
+
+plot <- ggplot(
+               missing_data_percentages,
+               aes(x = rownames(missing_data_percentages), y = fire_freq)
+               ) +
+  # Specify the type of plot, for example, a bar plot
+  geom_bar(stat = "identity", fill = "salmon") +
+  # Customize x-axis labels
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # Customize plot labels and title
+  labs(title = "Pourcentage de données manquantes fréquence de feu", x = "X-axis Label", y = "% données manquantes") +
+  ylim(0,1)
+
+print(plot)
+
+# ggsave(
+#        "NA_fire_freq.png",
+#        plot = plot,
+#        bg='#ffffff'# pour ne pas avoir un fond gris moche
+#        )
+
+# Par valeurs croissantes :
+
+plot <- ggplot(
+               missing_data_percentages,
+               aes(x =
+                   reorder(rownames(missing_data_percentages), fire_freq),
+                   y = fire_freq
+                   )
+               ) +
+  # Specify the type of plot, for example, a bar plot
+  geom_bar(stat = "identity", fill = "salmon") +
+  # Customize x-axis labels
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # Customize plot labels and title
+  labs(title = "Pourcentage de données manquantes fréquence de feu", x = "X-axis Label", y = "% données manquantes") +
+  ylim(0,1)
+
+print(plot)
+
+# ggsave(
+#        "NA_fire_freq_sorted.png",
+#        plot = plot,
+#        bg='#ffffff'# pour ne pas avoir un fond gris moche
+#        )
+
+setwd(path_to_R_folder)
+```
+
+```{r}
+# Visualisation des données manquantes de pluie
+
+setwd(file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures"
+                )
+      )
+
+plot <- ggplot(
+               missing_data_percentages,
+               aes(x = rownames(missing_data_percentages), y = mean_precip)
+               ) +
+  # Specify the type of plot, for example, a bar plot
+  geom_bar(stat = "identity", fill = "skyblue") +
+  # Customize x-axis labels
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # Customize plot labels and title
+  labs(title = "Pourcentage de données manquantes pluie moyenne annuelle", x = "X-axis Label", y = "% données manquantes") +
+  ylim(0,1)
+
+print(plot)
+
+# ggsave(
+#        "NA_mean_precip.png",
+#        plot = plot,
+#        bg='#ffffff'# pour ne pas avoir un fond gris moche
+#        )
+  
+# Par valeurs croissantes :
+
+plot <- ggplot(
+               missing_data_percentages,
+               aes(x =
+                   reorder(rownames(missing_data_percentages), mean_precip),
+                   y = mean_precip
+                   )
+               ) +
+  # Specify the type of plot, for example, a bar plot
+  geom_bar(stat = "identity", fill = "skyblue") +
+  # Customize x-axis labels
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # Customize plot labels and title
+  labs(title = "Pourcentage de données manquantes pluie moyenne annuelle", x = "X-axis Label", y = "% données manquantes") +
+  ylim(0,1)
+
+print(plot)
+
+# ggsave(
+#        "NA_mean_precip_sorted.png",
+#        plot = plot,
+#        bg='#ffffff'# pour ne pas avoir un fond gris moche
+#        )
+
+setwd(path_to_R_folder)
+```
+
+
+```{r}
+# Visualisation des données manquantes de feu ET de pluie simultanément
+
+setwd(file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures"
+                )
+      )
+
+df <- data.frame(rownames = rownames(missing_data_percentages), 
+                 fire_freq = missing_data_percentages$fire_freq, 
+                 mean_precip = missing_data_percentages$mean_precip)
+
+# Reshape the data to long format
+df <- tidyr::gather(df, variable, value, -rownames)
+
+# Create a bar plot
+plot <- ggplot(
+               df,
+               aes(x = rownames, y = value, fill = variable)
+               ) +
+               geom_bar(stat = "identity", position = "dodge", width = 0.8) +
+               scale_fill_manual(values = c("fire_freq" = "salmon", "mean_precip" = "skyblue")) +
+               theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+               labs(title = "Pourcentage de données manquantes fréquence de feu et pluie moyenne annuelle",
+               x = "X-axis Label", y = "% données manquantes") +
+               ylim(0,1)
+
+print(plot)
+
+# ggsave(
+#        "NA_fire_freq_and_mean_precip.png",
+#        plot = plot,
+#        bg='#ffffff'# pour ne pas avoir un fond gris moche
+#        )
+
+# Par valeurs croissantes :
+
+df <- data.frame(
+                 rownames = rownames(missing_data_percentages),
+                 fire_freq = missing_data_percentages$fire_freq,
+                 mean_precip = missing_data_percentages$mean_precip
+                 )
+
+# Order the dataframe by fire_freq before reshaping
+df <- df[order(df$fire_freq), ]
+
+# Reshape the data to long format
+df <- tidyr::gather(df, variable, value, -rownames)
+
+# Create a bar plot
+plot <- ggplot(
+               df,
+               aes(x = reorder(rownames, value), y = value, fill = variable)
+               ) +
+               geom_bar(stat = "identity", position = "dodge", width = 0.8) +
+               scale_fill_manual(values = c("fire_freq" = "salmon", "mean_precip" = "skyblue")) +
+               theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+               labs(
+               title = "Pourcentage de données manquantes fréquence de feu et pluie moyenne annuelle",
+               x = "X-axis Label",
+               y = "% données manquantes"
+               ) +
+               ylim(0, 1)
+
+# Print the plot
+print(plot)
+
+# rm(df)
+
+# ggsave(
+#        "NA_fire_freq_and_mean_precip_sorted.png",
+#        plot = plot,
+#        bg='#ffffff'# pour ne pas avoir un fond gris moche
+#        )
+
+setwd(path_to_R_folder)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
