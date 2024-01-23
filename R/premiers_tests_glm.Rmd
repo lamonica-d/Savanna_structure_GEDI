@@ -111,47 +111,140 @@ glm_result <- betareg(
                       )
 # "your dependent variable should take values that are strictly greater than 0 and strictly less than 1; they cannot be equal to 0 or equal to 1" cf :
 # browseURL("https://stats.stackexchange.com/questions/496050/why-is-betareg-giving-invalid-dependent-variable-error")
+
+summary(corresponding_table$canopy_cover)
+#  Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+# 0.00000 0.06435 0.13325 0.16026 0.22601 0.97506 
+
+# donc a priori le problème c'est les zéros pour les données "Northern_Congolian"
+# sum(corresponding_table[,"canopy_cover"]==0)
+# 9017 zéros sur 300 000 lignes
+
+# browseURL("https://mathlets.org/mathlets/beta-distribution/")
 ```
 
 ```{r}
-# Sur tous les jeux de données :
+# Regardons si les bornes sont atteintes pour tous les jeux de données :
 
 setwd(path_to_GEDI_raw_data)
 
 print(dir())
 print(length(dir()))
 
-for (i in 1:1){
+colnames_canopy_cover <- c(
+                           "min",
+                           "nb_0",
+                           "% 0",
+                           "max",
+                           "nb_1",
+                           "1st quart",
+                           "median",
+                           "3rd quart",
+                           "% de cc>0.9",
+                           "nb_rows_tot",
+                           "nb_rows",
+                           "% NA"
+                           )
+
+df_canopy_cover <- data.frame(matrix(NA, nrow = length(dir()), ncol = length(colnames_canopy_cover)))
+
+colnames(df_canopy_cover) <- colnames_canopy_cover
+rm(colnames_canopy_cover)
+
+for (i in 1:length(dir())){
 # for (i in 1:length(dir())){
   
-  # print(dir()[i])
-  
   name = dir()[i]
-  print(name)
   corresponding_table = fst::read.fst(name)
-  size <- nrow(corresponding_table)
+  nb_rows_NA_included <- nrow(corresponding_table)
+  
+  NA_cc_percentage <- round(
+                            sum(is.na(corresponding_table$canopy_cover))/nrow(corresponding_table)
+                            ,2)
+  # percentage of NA
+  corresponding_table <- corresponding_table[complete.cases(corresponding_table[ , "canopy_cover"]),]
+  # get rid of the NA
+  nb_rows_NA_excluded <- nrow(corresponding_table)
+  
   name <- substr(name, start = 1, stop = nchar(name) - 4)
   # to get rid of the ".fst" in the graph name
+  row.names(df_canopy_cover)[i] <- name 
   
-  start <- Sys.time()
+  df_canopy_cover[i,] <- c(
+                           min(corresponding_table[,"canopy_cover"]),
+                           sum(corresponding_table[,"canopy_cover"]==0),
+                           round(sum(corresponding_table[,"canopy_cover"]==0)/nb_rows_NA_excluded,2),
+                           round(max(corresponding_table[,"canopy_cover"]),3),
+                           round(sum(corresponding_table[,"canopy_cover"]==1),2),
+                           round(quantile(corresponding_table[,"canopy_cover"], probs = 0.25),2),
+                           round(median(corresponding_table[,"canopy_cover"]),2),
+                           round(quantile(corresponding_table[,"canopy_cover"], probs = 0.75),2),
+                           round(sum(corresponding_table$canopy_cover>0.9)/nb_rows_NA_excluded,5),
+                           nb_rows_NA_excluded,
+                           nb_rows_NA_included,
+                           NA_cc_percentage
+                           )
   
-  # glm_result <- ...
+
+    
+  par(mfrow= c(1,3))
   
-  duree <- round (Sys.time() - start,1)
+  # we already get rid of the canopy_cover NA
+
+  if(
+    is.null(nrow(corresponding_table[,"canopy_cover"]))==FALSE # s'il y a des données
+  ){plot(hist(corresponding_table[,"canopy_cover"],breaks=40,main=name,xlab="canopy_cover"))}
+  else{plot(c(0,0),main="que des NA pour canopy_cover",xlab="canopy_cover")}
   
-  nb_lignes <- round(nrow(corresponding_table),-3)
-  print(paste("nb_lignes :",nb_lignes))
-  print(duree)
+  corresponding_table2 <- corresponding_table[complete.cases(corresponding_table[ , "fire_freq"]),]
+  # get rid of the fire_freq NA
+    
+  if(
+     is.null(nrow(corresponding_table2[,"fire_freq"]))==FALSE # s'il y a des données
+    ){plot(hist(corresponding_table2[,"fire_freq"],breaks=40,main=name,xlab="fire_freq"))}
+  else{plot(c(0,0),main="que des NA pour le feu",xlab="fire_freq")}
   
-  print(summary(glm_result))
+  corresponding_table3 <- corresponding_table[complete.cases(corresponding_table[ , "mean_precip"]),]
+  # get rid of the mean_precip NA
+  
+  if(
+     is.null(nrow(corresponding_table3[,"mean_precip"]))==FALSE # s'il y a des données
+    ){plot(hist(corresponding_table3[,"mean_precip"],breaks=40,main=name,xlab="mean_precip"))}
+  else{plot(c(0,0),main="que des NA pour la pluie",xlab="mean_precip")}
+  
 }
+
+rm(nb_rows_NA_included)
+rm(corresponding_table)
+rm(corresponding_table2)
+rm(corresponding_table3)
+
+View(df_canopy_cover)
 
 # Get back to the R folder
 setwd(path_to_R_folder)
 ```
 
 ```{r}
+# Alors pourquoi y a-t-il des tableaux avec Inf en min et max
+setwd(path_to_GEDI_raw_data)
 
+corresponding_table = fst::read.fst("Horn_of.fst")
+# corresponding_table <- na.omit(corresponding_table)
+summary(corresponding_table$canopy_cover)
+min(corresponding_table$canopy_cover)
+
+# Le problème, c'est que si on fait :
+# corresponding_table <- na.omit(corresponding_table)
+# pour enlever les valeurs manquantes de canopy_cover,
+# comme pour Horn_of et Serengueti_volcanic, on a 100% de données de feu manquantes, ça les enlève aussi, donc il faut uniquement enlever les valeurs manquantes correspondant à canopy_cover pour voir les min et max :
+
+corresponding_table <- corresponding_table[complete.cases(corresponding_table[ , "canopy_cover"]),]
+
+# complete.cases allows partial selection by including only certain columns of the dataframe" d'après :
+# browseURL("https://stackoverflow.com/questions/4862178/remove-rows-with-all-or-some-nas-missing-values-in-data-frame")
+
+# Cela étant fait, si jamais on a 100% de NA pour le feu on ne peut pas faire de régression ce la canopy_cover par rapport au feu de toutes façons.
 ```
 
 ```{r}
