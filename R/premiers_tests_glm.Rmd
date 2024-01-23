@@ -161,6 +161,9 @@ for (i in 1:length(dir())){
   NA_cc_percentage <- round(
                             sum(is.na(corresponding_table$canopy_cover))/nrow(corresponding_table)
                             ,2)
+  
+  corresponding_table1 <- corresponding_table # all NA included in corresponding_table1
+  
   # percentage of NA
   corresponding_table <- corresponding_table[complete.cases(corresponding_table[ , "canopy_cover"]),]
   # get rid of the NA
@@ -185,32 +188,47 @@ for (i in 1:length(dir())){
                            NA_cc_percentage
                            )
   
-
+  setwd(
     
-  par(mfrow= c(1,3))
+        file.path(
+                  path_to_Savanna_structure_GEDI_folder,
+                  "figures",
+                  "cc_fire_rain"
+                  )
+        )
   
-  # we already get rid of the canopy_cover NA
-
-  if(
-    is.null(nrow(corresponding_table[,"canopy_cover"]))==FALSE # s'il y a des données
-  ){plot(hist(corresponding_table[,"canopy_cover"],breaks=40,main=name,xlab="canopy_cover"))}
-  else{plot(c(0,0),main="que des NA pour canopy_cover",xlab="canopy_cover")}
+  # sauvagarde des trois histogrammes
+  #
+  # png(filename=paste0(name,"_cc_fire_rain.png"),width = 2000, height = 1000)
+  # 
+  # par(mfrow= c(1,3))
+  # 
+  # # we already get rid of the canopy_cover NA in corresponding_table
+  # 
+  # if(
+  #   length(corresponding_table[,"canopy_cover"])>0 # s'il y a des données
+  # ){hist(corresponding_table[,"canopy_cover"],breaks=40,main=name,xlab="canopy_cover")}
+  # else{plot(c(0,0),main="que des NA pour canopy_cover",xlab="canopy_cover")}
+  # 
+  # corresponding_table2 <- corresponding_table1[complete.cases(corresponding_table1[ , "fire_freq"]),]
+  # # get rid of the fire_freq NA
+  # 
+  # if(
+  #    length(corresponding_table2[,"fire_freq"])>0 # s'il y a des données
+  #   ){hist(corresponding_table2[,"fire_freq"],breaks=40,main=name,xlab="fire_freq")}
+  # else{plot(c(0,0),main="que des NA pour le feu",xlab="fire_freq")}
+  # 
+  # corresponding_table3 <- corresponding_table1[complete.cases(corresponding_table1[ , "mean_precip"]),]
+  # # get rid of the mean_precip NA
+  # 
+  # if(
+  #    length(corresponding_table3[,"mean_precip"])>0 # s'il y a des données
+  #   ){hist(corresponding_table3[,"mean_precip"],breaks=40,main=name,xlab="mean_precip")}
+  # else{plot(c(0,0),main="que des NA pour la pluie",xlab="mean_precip")}
+  # 
+  # dev.off()
   
-  corresponding_table2 <- corresponding_table[complete.cases(corresponding_table[ , "fire_freq"]),]
-  # get rid of the fire_freq NA
-    
-  if(
-     is.null(nrow(corresponding_table2[,"fire_freq"]))==FALSE # s'il y a des données
-    ){plot(hist(corresponding_table2[,"fire_freq"],breaks=40,main=name,xlab="fire_freq"))}
-  else{plot(c(0,0),main="que des NA pour le feu",xlab="fire_freq")}
-  
-  corresponding_table3 <- corresponding_table[complete.cases(corresponding_table[ , "mean_precip"]),]
-  # get rid of the mean_precip NA
-  
-  if(
-     is.null(nrow(corresponding_table3[,"mean_precip"]))==FALSE # s'il y a des données
-    ){plot(hist(corresponding_table3[,"mean_precip"],breaks=40,main=name,xlab="mean_precip"))}
-  else{plot(c(0,0),main="que des NA pour la pluie",xlab="mean_precip")}
+  setwd(path_to_GEDI_raw_data)
   
 }
 
@@ -248,6 +266,7 @@ corresponding_table <- corresponding_table[complete.cases(corresponding_table[ ,
 ```
 
 ```{r}
+# corrplot sur toutes les données
 
 ```
 
