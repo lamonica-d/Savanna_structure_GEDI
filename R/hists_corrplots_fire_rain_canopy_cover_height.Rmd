@@ -21,12 +21,8 @@ getwd()
 
 # Libraries
 library(fst)
-library(visdat)
 # install.packages("visdat")
 library(ggplot2)
-# install.packages("betareg")
-library(betareg)
-# browseURL("https://www.jstatsoft.org/article/view/v034i02")
 
 # Chargement du tableau missing_data_percentages.csv
 
@@ -281,24 +277,121 @@ for (i in 1:length(dir())){
                   )
         )
   
-  ggsave(
-         paste0(name,".png"),
-         plot = plot,
-         bg='#ffffff'# pour ne pas avoir un fond gris moche
-         )
+  # ggsave(
+  #        paste0(name,".png"),
+  #        plot = plot,
+  #        bg='#ffffff'# pour ne pas avoir un fond gris moche
+  #        )
 
   setwd(path_to_GEDI_raw_data)
   
 }
 
 rm(corresponding_table)
-rm(corresponding_table1)
-rm(corresponding_table2)
-rm(corresponding_table3)
-rm(corresponding_table4)
+# rm(corresponding_table1)
+# rm(corresponding_table2)
+# rm(corresponding_table3)
+# rm(corresponding_table4)
+rm(empty_df)
 
 # Get back to the R folder
 setwd(path_to_R_folder)
+```
+
+```{r}
+# Correlation plots
+
+# install.packages("GGally")
+library(GGally)
+
+# Affichages avec GGPLOT histogrammes fire + rain + canopy_cover
+
+require(ggplot2)
+require(grid)
+require(gridExtra)
+
+setwd(path_to_GEDI_raw_data)
+
+#for (i in 1:length(dir())){
+for (i in 19:24){
+
+  name = dir()[i]
+  corresponding_table = fst::read.fst(name)
+  name <- substr(name, start = 1, stop = nchar(name) - 4)
+  # to get rid of the ".fst" in the graph name
+  print(name)
+  
+  # print(missing_data_percentages[i,c("canopy_cover","rh98","fire_freq","mean_precip")])
+  
+  corresponding_table1 <- corresponding_table # all NA included in corresponding_table1
+  
+  corresponding_table <- corresponding_table[
+    complete.cases(
+      corresponding_table[,c("canopy_cover","rh98","mean_precip","fire_freq")]
+      ),]
+  
+  # get rid of the canopy_cover rh98 mean_precip fire_freq NA rows
+  
+  corresponding_table <- corresponding_table[,c("canopy_cover","rh98","mean_precip","fire_freq")]
+  # then we only keep the desired columns
+  
+  non_NA_percentage <- round(
+                         nrow(corresponding_table)/nrow(corresponding_table1)
+                         ,2)
+  
+  start <- Sys.time()
+  
+  correlation_matrix <- ggpairs(data = corresponding_table) +
+    
+                          labs(x = paste0(name,
+                                          " (",
+                                          non_NA_percentage*100,
+                                          " % of data)"
+                                          )
+  )
+  
+  setwd(
+
+      file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures",
+                "hists_canopy_rain_fire"
+                )
+      )
+  
+  # ggsave(
+  #        paste0(name,"_corr.png"),
+  #        plot = correlation_matrix,
+  #        bg='#ffffff'# pour ne pas avoir un fond gris moche
+  #        )
+  
+  print(Sys.time() - start)
+  
+  setwd(path_to_GEDI_raw_data)
+  
+}
+
+rm(corresponding_table)
+rm(corresponding_table1)
+
+# Get back to the R folder
+setwd(path_to_R_folder)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
 ```
 
 ```{r}
