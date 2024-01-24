@@ -1,0 +1,19 @@
+https://dagitty.net/dags.html
+
+A copier-coller dans "Model Code" :
+
+dag {
+bb="0,0,1,1"
+"CANOPY COVER (%)" [pos="0.528,0.613"]
+"CANOY HEIGHT (m)" [pos="0.173,0.300"]
+"GRASS biomass (t.ha-1)" [pos="0.334,0.457"]
+"Mean annual rainfall (mm yr-1)" [pos="0.174,0.609"]
+"fire frequence (yr-1)" [pos="0.524,0.299"]
+"CANOPY COVER (%)" -> "GRASS biomass (t.ha-1)"
+"GRASS biomass (t.ha-1)" -> "fire frequence (yr-1)"
+"Mean annual rainfall (mm yr-1)" -> "CANOPY COVER (%)"
+"Mean annual rainfall (mm yr-1)" -> "CANOY HEIGHT (m)"
+"Mean annual rainfall (mm yr-1)" -> "GRASS biomass (t.ha-1)"
+"fire frequence (yr-1)" -> "CANOPY COVER (%)"
+"fire frequence (yr-1)" -> "CANOY HEIGHT (m)"
+}

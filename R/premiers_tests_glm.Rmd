@@ -124,7 +124,7 @@ summary(corresponding_table$canopy_cover)
 ```
 
 ```{r}
-# Regardons si les bornes sont atteintes pour tous les jeux de données :
+# Regardons si les bornes de canopy_cover sont atteintes pour tous les jeux de données :
 
 setwd(path_to_GEDI_raw_data)
 
@@ -174,68 +174,25 @@ for (i in 1:length(dir())){
   row.names(df_canopy_cover)[i] <- name 
   
   df_canopy_cover[i,] <- c(
-                           min(corresponding_table[,"canopy_cover"]),
+                           round(min(corresponding_table[,"canopy_cover"]),4),
                            sum(corresponding_table[,"canopy_cover"]==0),
                            round(sum(corresponding_table[,"canopy_cover"]==0)/nb_rows_NA_excluded,2),
-                           round(max(corresponding_table[,"canopy_cover"]),3),
+                           round(max(corresponding_table[,"canopy_cover"]),5),
                            round(sum(corresponding_table[,"canopy_cover"]==1),2),
                            round(quantile(corresponding_table[,"canopy_cover"], probs = 0.25),2),
                            round(median(corresponding_table[,"canopy_cover"]),2),
                            round(quantile(corresponding_table[,"canopy_cover"], probs = 0.75),2),
                            round(sum(corresponding_table$canopy_cover>0.9)/nb_rows_NA_excluded,5),
-                           nb_rows_NA_excluded,
-                           nb_rows_NA_included,
+                           format(round(nb_rows_NA_excluded,-2), scientific = TRUE),
+                           format(round(nb_rows_NA_included,-2), scientific = TRUE),
                            NA_cc_percentage
                            )
-  
-  setwd(
-    
-        file.path(
-                  path_to_Savanna_structure_GEDI_folder,
-                  "figures",
-                  "cc_fire_rain"
-                  )
-        )
-  
-  # sauvagarde des trois histogrammes
-  #
-  # png(filename=paste0(name,"_cc_fire_rain.png"),width = 2000, height = 1000)
-  # 
-  # par(mfrow= c(1,3))
-  # 
-  # # we already get rid of the canopy_cover NA in corresponding_table
-  # 
-  # if(
-  #   length(corresponding_table[,"canopy_cover"])>0 # s'il y a des données
-  # ){hist(corresponding_table[,"canopy_cover"],breaks=40,main=name,xlab="canopy_cover")}
-  # else{plot(c(0,0),main="que des NA pour canopy_cover",xlab="canopy_cover")}
-  # 
-  # corresponding_table2 <- corresponding_table1[complete.cases(corresponding_table1[ , "fire_freq"]),]
-  # # get rid of the fire_freq NA
-  # 
-  # if(
-  #    length(corresponding_table2[,"fire_freq"])>0 # s'il y a des données
-  #   ){hist(corresponding_table2[,"fire_freq"],breaks=40,main=name,xlab="fire_freq")}
-  # else{plot(c(0,0),main="que des NA pour le feu",xlab="fire_freq")}
-  # 
-  # corresponding_table3 <- corresponding_table1[complete.cases(corresponding_table1[ , "mean_precip"]),]
-  # # get rid of the mean_precip NA
-  # 
-  # if(
-  #    length(corresponding_table3[,"mean_precip"])>0 # s'il y a des données
-  #   ){hist(corresponding_table3[,"mean_precip"],breaks=40,main=name,xlab="mean_precip")}
-  # else{plot(c(0,0),main="que des NA pour la pluie",xlab="mean_precip")}
-  # 
-  # dev.off()
-  
-  setwd(path_to_GEDI_raw_data)
   
 }
 
 rm(nb_rows_NA_included)
 rm(corresponding_table)
-rm(corresponding_table2)
-rm(corresponding_table3)
+rm(corresponding_table1)
 
 View(df_canopy_cover)
 
@@ -265,8 +222,98 @@ corresponding_table <- corresponding_table[complete.cases(corresponding_table[ ,
 # Cela étant fait, si jamais on a 100% de NA pour le feu on ne peut pas faire de régression ce la canopy_cover par rapport au feu de toutes façons.
 ```
 
+
 ```{r}
-# corrplot sur toutes les données
+# Regardons si les bornes de rh98 sont atteintes pour tous les jeux de données :
+
+setwd(path_to_GEDI_raw_data)
+
+print(dir())
+print(length(dir()))
+
+colnames_rh98 <- c(
+                           "min",
+                           "nb_0",
+                           "% 0",
+                           "max",
+                           "nb_1",
+                           "1st quart",
+                           "median",
+                           "3rd quart",
+                           "% de rh98>25",
+                           "nb_rows_tot",
+                           "nb_rows",
+                           "% NA"
+                           )
+
+df_rh98 <- data.frame(matrix(NA, nrow = length(dir()), ncol = length(colnames_rh98)))
+
+colnames(df_rh98) <- colnames_rh98
+rm(colnames_rh98)
+
+for (i in 1:length(dir())){
+
+  name = dir()[i]
+  corresponding_table = fst::read.fst(name)
+  nb_rows_NA_included <- nrow(corresponding_table)
+  
+  NA_cc_percentage <- round(
+                            sum(is.na(corresponding_table$canopy_cover))/nrow(corresponding_table)
+                            ,2)
+  
+  corresponding_table1 <- corresponding_table # all NA included in corresponding_table1
+  
+  # percentage of NA
+  corresponding_table <- corresponding_table[complete.cases(corresponding_table[ , "rh98"]),]
+  # get rid of the NA
+  nb_rows_NA_excluded <- nrow(corresponding_table)
+  
+  name <- substr(name, start = 1, stop = nchar(name) - 4)
+  # to get rid of the ".fst" in the graph name
+  row.names(df_rh98)[i] <- name 
+  
+  df_rh98[i,] <- c(
+                   round(min(corresponding_table[,"rh98"]),2),
+                   sum(corresponding_table[,"rh98"]==0),
+                   round(sum(corresponding_table[,"rh98"]==0)/nb_rows_NA_excluded,2),
+                   round(max(corresponding_table[,"rh98"]),3),
+                   round(sum(corresponding_table[,"rh98"]==1),2),
+                   round(quantile(corresponding_table[,"rh98"], probs = 0.25),2),
+                   round(median(corresponding_table[,"rh98"]),2),
+                   round(quantile(corresponding_table[,"rh98"], probs = 0.75),2),
+                   round(sum(corresponding_table$rh98>25)/nb_rows_NA_excluded,5),
+                   format(round(nb_rows_NA_excluded,-2), scientific = TRUE),
+                   format(round(nb_rows_NA_included,-2), scientific = TRUE),
+                   NA_cc_percentage
+                   )
+  
+
+}
+
+rm(nb_rows_NA_included)
+rm(corresponding_table)
+rm(corresponding_table1)
+
+View(df_rh98)
+
+# Get back to the R folder
+setwd(path_to_R_folder)
+```
+
+```{r}
+
+# Sauvegarde des deux tableaux résumant les formes respectives de canop_cover et rh98
+
+setwd(file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures"
+                )
+      )
+
+# write.csv(df_canopy_cover,"Summaries_canopy_cover.csv")
+# write.csv(df_rh98,"Summaries_rh98.csv")
+
+setwd(path_to_R_folder)
 
 ```
 
@@ -277,3 +324,17 @@ corresponding_table <- corresponding_table[complete.cases(corresponding_table[ ,
 ```{r}
 
 ```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+

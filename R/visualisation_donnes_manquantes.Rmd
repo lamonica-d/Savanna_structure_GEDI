@@ -33,7 +33,7 @@ setwd(file.path(
                 )
       )
 
-missing_data_percentages <- read.csv("missing_data_percentages.csv",row.names=1)
+# missing_data_percentages <- read.csv("missing_data_percentages.csv",row.names=1)
 
 setwd(path_to_R_folder)
 ```
@@ -121,11 +121,11 @@ for (i in c(1:16,18:24)){
                    show_perc = FALSE,
                    warn_large_data =FALSE
                    )
-  ggsave(
-         paste0(name,"_NA.png"),
-         plot = plot,
-         bg='#ffffff'# pour ne pas avoir un fond gris moche
-         )
+  # ggsave(
+  #        paste0(name,"_NA.png"),
+  #        plot = plot,
+  #        bg='#ffffff'# pour ne pas avoir un fond gris moche
+  #        )
 
   duree <- Sys.time() - start
   nb_lignes <- round(nrow(corresponding_table),-3)
@@ -236,7 +236,8 @@ for (i in 1:length(dir())){
                                         colMeans(is.na(corresponding_table)),
                                         2
                                         )
-  
+  print(missing_data_percentages[i,])
+   
   row.names(missing_data_percentages)[i] <- name
     
 }
@@ -386,85 +387,85 @@ setwd(path_to_R_folder)
 
 
 ```{r}
-# Visualisation des données manquantes de feu ET de pluie simultanément
-
-setwd(file.path(
-                path_to_Savanna_structure_GEDI_folder,
-                "figures"
-                )
-      )
-
-df <- data.frame(rownames = rownames(missing_data_percentages), 
-                 fire_freq = missing_data_percentages$fire_freq, 
-                 mean_precip = missing_data_percentages$mean_precip)
-
-# Reshape the data to long format
-df <- tidyr::gather(df, variable, value, -rownames)
-
-# Create a bar plot
-plot <- ggplot(
-               df,
-               aes(x = rownames, y = value, fill = variable)
-               ) +
-               geom_bar(stat = "identity", position = "dodge", width = 0.8) +
-               scale_fill_manual(values = c("fire_freq" = "salmon", "mean_precip" = "skyblue")) +
-               theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-               labs(title = "Pourcentage de données manquantes fréquence de feu et pluie moyenne annuelle",
-               x = "X-axis Label", y = "% données manquantes") +
-               ylim(0,1)
-
-print(plot)
-
-# ggsave(
-#        "NA_fire_freq_and_mean_precip.png",
-#        plot = plot,
-#        bg='#ffffff'# pour ne pas avoir un fond gris moche
-#        )
-
-# Par valeurs croissantes :
-
-# Pour ordonner par valeur manqunte de feu
-missing_data_percentages <- missing_data_percentages[order(missing_data_percentages$fire_freq),]
-
-df <- data.frame(
-                 rownames = rownames(missing_data_percentages),
-                 fire_freq = missing_data_percentages$fire_freq,
-                 mean_precip = missing_data_percentages$mean_precip
-                 )
-
-# Order the dataframe by fire_freq before reshaping
-
-# Reshape the data to long format
-df <- tidyr::gather(df, variable, value, -rownames)
-df["numero"] <- rep(1:24,2)
-
-# Create a bar plot
-plot <- ggplot(
-               df,
-               aes(x = numero, y = value, fill = variable)
-               ) +
-               geom_bar(stat = "identity", position = "dodge", width = 0.8) +
-               scale_fill_manual(values = c("fire_freq" = "salmon", "mean_precip" = "skyblue")) +
-               theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-               labs(
-               title = "Pourcentage de données manquantes fréquence de feu et pluie moyenne annuelle",
-               x = "X-axis Label",
-               y = "% données manquantes"
-               ) +
-               ylim(0, 1)
-
-# Print the plot
-print(plot)
-
-# rm(df)
-
-# ggsave(
-#        "NA_fire_freq_and_mean_precip_sorted_by_fire.png",
-#        plot = plot,
-#        bg='#ffffff'# pour ne pas avoir un fond gris moche
-#        )
-
-setwd(path_to_R_folder)
+# # Visualisation des données manquantes de feu ET de pluie simultanément
+# 
+# setwd(file.path(
+#                 path_to_Savanna_structure_GEDI_folder,
+#                 "figures"
+#                 )
+#       )
+# 
+# df <- data.frame(rownames = rownames(missing_data_percentages), 
+#                  fire_freq = missing_data_percentages$fire_freq, 
+#                  mean_precip = missing_data_percentages$mean_precip)
+# 
+# # Reshape the data to long format
+# df <- tidyr::gather(df, variable, value, -rownames)
+# 
+# # Create a bar plot
+# plot <- ggplot(
+#                df,
+#                aes(x = rownames, y = value, fill = variable)
+#                ) +
+#                geom_bar(stat = "identity", position = "dodge", width = 0.8) +
+#                scale_fill_manual(values = c("fire_freq" = "salmon", "mean_precip" = "skyblue")) +
+#                theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#                labs(title = "Pourcentage de données manquantes fréquence de feu et pluie moyenne annuelle",
+#                x = "X-axis Label", y = "% données manquantes") +
+#                ylim(0,1)
+# 
+# print(plot)
+# 
+# # ggsave(
+# #        "NA_fire_freq_and_mean_precip.png",
+# #        plot = plot,
+# #        bg='#ffffff'# pour ne pas avoir un fond gris moche
+# #        )
+# 
+# # Par valeurs croissantes :
+# 
+# # Pour ordonner par valeur manqunte de feu
+# missing_data_percentages <- missing_data_percentages[order(missing_data_percentages$fire_freq),]
+# 
+# df <- data.frame(
+#                  rownames = rownames(missing_data_percentages),
+#                  fire_freq = missing_data_percentages$fire_freq,
+#                  mean_precip = missing_data_percentages$mean_precip
+#                  )
+# 
+# # Order the dataframe by fire_freq before reshaping
+# 
+# # Reshape the data to long format
+# df <- tidyr::gather(df, variable, value, -rownames)
+# df["numero"] <- rep(1:24,2)
+# 
+# # Create a bar plot
+# plot <- ggplot(
+#                df,
+#                aes(x = numero, y = value, fill = variable)
+#                ) +
+#                geom_bar(stat = "identity", position = "dodge", width = 0.8) +
+#                scale_fill_manual(values = c("fire_freq" = "salmon", "mean_precip" = "skyblue")) +
+#                theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#                labs(
+#                title = "Pourcentage de données manquantes fréquence de feu et pluie moyenne annuelle",
+#                x = "X-axis Label",
+#                y = "% données manquantes"
+#                ) +
+#                ylim(0, 1)
+# 
+# # Print the plot
+# print(plot)
+# 
+# # rm(df)
+# 
+# # ggsave(
+# #        "NA_fire_freq_and_mean_precip_sorted_by_fire.png",
+# #        plot = plot,
+# #        bg='#ffffff'# pour ne pas avoir un fond gris moche
+# #        )
+# 
+# setwd(path_to_R_folder)
 ```
 
 ```{r}
@@ -569,50 +570,54 @@ print(plot)
 #        bg='#ffffff'# pour ne pas avoir un fond gris moche
 #        )
 
-# # Par valeurs croissantes :
+# Par valeurs croissantes :
+
+# Pour ordonner par valeur manqunte de feu
+missing_data_percentages <- missing_data_percentages[order(missing_data_percentages$fire_freq),]
+
+df <- data.frame(rownames = rownames(missing_data_percentages),
+                 fire_freq = missing_data_percentages$fire_freq,
+                 mean_precip = missing_data_percentages$mean_precip,
+                 canopy_cover = missing_data_percentages$canopy_cover)
+
+# Reshape the data to long format
+df <- tidyr::gather(df, variable, value, -rownames)
+df["numero"] <- rep(sprintf("%02d", 1:24), times = 3)
+
+for(i in 1:nrow(df)){
+  df[i,"numero"] <- paste0(df[i,"numero"],df[i,"rownames"])
+}
+
+# Create a bar plot
+plot <- ggplot(
+               df,
+               aes(x = numero, y = value, fill = variable, position = "dodge")
+               ) +
+               geom_bar(stat = "identity", position = "dodge", width = 0.8) +
+               scale_fill_manual(values = c(
+                                            "fire_freq" = "salmon",
+                                            "mean_precip" = "skyblue",
+                                            "canopy_cover" = "forestgreen"
+                                            )
+                                 ) +
+               theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+               labs(
+               title = "Pourcentage de données manquantes feu + pluie + canopy_cover",
+               x = "X-axis Label",
+               y = "% données manquantes"
+               ) +
+               ylim(0, 1)
+
+# Print the plot
+print(plot)
+
+# rm(df)
 # 
-# # Pour ordonner par valeur manqunte de feu
-# missing_data_percentages <- missing_data_percentages[order(missing_data_percentages$fire_freq),]
-# 
-# df <- data.frame(rownames = rownames(missing_data_percentages), 
-#                  fire_freq = missing_data_percentages$fire_freq, 
-#                  mean_precip = missing_data_percentages$mean_precip,
-#                  canopy_cover = missing_data_percentages$canopy_cover)
-# 
-# # Reshape the data to long format
-# df <- tidyr::gather(df, variable, value, -rownames)
-# df["numero"] <- rep(1:24,3)
-# 
-# # Create a bar plot
-# plot <- ggplot(
-#                df,
-#                aes(x = numero, y = value, fill = variable, position = "dodge") 
-#                ) +
-#                geom_bar(stat = "identity", position = "dodge", width = 0.8) +
-#                scale_fill_manual(values = c(
-#                                             "fire_freq" = "salmon",
-#                                             "mean_precip" = "skyblue",
-#                                             "canopy_cover" = "forestgreen"
-#                                             )
-#                                  ) +
-#                theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-#                labs(
-#                title = "Pourcentage de données manquantes feu + pluie + canopy_cover",
-#                x = "X-axis Label",
-#                y = "% données manquantes"
-#                ) +
-#                ylim(0, 1)
-# 
-# # Print the plot
-# print(plot)
-# 
-# # rm(df)
-# 
-# # ggsave(
-# #        "NA_fire_freq_and_mean_precip_sorted_by_fire_NA.png",
-# #        plot = plot,
-# #        bg='#ffffff'# pour ne pas avoir un fond gris moche
-# #        )
+# ggsave(
+#        "NA_fire_freq_and_mean_precip_sorted_by_fire_NA.png",
+#        plot = plot,
+#        bg='#ffffff'# pour ne pas avoir un fond gris moche
+#        )
 
 ```
 
