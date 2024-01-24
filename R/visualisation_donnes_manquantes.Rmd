@@ -524,6 +524,8 @@ print(plot)
 setwd(path_to_R_folder)
 ```
 
+
+
 ```{r}
 # Visualisation des données manquantes
 # de feu ET de pluie ET de canopy_cover simultanément
@@ -567,147 +569,50 @@ print(plot)
 #        bg='#ffffff'# pour ne pas avoir un fond gris moche
 #        )
 
-# Par valeurs croissantes :
-
-# Pour ordonner par valeur manqunte de feu
-missing_data_percentages <- missing_data_percentages[order(missing_data_percentages$fire_freq),]
-
-df <- data.frame(rownames = rownames(missing_data_percentages), 
-                 fire_freq = missing_data_percentages$fire_freq, 
-                 mean_precip = missing_data_percentages$mean_precip,
-                 canopy_cover = missing_data_percentages$canopy_cover)
-
-# Reshape the data to long format
-df <- tidyr::gather(df, variable, value, -rownames)
-df["numero"] <- rep(1:24,3)
-
-# Create a bar plot
-plot <- ggplot(
-               df,
-               aes(x = numero, y = value, fill = variable, position = "dodge") 
-               ) +
-               geom_bar(stat = "identity", position = "dodge", width = 0.8) +
-               scale_fill_manual(values = c(
-                                            "fire_freq" = "salmon",
-                                            "mean_precip" = "skyblue",
-                                            "canopy_cover" = "forestgreen"
-                                            )
-                                 ) +
-               theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-               labs(
-               title = "Pourcentage de données manquantes feu + pluie + canopy_cover",
-               x = "X-axis Label",
-               y = "% données manquantes"
-               ) +
-               ylim(0, 1)
-
-# Print the plot
-print(plot)
-
-# rm(df)
-
-# ggsave(
-#        "NA_fire_freq_and_mean_precip_sorted_by_fire_NA.png",
-#        plot = plot,
-#        bg='#ffffff'# pour ne pas avoir un fond gris moche
-#        )
-
-# Par valeurs croissantes :
-
-# Pour ordonner par valeur manquante de canopy_cover
-missing_data_percentages <- missing_data_percentages[order(missing_data_percentages$canopy_cover),]
-
-df <- data.frame(rownames = rownames(missing_data_percentages), 
-                 fire_freq = missing_data_percentages$fire_freq, 
-                 mean_precip = missing_data_percentages$mean_precip,
-                 canopy_cover = missing_data_percentages$canopy_cover)
-
-# Reshape the data to long format
-df <- tidyr::gather(df, variable, value, -rownames)
-df["numero"] <- rep(1:24,3)
-
-# Create a bar plot
-plot <- ggplot(
-               df,
-               aes(x = numero, y = value, fill = variable, position = "dodge") 
-               ) +
-               geom_bar(stat = "identity", position = "dodge", width = 0.8) +
-               scale_fill_manual(values = c(
-                                            "fire_freq" = "salmon",
-                                            "mean_precip" = "skyblue",
-                                            "canopy_cover" = "forestgreen"
-                                            )
-                                 ) +
-               theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-               labs(
-               title = "Pourcentage de données manquantes feu + pluie + canopy_cover",
-               x = "X-axis Label",
-               y = "% données manquantes"
-               ) +
-               ylim(0, 1)
-
-# Print the plot
-print(plot)
-
-# rm(df)
-
-# ggsave(
-#        "NA_fire_freq_and_mean_precip_sorted_by_canopy_cover_NA.png",
-#        plot = plot,
-#        bg='#ffffff'# pour ne pas avoir un fond gris moche
-#        )
-
-# Par valeurs croissantes :
-
-# Pour ordonner par valeur manquante de canopy_cover
-missing_data_percentages <- missing_data_percentages[order(missing_data_percentages$mean_precip),]
-
-df <- data.frame(rownames = rownames(missing_data_percentages), 
-                 fire_freq = missing_data_percentages$fire_freq, 
-                 mean_precip = missing_data_percentages$mean_precip,
-                 canopy_cover = missing_data_percentages$canopy_cover)
-
-# Reshape the data to long format
-df <- tidyr::gather(df, variable, value, -rownames)
-df["numero"] <- rep(1:24,3)
-
-# Create a bar plot
-plot <- ggplot(
-               df,
-               aes(x = numero, y = value, fill = variable, position = "dodge") 
-               ) +
-               geom_bar(stat = "identity", position = "dodge", width = 0.8) +
-               scale_fill_manual(values = c(
-                                            "fire_freq" = "salmon",
-                                            "mean_precip" = "skyblue",
-                                            "canopy_cover" = "forestgreen"
-                                            )
-                                 ) +
-               theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-               labs(
-               title = "Pourcentage de données manquantes feu + pluie + canopy_cover",
-               x = "X-axis Label",
-               y = "% données manquantes"
-               ) +
-               ylim(0, 1)
-
-# Print the plot
-print(plot)
-
-# rm(df)
-# rm(plot)
-
-# ggsave(
-#        "NA_fire_freq_and_mean_precip_sorted_by_mean_precip_NA.png",
-#        plot = plot,
-#        bg='#ffffff'# pour ne pas avoir un fond gris moche
-#        )
-
-
-setwd(path_to_R_folder)
-```
-
-```{r}
+# # Par valeurs croissantes :
+# 
+# # Pour ordonner par valeur manqunte de feu
+# missing_data_percentages <- missing_data_percentages[order(missing_data_percentages$fire_freq),]
+# 
+# df <- data.frame(rownames = rownames(missing_data_percentages), 
+#                  fire_freq = missing_data_percentages$fire_freq, 
+#                  mean_precip = missing_data_percentages$mean_precip,
+#                  canopy_cover = missing_data_percentages$canopy_cover)
+# 
+# # Reshape the data to long format
+# df <- tidyr::gather(df, variable, value, -rownames)
+# df["numero"] <- rep(1:24,3)
+# 
+# # Create a bar plot
+# plot <- ggplot(
+#                df,
+#                aes(x = numero, y = value, fill = variable, position = "dodge") 
+#                ) +
+#                geom_bar(stat = "identity", position = "dodge", width = 0.8) +
+#                scale_fill_manual(values = c(
+#                                             "fire_freq" = "salmon",
+#                                             "mean_precip" = "skyblue",
+#                                             "canopy_cover" = "forestgreen"
+#                                             )
+#                                  ) +
+#                theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#                labs(
+#                title = "Pourcentage de données manquantes feu + pluie + canopy_cover",
+#                x = "X-axis Label",
+#                y = "% données manquantes"
+#                ) +
+#                ylim(0, 1)
+# 
+# # Print the plot
+# print(plot)
+# 
+# # rm(df)
+# 
+# # ggsave(
+# #        "NA_fire_freq_and_mean_precip_sorted_by_fire_NA.png",
+# #        plot = plot,
+# #        bg='#ffffff'# pour ne pas avoir un fond gris moche
+# #        )
 
 ```
 
