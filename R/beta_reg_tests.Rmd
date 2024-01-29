@@ -1,0 +1,112 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r}
+# For the accents é ù û etc
+options(Encoding="latin1")
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R",encoding="latin1")
+# Setting the current path
+path_to_R_folder = file.path(
+                             path_to_Savanna_structure_GEDI_folder,
+                             "R"
+                             )
+setwd(path_to_R_folder)
+getwd()
+
+# Libraries
+library(fst)
+library(visdat)
+# install.packages("visdat")
+library(ggplot2)
+# install.packages("betareg")
+library(betareg)
+# browseURL("https://www.jstatsoft.org/article/view/v034i02")
+
+# Chargement du tableau missing_data_percentages.csv
+
+setwd(file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures"
+                )
+      )
+
+missing_data_percentages <- read.csv("missing_data_percentages.csv",row.names=1)
+
+setwd(path_to_R_folder)
+```
+
+```{r}
+# Générons des données simulées de loi Beta_(theta_i)
+n = 10**4
+
+phi = 50
+
+if(phi<=0){stop("phi not in ]0,+inf[")}
+
+
+x_1 = rnorm(n,3,1)
+x_2 = runif(n,-2,2)
+
+comb_lin = 0.3*x_1 - 2*x_2
+# Lien logit :
+mu = 1/(1+exp(-comb_lin))
+
+y = rep(NA,n)
+
+for(i in 1:n){
+  
+  p = phi*mu[i]
+  q = phi*(1-mu[i])
+  
+  y[i] = rbeta(n=1,shape1=p,shape2=q)
+  
+  }
+
+plot(1:n,y,ylim=c(0,1))
+
+df = data.frame(cbind(y,x_1,x_2))
+```
+
+```{r}
+library(betareg)
+
+# df$y[1]=0
+
+model <- betareg(y ~ -1 + x_1 + x_2,
+                 # | 1 => phi constant
+                 data = df,
+                 # subset,
+                 # na.action=na.omit,
+                 # weights,
+                 # offset,
+                 link = "logit",
+                 link.phi = NULL,
+                 # control = betareg.control(...),
+                 model = TRUE,
+                 y = TRUE,
+                 x = FALSE
+                 )
+
+summary(model)
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
