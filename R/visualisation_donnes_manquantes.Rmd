@@ -33,7 +33,7 @@ setwd(file.path(
                 )
       )
 
-# missing_data_percentages <- read.csv("missing_data_percentages.csv",row.names=1)
+missing_data_percentages <- read.csv("missing_data_percentages.csv",row.names=1)
 
 setwd(path_to_R_folder)
 ```
@@ -621,15 +621,208 @@ print(plot)
 
 ```
 
-```{r}
 
+```{r}
+# Visualisation des données manquantes totales
+
+setwd(path_to_GEDI_raw_data)
+
+print(dir())
+print(length(dir()))
+
+for (i in 1:length(dir())){
+  
+  # print(dir()[i])
+  
+  setwd(path_to_GEDI_raw_data)
+  
+  name = dir()[i]
+  corresponding_table = fst::read.fst(name)
+  name <- substr(name, start = 1, stop = nchar(name) - 4)
+  # to get rid of the ".fst" in the graph name  
+  
+  nb_total_rows <- nrow(corresponding_table)
+  corresponding_table <- na.omit(corresponding_table)
+  nb_rows_NA_excluded <- nrow(corresponding_table)
+  
+  missing_data_percentages[i,"missing"] <- 1-round(nb_rows_NA_excluded/nb_total_rows,2)
+    
+  print(name)
+  print(rownames(missing_data_percentages)[i])
+}
+
+# Get back to the R folder
+setwd(path_to_R_folder)
+# Get back to the R folder
+getwd()
 ```
 
 ```{r}
-
+# setwd(file.path(
+#                 path_to_Savanna_structure_GEDI_folder,
+#                 "figures"
+#                 )
+#       )
+# 
+# write.csv(
+#           missing_data_percentages,
+#           "missing_data_percentages.csv",
+#           row.names=TRUE
+#           )
 ```
 
 ```{r}
+# Visualisation des données manquantes totales
+
+setwd(file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures"
+                )
+      )
+
+plot <- ggplot(
+               missing_data_percentages,
+               aes(x = rownames(missing_data_percentages), y = missing)
+               ) +
+  # Specify the type of plot, for example, a bar plot
+  geom_bar(stat = "identity", fill = "pink") +
+  # Customize x-axis labels
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # Customize plot labels and title
+  labs(title = "Pourcentage de données manquantes (au moins une variable NA)", x = "X-axis Label", y = "% données manquantes") +
+  ylim(0,1)
+
+print(plot)
+
+# ggsave(
+#        "NA_total.png",
+#        plot = plot,
+#        bg='#ffffff'# pour ne pas avoir un fond gris moche
+#        )
+
+# Par valeurs croissantes :
+
+plot <- ggplot(
+               missing_data_percentages,
+               aes(x =
+                   reorder(rownames(missing_data_percentages), missing),
+                   y = missing
+                   )
+               ) +
+  # Specify the type of plot, for example, a bar plot
+  geom_bar(stat = "identity", fill = "pink") +
+  # Customize x-axis labels
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # Customize plot labels and title
+  labs(title = "Pourcentage de données manquantes (au moins une variable NA)", x = "X-axis Label", y = "% données manquantes") +
+  ylim(0,1)
+
+print(plot)
+
+# ggsave(
+#        "NA_total_sorted.png",
+#        plot = plot,
+#        bg='#ffffff'# pour ne pas avoir un fond gris moche
+#        )
+
+setwd(path_to_R_folder)
+```
+
+```{r}
+# Visualisation des données manquantes
+# de feu ET de pluie ET de canopy_cover ET "missing" simultanément
+
+setwd(file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures"
+                )
+      )
+
+df <- data.frame(rownames = rownames(missing_data_percentages), 
+                 fire_freq = missing_data_percentages$fire_freq, 
+                 mean_precip = missing_data_percentages$mean_precip,
+                 canopy_cover = missing_data_percentages$canopy_cover,
+                 missing = missing_data_percentages$missing)
+
+# Reshape the data to long format
+df <- tidyr::gather(df, variable, value, -rownames)
+
+# Create a bar plot
+plot <- ggplot(
+               df,
+               aes(x = rownames, y = value, fill = variable)
+               ) +
+               geom_bar(stat = "identity", position = "dodge", width = 0.8) +
+               scale_fill_manual(values = c(
+                                            "fire_freq" = "salmon",
+                                            "mean_precip" = "skyblue",
+                                            "canopy_cover" = "forestgreen",
+                                            "missing" = "pink"
+                                            )
+                                 ) +
+               theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+               labs(title = "Pourcentage de données manquantes feu + pluie + canopy_cover",
+               x = "X-axis Label", y = "% données manquantes") +
+               ylim(0,1)
+
+print(plot)
+
+# ggsave(
+#        "NA_general.png",
+#        plot = plot,
+#        bg='#ffffff'# pour ne pas avoir un fond gris moche
+#        )
+
+# Par valeurs croissantes :
+
+# Pour ordonner par valeur manquante de missing
+missing_data_percentages <- missing_data_percentages[order(missing_data_percentages$missing),]
+
+df <- data.frame(rownames = rownames(missing_data_percentages),
+                 fire_freq = missing_data_percentages$fire_freq,
+                 mean_precip = missing_data_percentages$mean_precip,
+                 canopy_cover = missing_data_percentages$canopy_cover,
+                 missing = missing_data_percentages$missing)
+
+# Reshape the data to long format
+df <- tidyr::gather(df, variable, value, -rownames)
+df["numero"] <- rep(sprintf("%02d", 1:24), times = 4)
+
+for(i in 1:nrow(df)){
+  df[i,"numero"] <- paste0(df[i,"numero"],df[i,"rownames"])
+}
+
+# Create a bar plot
+plot <- ggplot(
+               df,
+               aes(x = numero, y = value, fill = variable, position = "dodge")
+               ) +
+               geom_bar(stat = "identity", position = "dodge", width = 0.8) +
+               scale_fill_manual(values = c(
+                                            "fire_freq" = "salmon",
+                                            "mean_precip" = "skyblue",
+                                            "canopy_cover" = "forestgreen",
+                                            "missing"="pink"
+                                            )
+                                 ) +
+               theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+               labs(
+               title = "% de données manquantes feu + pluie + canopy_cover + au moins une variable",
+               x = "X-axis Label",
+               y = "% données manquantes"
+               ) +
+               ylim(0, 1)
+
+# Print the plot
+print(plot)
+
+# rm(df)
+# 
+# ggsave(
+#        "NA_general_sorted.png",
+#        plot = plot,
+#        bg='#ffffff'# pour ne pas avoir un fond gris moche
+#        )
 
 ```
 
