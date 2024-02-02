@@ -45,7 +45,7 @@ setwd(path_to_R_folder)
 # Générons des données simulées de loi Beta_(theta_i)
 n = 10**4
 
-phi = 50
+phi = 3
 
 if(phi<=0){stop("phi not in ]0,+inf[")}
 
@@ -94,29 +94,9 @@ model <- betareg(y ~ -1 + x_1 + x_2,
                  )
 
 summary(model)
-```
 
-```{r}
-# install.packages("zoib")
-require(zoib)
-# ah ça fait du mcmc...
-model2 <- zoib(
-               y ~ -1 x_1 + x_2 | 1,
-               # | 1 => phi constant
-               data = df,
-               joint = FALSE,
-               random = 0,
-               # EUID = 1:nrow(d),
-               link.mu = "logit",
-               zero.inflation = FALSE,
-               one.inflation = FALSE,
-               n.iter = 1050,
-               n.thin = 5,
-               n.burn = 50
-               )
-
-summary(model2$coeff)
-# comment est estimé le deuxième paramètre ?
+# Erreur dans betareg(y ~ -1 + x_1 + x_2, data = df, link = "logit", link.phi = NULL,  : 
+#   invalid dependent variable, all observations must be in (0, 1)
 ```
 
 ```{r}
@@ -135,7 +115,9 @@ View(default_prior)
 
 ```{r}
 # vignette("brms_families")
+
 # browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
+
 # browseURL("https://github.com/paul-buerkner/brms/issues/34")
 # browseURL("https://discourse.mc-stan.org/t/understanding-parameters-of-beta-family-in-brms/21640")
 
@@ -144,15 +126,17 @@ mod <- brm(
             formula = y ~ 1 + x_1 +x_2,
 
             data = df,
-            family = brmsfamily(family = "beta",
+            family = brmsfamily(family = "zero_one_inflated_beta",
                                 link = "logit",
-                                link_phi = "log"),
+                                link_phi = "log",
+                                link_zoi = "logit",
+                                link_coi = "logit"),
 
             prior = NULL,
             # prior = NULL pour utiliser les priors par défaut,
 
-            warmup = 1000,
-            iter = 10**4,
+            warmup = 100,
+            iter = 5*10**3,
             thin = 10,
 
             chains = 3,
@@ -177,12 +161,71 @@ summary(mod)
 
 ```{r}
 getwd()
-# saveRDS(mod,file="test_brms1.RDS")
-mod2 <- readRDS("test_brms1.RDS")
+#saveRDS(mod,file="test_brms2.RDS")
+mod2 <- readRDS("test_brms2.RDS")
 
 summary(mod2)
 # exceptionnel
 # bon ça aura pris une demie-heure
+```
+
+```{r}
+# pdf("chaines.pdf")
+# plot(mod,ask=FALSE)
+# dev.off()
+```
+
+
+```{r}
+# vignette("brms_families")
+
+# browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
+
+# browseURL("https://github.com/paul-buerkner/brms/issues/34")
+# browseURL("https://discourse.mc-stan.org/t/understanding-parameters-of-beta-family-in-brms/21640")
+mod3 <- brm(
+
+            formula = y ~ 1 + x_1 +x_2,
+
+            data = df,
+            family = brmsfamily(family = "zero_inflated_beta",
+                                link = "logit",
+                                link_phi = "log",
+                                link_zi = "logit"),
+
+            prior = NULL,
+            # prior = NULL pour utiliser les priors par défaut,
+
+            warmup = 100,
+            iter = 10**3,
+            thin = 10,
+
+            chains = 3,
+            cores = 3,
+            # Number of cores to use when executing the chains in parallel.
+            control = list(adapt_delta = 0.95), 
+            # A named list of parameters to control the sampler's behavior.
+            # J'ai dû  rajouter ce paramètre suite à une erreur qui suggérait
+            # de rajouter cette commande.
+            
+            silent = 0
+            )
+
+```
+
+```{r}
+summary(mod3)
+
+
+
+```
+
+```{r}
+getwd()
+saveRDS(mod3,file="test_brms3.RDS")
+mod3 <- readRDS("test_brms3.RDS")
+
+summary(mod3)
 ```
 
 ```{r}
