@@ -37,26 +37,6 @@ missing_data_percentages <- read.csv("missing_data_percentages.csv",row.names=1)
 setwd(path_to_R_folder)
 ```
 ```{r}
-# Visualisation des aires géographiques
-
-setwd(path_to_GEDI_raw_data)
-
-for (i in 1:length(dir())){
-
-  name = dir()[i]
-  corresponding_table = fst::read.fst(name)
-  name <- substr(name, start = 1, stop = nchar(name) - 4)
-  # to get rid of the ".fst" in the graph name
-  print(name)
-  
-  SpatVector <- vect(corresponding_table, geom=c("x", "y"))
-  plot(SpatVector)
-}
-```
-
-
-
-```{r}
 # Correlation plots
 
 # install.packages("GGally")
