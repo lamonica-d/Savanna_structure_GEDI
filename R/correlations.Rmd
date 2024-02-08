@@ -1,0 +1,130 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r}
+# For the accents é ù û etc
+options(Encoding="latin1")
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R",encoding="latin1")
+# Setting the current path
+path_to_R_folder = file.path(
+                             path_to_Savanna_structure_GEDI_folder,
+                             "R"
+                             )
+setwd(path_to_R_folder)
+getwd()
+
+# Libraries
+library(fst)
+library(ggplot2)
+library(terra)
+
+# Chargement du tableau missing_data_percentages.csv
+
+setwd(file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures"
+                )
+      )
+
+missing_data_percentages <- read.csv("missing_data_percentages.csv",row.names=1)
+
+setwd(path_to_R_folder)
+```
+```{r}
+# Visualisation des aires géographiques
+
+setwd(path_to_GEDI_raw_data)
+
+for (i in 1:length(dir())){
+
+  name = dir()[i]
+  corresponding_table = fst::read.fst(name)
+  name <- substr(name, start = 1, stop = nchar(name) - 4)
+  # to get rid of the ".fst" in the graph name
+  print(name)
+  
+  SpatVector <- vect(corresponding_table, geom=c("x", "y"))
+  plot(SpatVector)
+}
+```
+
+
+
+```{r}
+# Correlation plots
+
+# install.packages("GGally")
+library(GGally)
+
+# Affichages avec GGPLOT histogrammes fire + rain + canopy_cover
+
+require(ggplot2)
+require(grid)
+require(gridExtra)
+
+setwd(path_to_GEDI_raw_data)
+
+for (i in 1:length(dir())){
+
+  name = dir()[i]
+  corresponding_table = fst::read.fst(name)
+  name <- substr(name, start = 1, stop = nchar(name) - 4)
+  # to get rid of the ".fst" in the graph name
+  print(name)
+  
+  # print(missing_data_percentages[i,c("canopy_cover","rh98","fire_freq","mean_precip")])
+  
+  start <- Sys.time()
+  
+  corresponding_table <- corresponding_table[
+    complete.cases(
+                   corresponding_table[,c("canopy_cover",
+                                          "rh98",
+                                          "mean_precip",
+                                          "fire_freq")]
+                  ),]
+  
+  # get rid of the canopy_cover rh98 mean_precip fire_freq NA rows
+  
+  print(colnames(corresponding_table))
+  
+  print(Sys.time() - start)
+  
+  setwd(path_to_GEDI_raw_data)
+  
+}
+
+
+# Get back to the R folder
+setwd(path_to_R_folder)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
