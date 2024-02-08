@@ -96,17 +96,17 @@ for (i in 1:length(dir())){
                   )
   )
   
-  ggsave(
-       paste(name,"_fire_freq.png"),
-       plot = plot1,
-       bg='#ffffff'# pour ne pas avoir un fond gris moche
-       )
-
-  ggsave(
-     paste(name,"_fire_freq_NA.png"),
-     plot = plot2,
-     bg='#ffffff'# pour ne pas avoir un fond gris moche
-     )
+  # ggsave(
+  #      paste(name,"_canopy_cover.png"),
+  #      plot = plot1,
+  #      bg='#ffffff'# pour ne pas avoir un fond gris moche
+  #      )
+  # 
+  # ggsave(
+  #    paste(name,"_canopy_cover_NA.png"),
+  #    plot = plot2,
+  #    bg='#ffffff'# pour ne pas avoir un fond gris moche
+  #    )
   
   setwd(path_to_GEDI_raw_data)
 
