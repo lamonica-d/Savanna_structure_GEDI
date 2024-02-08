@@ -170,6 +170,16 @@ summary(mod2)
 ```
 
 ```{r}
+
+# zoi : zero-one-inflated probability (alpha in the vignette)
+# coi : conditional one-inflation probability (gamma in the vignette)
+# density on 0 : alpha*(1-gamma)
+# i.e. zoi*(1-coi)
+# density on 1 : alpha*gamma
+# i.e. zoi*coi
+# density elsewhere : (1-alpha)*f(y)
+# i.e. (1-zoi)*f(y)
+
 # pdf("chaines.pdf")
 # plot(mod,ask=FALSE)
 # dev.off()
@@ -215,9 +225,6 @@ mod3 <- brm(
 
 ```{r}
 summary(mod3)
-
-
-
 ```
 
 ```{r}
