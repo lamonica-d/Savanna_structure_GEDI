@@ -50,6 +50,83 @@ for (i in 1:length(dir())){
   # to get rid of the ".fst" in the graph name
   print(name)
   
+  TRUE_FALSE_is_canopy_cover_NA <- is.na(corresponding_table[,"canopy_cover"])
+  corresponding_table["canopy_cover_NA"] <- TRUE_FALSE_is_canopy_cover_NA
+  
+  # If we want to replace the NA by zero at some point
+  # corresponding_table[which(TRUE_FALSE_is_fire_freq_NA),"fire_freq"] <- 0
+  
+
+  corresponding_table_without_canopy_cover_NA <- corresponding_table[
+                                          complete.cases(
+                                           corresponding_table[,c("canopy_cover")]
+                                                         ),]
+
+  plot1 <- ggplot() +
+    
+  geom_raster(data = corresponding_table_without_canopy_cover_NA ,
+              aes(x = x, y = y,
+                  fill = canopy_cover)) +
+  scale_fill_gradient(low = "palegreen", high = "forestgreen") +
+
+  scale_alpha(range = c(0.15, 0.65), guide = "none") +
+  ggtitle("canopy_cover") +
+  coord_quickmap()
+
+  # print(plot1)
+  
+  ###################
+  plot2 <- ggplot() +
+    
+  geom_raster(data = corresponding_table ,
+          aes(x = x, y = y,
+              fill = canopy_cover_NA)) +
+      scale_fill_manual(values = c("green", "blue")) +
+    
+  scale_alpha(range = c(0.15, 0.65), guide = "none") +
+  ggtitle("canopy_cover_NA") +
+  coord_quickmap()
+
+  # print(plot2)
+  
+  setwd(file.path(
+                  path_to_Savanna_structure_GEDI_folder,
+                  "figures",
+                  "canopy_cover_NA_in_space"
+                  )
+  )
+  
+  ggsave(
+       paste(name,"_fire_freq.png"),
+       plot = plot1,
+       bg='#ffffff'# pour ne pas avoir un fond gris moche
+       )
+
+  ggsave(
+     paste(name,"_fire_freq_NA.png"),
+     plot = plot2,
+     bg='#ffffff'# pour ne pas avoir un fond gris moche
+     )
+  
+  setwd(path_to_GEDI_raw_data)
+
+}
+```
+
+```{r}
+# Visualisation des aires géographiques
+
+setwd(path_to_GEDI_raw_data)
+
+for (i in 1:length(dir())){
+# for (i in 1:1){
+
+  name = dir()[i]
+  corresponding_table = fst::read.fst(name)
+  name <- substr(name, start = 1, stop = nchar(name) - 4)
+  # to get rid of the ".fst" in the graph name
+  print(name)
+  
   TRUE_FALSE_is_fire_freq_NA <- is.na(corresponding_table[,"fire_freq"])
   corresponding_table["fire_freq_NA"] <- TRUE_FALSE_is_fire_freq_NA
   
@@ -96,26 +173,21 @@ for (i in 1:length(dir())){
                   )
   )
   
-  ggsave(
-       paste(name,"_fire_freq.png"),
-       plot = plot1,
-       bg='#ffffff'# pour ne pas avoir un fond gris moche
-       )
-  
-  ggsave(
-     paste(name,"_fire_freq_NA.png"),
-     plot = plot2,
-     bg='#ffffff'# pour ne pas avoir un fond gris moche
-     )
+  # ggsave(
+  #      paste(name,"_fire_freq.png"),
+  #      plot = plot1,
+  #      bg='#ffffff'# pour ne pas avoir un fond gris moche
+  #      )
+  # 
+  # ggsave(
+  #    paste(name,"_fire_freq_NA.png"),
+  #    plot = plot2,
+  #    bg='#ffffff'# pour ne pas avoir un fond gris moche
+  #    )
   
   setwd(path_to_GEDI_raw_data)
 
 }
-```
-
-
-```{r}
-
 ```
 
 ```{r}
