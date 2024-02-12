@@ -86,8 +86,8 @@ setwd(path_to_GEDI_raw_data)
 ```{r}
 # Visualisation des trois zones à travers les canopy_cover :
 
-print("Comptez 3 minutes pour l'affichage des graphiques")
-print("(cartes déjà dispos dans les figures)")
+# Comptez 3 minutes pour l'affichage des graphiques
+# (cartes déjà dispos dans les figures)
 
 for (i in 1:3){
   
@@ -135,8 +135,8 @@ for (i in 1:3){
 ```{r}
 # Visualisation des trois zones à travers les rh98 :
 
-print("Comptez 3 minutes pour l'affichage des graphiques")
-print("(cartes déjà dispos dans les figures)")
+# Comptez 3 minutes pour l'affichage des graphiques
+# (cartes déjà dispos dans les figures)
 
 for (i in 1:3){
   
@@ -172,154 +172,87 @@ for (i in 1:3){
 ```
 
 ```{r}
-rm(plot1,plot2)
-```
+# Premier test brms juste pour voir si brms encaisse le volume de données
+# même sans corrélation spatiale pour commencer
 
+print(round(nrow(Guinean_table),-3))
 
-```{r}
+summary(Guinean_table[,"rh98"])
+# On va tester sur le rh98 avec une loi Gamma pour commencer
+# pour ne pas avoir le problème du beta inflated avec canopy_cover dans [0,1[
+
+print(colnames(Guinean_table))
+
 require(brms)
-# Donne la liste des priors utilisés par défaut (qu'on peut changer individuellement)
+
+# get_prior donne la liste des priors utilisés par défaut (qu'on peut changer individuellement)
 # avec la commande brms pour une formule donnée
 
+# Pour avoir des détails sur une loi et se(s) lien(s) pour un glm :
+
+# vignette("brms_families")
+# browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
+
+# Pour plus d'infos j'ai mis toute la doc dans Forest_savanna_project -> _Documents -> brms
+
 default_prior = get_prior(
-                          formula = y ~ 1 + x_1 +x_2,
+                          formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
                           # +  (1 | machin) pour effet aléatoire machin
-                          data = df,
+                          
+                          data = Guinean_table,
+                          
+                          family = brmsfamily(family = "Gamma")
+                          # à voir comment spécifier le lien et lequel est utilisé
                           )
 
 View(default_prior)
 ```
+```{r}
+# Sous-échantillonage pas homogène juste pour voir le temps que ça prend
+print(round(nrow(Guinean_table),-3))
+sub_Guinean_table <- Guinean_table[1:10**4,]
+```
 
 ```{r}
-# vignette("brms_families")
 
-# browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
-
-# browseURL("https://github.com/paul-buerkner/brms/issues/34")
-# browseURL("https://discourse.mc-stan.org/t/understanding-parameters-of-beta-family-in-brms/21640")
+start <- Sys.time()
+print(start)
 
 mod <- brm(
 
-            formula = y ~ 1 + x_1 +x_2,
-
-            data = df,
-            family = brmsfamily(family = "zero_one_inflated_beta",
-                                link = "logit",
-                                link_phi = "log",
-                                link_zoi = "logit",
-                                link_coi = "logit"),
+            formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
+            # +  (1 | machin) pour effet aléatoire machin
+            
+            data = sub_Guinean_table,
+            
+            family = brmsfamily(family = "Gamma"),
+            # à voir comment spécifier le lien et lequel est utilisé
 
             prior = NULL,
             # prior = NULL pour utiliser les priors par défaut,
 
             warmup = 100,
-            iter = 5*10**3,
+            iter = 5*10**2,
             thin = 10,
 
             chains = 3,
             cores = 3,
             # Number of cores to use when executing the chains in parallel.
-            control = list(adapt_delta = 0.95), 
+            
+            # control = list(adapt_delta = 0.95), 
             # A named list of parameters to control the sampler's behavior.
-            # J'ai dû  rajouter ce paramètre suite à une erreur qui suggérait
-            # de rajouter cette commande.
+            # On peut être amené à ajouter ce paramètre suite à une erreur qui suggère
+            # de rajouter cette commande. Je ne sais pas pourquoi.
             
             silent = 0
+            # Pour avoir les détails de l'évolution de la chaîne
             )
 
-```
+print(Sys.time() - start)
 
-```{r}
-summary(mod)
+# Il faudrait regarder combien de temps prends glm() pour la même tâche
 
-
-
-```
-
-```{r}
-getwd()
-#saveRDS(mod,file="test_brms2.RDS")
-mod2 <- readRDS("test_brms2.RDS")
-
-summary(mod2)
-# exceptionnel
-# bon ça aura pris une demie-heure
-```
-
-```{r}
-
-# zoi : zero-one-inflated probability (alpha in the vignette)
-# coi : conditional one-inflation probability (gamma in the vignette)
-# density on 0 : alpha*(1-gamma)
-# i.e. zoi*(1-coi)
-# density on 1 : alpha*gamma
-# i.e. zoi*coi
-# density elsewhere : (1-alpha)*f(y)
-# i.e. (1-zoi)*f(y)
-
-# pdf("chaines.pdf")
-# plot(mod,ask=FALSE)
-# dev.off()
-```
-
-
-```{r}
-# vignette("brms_families")
-
-# browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
-
-# browseURL("https://github.com/paul-buerkner/brms/issues/34")
-# browseURL("https://discourse.mc-stan.org/t/understanding-parameters-of-beta-family-in-brms/21640")
-mod3 <- brm(
-
-            formula = y ~ 1 + x_1 +x_2,
-
-            data = df,
-            family = brmsfamily(family = "zero_inflated_beta",
-                                link = "logit",
-                                link_phi = "log",
-                                link_zi = "logit"),
-
-            prior = NULL,
-            # prior = NULL pour utiliser les priors par défaut,
-
-            warmup = 100,
-            iter = 10**3,
-            thin = 10,
-
-            chains = 3,
-            cores = 3,
-            # Number of cores to use when executing the chains in parallel.
-            control = list(adapt_delta = 0.95), 
-            # A named list of parameters to control the sampler's behavior.
-            # J'ai dû  rajouter ce paramètre suite à une erreur qui suggérait
-            # de rajouter cette commande.
-            
-            silent = 0
-            )
-
-```
-
-```{r}
-summary(mod3)
-```
-
-```{r}
-getwd()
-saveRDS(mod3,file="test_brms3.RDS")
-mod3 <- readRDS("test_brms3.RDS")
-
-summary(mod3)
-```
-
-```{r}
-# pdf("chaines.pdf")
-# plot(mod,ask=FALSE)
-# dev.off()
-```
-
-```{r}
-
+# Ca sent le besoin de sous-échantilloner :DD
 ```
 
 ```{r}
