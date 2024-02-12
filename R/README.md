@@ -1,6 +1,6 @@
 Listes des scripts R présents dans ce folder :
 
- - **"aires_geographiques.Rmd"** : génération des cartes de feu NA et intensité                          
+ - **"aires_geographiques.Rmd"** : génération des cartes des variables dans l'espace et des zones de NA associées à chaque variable                        
 - **"beta_reg_tests.Rmd"** : premiers tests sur la régression beta                               
 - **"correlations.Rmd"** : génération des matrices de corrélation sur les données totales                               
 - **"correlations_with_NA_replacement.Rmd"** : génération des matrices de corrélation sur les données avec NA feu transformé en 0

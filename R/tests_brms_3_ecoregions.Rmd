@@ -58,31 +58,123 @@ for (name in names){
   corresponding_table = fst::read.fst(paste0(name,".fst"))
 
   print(name)
-  print(paste("Nb lignes",round(nrow(corresponding_table),-3)))
+  print(paste("Nb lignes :",round(nrow(corresponding_table),-3)))
   
   TRUE_FALSE_is_fire_freq_NA <- is.na(corresponding_table[,"fire_freq"])
   corresponding_table["fire_freq_NA"] <- TRUE_FALSE_is_fire_freq_NA
   
-  # To replace the NA by zero at some point
+  # To replace the NA by zeros :
   corresponding_table[which(TRUE_FALSE_is_fire_freq_NA),"fire_freq"] <- 0
   
+  # print("Mean_precip :")
+  # print(summary(corresponding_table[,"mean_precip"]))
+  
   corresponding_tables[[i]] <- corresponding_table
+  
 }
 
 Guinean_table <- corresponding_tables[[1]]
 Sudanian_table <- corresponding_tables[[2]]
 Sahelian_table <- corresponding_tables[[3]]
 
-rm(corresponding_table)
-rm(corresponding_tables)
+rm(corresponding_table,i,name)
+rm(TRUE_FALSE_is_fire_freq_NA)
 
 setwd(path_to_GEDI_raw_data)
 ```
 
 ```{r}
-# Visualisation des trois zones :
+# Visualisation des trois zones à travers les canopy_cover :
+
+print("Comptez 3 minutes pour l'affichage des graphiques")
+print("(cartes déjà dispos dans les figures)")
+
+for (i in 1:3){
+  
+  start <- Sys.time()
+
+  name <- names[i]
+  print(name)
+  
+  corresponding_table <- corresponding_tables[[i]]
+  print(paste("Nb lignes :",round(nrow(corresponding_table),-3)))
+
+  corresponding_table_without_canopy_cover_NA <- corresponding_table[
+                                        complete.cases(
+                                         corresponding_table[,c("canopy_cover")]
+                                                       ),]
+  print(" suppression des canopy_cover NA ")
+  print(paste(
+    "Nb lignes :",
+     round(nrow(corresponding_table_without_canopy_cover_NA),-3),
+     "soit",
+     round(nrow(corresponding_table_without_canopy_cover_NA)/nrow(corresponding_table),2),
+     "%"
+  ))
+  
+  # Affichage :
+  
+  plot1 <- ggplot() +
+    
+  geom_raster(data = corresponding_table_without_canopy_cover_NA ,
+              aes(x = x, y = y,
+                  fill = canopy_cover)) +
+  scale_fill_gradient(low = "palegreen", high = "forestgreen") +
+
+  scale_alpha(range = c(0.15, 0.65), guide = "none") +
+  ggtitle("canopy_cover") +
+  coord_quickmap() +
+  ggtitle(name)
+
+  print(plot1)
+  
+  print(Sys.time() - start)
+}
+```
+
+```{r}
+# Visualisation des trois zones à travers les rh98 :
+
+print("Comptez 3 minutes pour l'affichage des graphiques")
+print("(cartes déjà dispos dans les figures)")
+
+for (i in 1:3){
+  
+  start <- Sys.time()
+
+  name <- names[i]
+  print(name)
+  
+  corresponding_table <- corresponding_tables[[i]]
+  print(paste("Nb lignes :",round(nrow(corresponding_table),-3)))
+
+  # Pas de données manquantes pour les rh98
+  
+  # Affichage :
+  
+  plot2 <- ggplot() +
+    
+  geom_raster(data = corresponding_table ,
+              aes(x = x, y = y,
+                  fill = rh98)) +
+  scale_fill_gradient(low = "palegreen", high = "darkgreen") +
+
+  scale_alpha(range = c(0.15, 0.65), guide = "none") +
+  ggtitle("rh98") +
+  coord_quickmap() +
+  ggtitle(name)
+
+  print(plot2)
+  
+  print(Sys.time() - start)
+}
 
 ```
+
+```{r}
+rm(plot1,plot2)
+```
+
 
 ```{r}
 require(brms)

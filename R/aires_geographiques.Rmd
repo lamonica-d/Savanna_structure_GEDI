@@ -37,7 +37,7 @@ setwd(path_to_R_folder)
 ```
 
 ```{r}
-# Visualisation des aires géographiques
+# Visualisation des aires géographiques avec canopy_cover
 
 setwd(path_to_GEDI_raw_data)
 
@@ -55,7 +55,7 @@ for (i in 1:length(dir())){
   
   # If we want to replace the NA by zero at some point
   # corresponding_table[which(TRUE_FALSE_is_fire_freq_NA),"fire_freq"] <- 0
-  
+  # here doesn't matter as we only display something else
 
   corresponding_table_without_canopy_cover_NA <- corresponding_table[
                                           complete.cases(
@@ -97,12 +97,12 @@ for (i in 1:length(dir())){
   )
   
   # ggsave(
-  #      paste(name,"_canopy_cover.png"),
+  #      paste0(name,"_canopy_cover.png"),
   #      plot = plot1,
   #      bg='#ffffff'# pour ne pas avoir un fond gris moche
   #      )
   # 
-  # ggsave(
+  # ggsave0(
   #    paste(name,"_canopy_cover_NA.png"),
   #    plot = plot2,
   #    bg='#ffffff'# pour ne pas avoir un fond gris moche
@@ -114,7 +114,7 @@ for (i in 1:length(dir())){
 ```
 
 ```{r}
-# Visualisation des aires géographiques
+# Visualisation des aires géographiques avec fire_freq
 
 setwd(path_to_GEDI_raw_data)
 
@@ -132,7 +132,7 @@ for (i in 1:length(dir())){
   
   # If we want to replace the NA by zero at some point
   # corresponding_table[which(TRUE_FALSE_is_fire_freq_NA),"fire_freq"] <- 0
-  
+  # here doesn't matter as we display the NAs
 
   corresponding_table_without_fire_NA <- corresponding_table[
                                             complete.cases(
@@ -174,12 +174,12 @@ for (i in 1:length(dir())){
   )
   
   # ggsave(
-  #      paste(name,"_fire_freq.png"),
+  #      paste0(name,"_fire_freq.png"),
   #      plot = plot1,
   #      bg='#ffffff'# pour ne pas avoir un fond gris moche
   #      )
   # 
-  # ggsave(
+  # ggsave0(
   #    paste(name,"_fire_freq_NA.png"),
   #    plot = plot2,
   #    bg='#ffffff'# pour ne pas avoir un fond gris moche
@@ -191,7 +191,127 @@ for (i in 1:length(dir())){
 ```
 
 ```{r}
+# Visualisation des aires géographiques avec rh98
 
+setwd(path_to_GEDI_raw_data)
+
+for (i in 1:length(dir())){
+# for (i in 1:1){
+
+  name = dir()[i]
+  corresponding_table = fst::read.fst(name)
+  name <- substr(name, start = 1, stop = nchar(name) - 4)
+  # to get rid of the ".fst" in the graph name
+  print(name)
+  
+  # Pas de données manquantes pour rh98
+  
+  plot1 <- ggplot() +
+    
+  geom_raster(data = corresponding_table ,
+              aes(x = x, y = y,
+                  fill = rh98)) +
+  scale_fill_gradient(low = "palegreen", high = "darkgreen") +
+  scale_alpha(range = c(0.15, 0.65), guide = "none") +
+  ggtitle(paste0(name,"rh98")) +
+  coord_quickmap()
+
+  # print(plot1)
+  
+  setwd(file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures",
+                "rh98_in_space"
+                )
+  )
+  
+  # ggsave(
+  #      paste0(name,"_rh98.png"),
+  #      plot = plot1,
+  #      bg='#ffffff'# pour ne pas avoir un fond gris moche
+  #      )
+
+
+  setwd(path_to_GEDI_raw_data)
+
+}
+```
+
+```{r}
+# Visualisation des mean_precip
+
+setwd(path_to_GEDI_raw_data)
+
+for (i in 1:length(dir())){
+# for (i in 1:1){
+
+  name = dir()[i]
+  corresponding_table = fst::read.fst(name)
+  name <- substr(name, start = 1, stop = nchar(name) - 4)
+  # to get rid of the ".fst" in the graph name
+  print(name)
+  
+  TRUE_FALSE_is_mean_precip_NA <- is.na(corresponding_table[,"mean_precip"])
+  corresponding_table["mean_precip_NA"] <- TRUE_FALSE_is_mean_precip_NA
+  
+  # If we want to replace the NA by zero at some point
+  # corresponding_table[which(TRUE_FALSE_is_fire_freq_NA),"fire_freq"] <- 0
+  # here doesn't matter as we only display something else
+
+  corresponding_table_without_mean_precip_NA <- corresponding_table[
+                                          complete.cases(
+                                           corresponding_table[,c("mean_precip")]
+                                                         ),]
+
+  plot1 <- ggplot() +
+    
+  geom_raster(data = corresponding_table_without_mean_precip_NA ,
+              aes(x = x, y = y,
+                  fill = mean_precip)) +
+  scale_fill_gradient(low = "lightblue", high = "blue", limits=c(0,3600)) +
+
+  scale_alpha(range = c(0.15, 0.65), guide = "none") +
+  ggtitle("mean_precip") +
+  coord_quickmap()
+
+  # print(plot1)
+  
+  ###################
+  # plot2 <- ggplot() +
+  # 
+  # geom_raster(data = corresponding_table ,
+  #         aes(x = x, y = y,
+  #             fill = mean_precip_NA)) +
+  #     scale_fill_manual(values = c("skyblue", "black")) +
+  # 
+  # scale_alpha(range = c(0.15, 0.65), guide = "none") +
+  # ggtitle("mean_precip_NA") +
+  # coord_quickmap()
+
+  # print(plot2)
+  
+  setwd(file.path(
+                  path_to_Savanna_structure_GEDI_folder,
+                  "figures",
+                  "mean_precip_in_space"
+                  )
+  )
+  
+  ggsave(
+       paste0(name,"_mean_precip.png"),
+       plot = plot1,
+       bg='#ffffff'# pour ne pas avoir un fond gris moche
+       )
+
+  # ggsave(
+  #    paste0(name,"_mean_precip_NA.png"),
+  #    plot = plot2,
+  #    bg='#ffffff'# pour ne pas avoir un fond gris moche
+  #    )
+  
+  setwd(path_to_GEDI_raw_data)
+
+}
 ```
 
 ```{r}
