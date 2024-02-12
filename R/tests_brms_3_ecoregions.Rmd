@@ -1,0 +1,247 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r}
+# For the accents é ù û etc
+options(Encoding="latin1")
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R",encoding="latin1")
+# Setting the current path
+path_to_R_folder = file.path(
+                             path_to_Savanna_structure_GEDI_folder,
+                             "R"
+                             )
+setwd(path_to_R_folder)
+getwd()
+
+# Libraries
+library(fst)
+library(ggplot2)
+
+# # Pour avoir les pourcentages de données manquantes :
+# 
+# # Chargement du tableau missing_data_percentages.csv
+# 
+# setwd(file.path(
+#                 path_to_Savanna_structure_GEDI_folder,
+#                 "figures"
+#                 )
+#       )
+# 
+# missing_data_percentages <- read.csv("missing_data_percentages.csv",row.names=1)
+# 
+# sub_missing_data_percentages <- missing_data_percentages[c("Guinean_forest-savanna",
+#                                                            "West_Sudanian",
+#                                                            "Sahelian_Acacia"),]
+  
+setwd(path_to_R_folder)
+```
+
+```{r}
+# Chargement des données des 3 écorégions
+
+setwd(path_to_GEDI_raw_data)
+names = c("Guinean_forest-savanna","West_Sudanian","Sahelian_Acacia")
+corresponding_tables = list()
+
+i = 0
+
+for (name in names){
+  
+  i <- i +1
+  
+  corresponding_table = fst::read.fst(paste0(name,".fst"))
+
+  print(name)
+  print(paste("Nb lignes",round(nrow(corresponding_table),-3)))
+  
+  TRUE_FALSE_is_fire_freq_NA <- is.na(corresponding_table[,"fire_freq"])
+  corresponding_table["fire_freq_NA"] <- TRUE_FALSE_is_fire_freq_NA
+  
+  # To replace the NA by zero at some point
+  corresponding_table[which(TRUE_FALSE_is_fire_freq_NA),"fire_freq"] <- 0
+  
+  corresponding_tables[[i]] <- corresponding_table
+}
+
+Guinean_table <- corresponding_tables[[1]]
+Sudanian_table <- corresponding_tables[[2]]
+Sahelian_table <- corresponding_tables[[3]]
+
+rm(corresponding_table)
+rm(corresponding_tables)
+
+setwd(path_to_GEDI_raw_data)
+```
+
+```{r}
+# Visualisation des trois zones :
+
+```
+
+```{r}
+require(brms)
+# Donne la liste des priors utilisés par défaut (qu'on peut changer individuellement)
+# avec la commande brms pour une formule donnée
+
+default_prior = get_prior(
+                          formula = y ~ 1 + x_1 +x_2,
+                          # +  (1 | machin) pour effet aléatoire machin
+                          data = df,
+                          )
+
+View(default_prior)
+```
+
+```{r}
+# vignette("brms_families")
+
+# browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
+
+# browseURL("https://github.com/paul-buerkner/brms/issues/34")
+# browseURL("https://discourse.mc-stan.org/t/understanding-parameters-of-beta-family-in-brms/21640")
+
+mod <- brm(
+
+            formula = y ~ 1 + x_1 +x_2,
+
+            data = df,
+            family = brmsfamily(family = "zero_one_inflated_beta",
+                                link = "logit",
+                                link_phi = "log",
+                                link_zoi = "logit",
+                                link_coi = "logit"),
+
+            prior = NULL,
+            # prior = NULL pour utiliser les priors par défaut,
+
+            warmup = 100,
+            iter = 5*10**3,
+            thin = 10,
+
+            chains = 3,
+            cores = 3,
+            # Number of cores to use when executing the chains in parallel.
+            control = list(adapt_delta = 0.95), 
+            # A named list of parameters to control the sampler's behavior.
+            # J'ai dû  rajouter ce paramètre suite à une erreur qui suggérait
+            # de rajouter cette commande.
+            
+            silent = 0
+            )
+
+```
+
+```{r}
+summary(mod)
+
+
+
+```
+
+```{r}
+getwd()
+#saveRDS(mod,file="test_brms2.RDS")
+mod2 <- readRDS("test_brms2.RDS")
+
+summary(mod2)
+# exceptionnel
+# bon ça aura pris une demie-heure
+```
+
+```{r}
+
+# zoi : zero-one-inflated probability (alpha in the vignette)
+# coi : conditional one-inflation probability (gamma in the vignette)
+# density on 0 : alpha*(1-gamma)
+# i.e. zoi*(1-coi)
+# density on 1 : alpha*gamma
+# i.e. zoi*coi
+# density elsewhere : (1-alpha)*f(y)
+# i.e. (1-zoi)*f(y)
+
+# pdf("chaines.pdf")
+# plot(mod,ask=FALSE)
+# dev.off()
+```
+
+
+```{r}
+# vignette("brms_families")
+
+# browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
+
+# browseURL("https://github.com/paul-buerkner/brms/issues/34")
+# browseURL("https://discourse.mc-stan.org/t/understanding-parameters-of-beta-family-in-brms/21640")
+mod3 <- brm(
+
+            formula = y ~ 1 + x_1 +x_2,
+
+            data = df,
+            family = brmsfamily(family = "zero_inflated_beta",
+                                link = "logit",
+                                link_phi = "log",
+                                link_zi = "logit"),
+
+            prior = NULL,
+            # prior = NULL pour utiliser les priors par défaut,
+
+            warmup = 100,
+            iter = 10**3,
+            thin = 10,
+
+            chains = 3,
+            cores = 3,
+            # Number of cores to use when executing the chains in parallel.
+            control = list(adapt_delta = 0.95), 
+            # A named list of parameters to control the sampler's behavior.
+            # J'ai dû  rajouter ce paramètre suite à une erreur qui suggérait
+            # de rajouter cette commande.
+            
+            silent = 0
+            )
+
+```
+
+```{r}
+summary(mod3)
+```
+
+```{r}
+getwd()
+saveRDS(mod3,file="test_brms3.RDS")
+mod3 <- readRDS("test_brms3.RDS")
+
+summary(mod3)
+```
+
+```{r}
+# pdf("chaines.pdf")
+# plot(mod,ask=FALSE)
+# dev.off()
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```

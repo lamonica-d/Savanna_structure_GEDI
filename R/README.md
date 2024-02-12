@@ -9,7 +9,8 @@ Listes des scripts R présents dans ce folder :
 - **"premiers_tests_glm.Rmd"** : premiers tests glms                        
 - **"README.md"**                                       
 - **"script01.R"** : premier fichier Dom                                       
-- **"test_beta_inflated.Rmd"** : tests sur la régression beta inflated                       
+- **"test_beta_inflated.Rmd"** : tests sur la régression beta inflated     
+- **"tests_brms_3_ecoregions"** : premiers essais glm sur les 3 écorégions Guinean forest-savanna, West_Sudanian et Sahelian Acacia                  
 - **"test_brms1.RDS"** : sauvegarde d'une chaîne MCMC                                
 - **"test_brms2.RDS"** : sauvegarde d'une chaîne MCMC                                  
 - **"tests_lecture_ecoregions.Rmd"** : aggrégation de données écorégions plus précises suite au mail de Le Bien                     
