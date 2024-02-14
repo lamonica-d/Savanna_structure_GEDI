@@ -210,40 +210,40 @@ View(default_prior)
 # On pourra mettre des priors loi normale au lieu des prior plats impropres pour la pluie etc.
 ```
 ```{r}
-start <- Sys.time()
-print(start)
-
-mod <- brm(
-
-            formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
-            # +  (1 | machin) pour effet aléatoire machin
-            
-            data = Guinean_table,
-            
-            family = brmsfamily(family = "Gamma"),
-            # à voir comment spécifier le lien et lequel est utilisé
-
-            prior = NULL,
-            # prior = NULL pour utiliser les priors par défaut,
-
-            warmup = 10**3,
-            iter = 5*10**3,
-            thin = 10,
-
-            chains = 3,
-            cores = 3,
-            # Number of cores to use when executing the chains in parallel.
-            
-            # control = list(adapt_delta = 0.95), 
-            # A named list of parameters to control the sampler's behavior.
-            # On peut être amené à ajouter ce paramètre suite à une erreur qui suggère
-            # de rajouter cette commande. Je ne sais pas pourquoi.
-            
-            silent = 0
-            # Pour avoir les détails de l'évolution de la chaîne
-            )
-
-print(Sys.time() - start)
+# start <- Sys.time()
+# print(start)
+# 
+# mod <- brm(
+# 
+#             formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
+#             # +  (1 | machin) pour effet aléatoire machin
+#             
+#             data = Guinean_table,
+#             
+#             family = brmsfamily(family = "Gamma"),
+#             # à voir comment spécifier le lien et lequel est utilisé
+# 
+#             prior = NULL,
+#             # prior = NULL pour utiliser les priors par défaut,
+# 
+#             warmup = 10**3,
+#             iter = 5*10**3,
+#             thin = 10,
+# 
+#             chains = 3,
+#             cores = 3,
+#             # Number of cores to use when executing the chains in parallel.
+#             
+#             # control = list(adapt_delta = 0.95), 
+#             # A named list of parameters to control the sampler's behavior.
+#             # On peut être amené à ajouter ce paramètre suite à une erreur qui suggère
+#             # de rajouter cette commande. Je ne sais pas pourquoi.
+#             
+#             silent = 0
+#             # Pour avoir les détails de l'évolution de la chaîne
+#             )
+# 
+# print(Sys.time() - start)
 
 # 1000 transitions using 10 leapfrog steps per transition would take 15755.6 seconds.
 # i.e. 4 hours 20 minutes
@@ -254,15 +254,15 @@ print(Sys.time() - start)
 ```
 
 ```{r}
-setwd(path_to_R_folder)
+# setwd(path_to_R_folder)
 
 # saveRDS(mod,file="test_brms_Guinean.RDS")
 # mod <- readRDS("test_brms_Guinean.RDS")
 ```
 
 ```{r}
-summary(mod)
-plot(mod,ask=FALSE)
+# summary(mod)
+# plot(mod,ask=FALSE)
 ```
 
 ```{r}

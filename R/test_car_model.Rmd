@@ -134,7 +134,7 @@ for (i in 1:1){
     
   geom_raster(data = corresponding_table ,
               aes(x = x, y = y,
-                  fill = canopy)) +
+                  fill = canopy_cover)) +
   scale_fill_gradient(low = "palegreen", high = "forestgreen") +
 
   scale_alpha(range = c(0.15, 0.65), guide = "none") +
@@ -147,46 +147,25 @@ for (i in 1:1){
   print(Sys.time() - start)
 }
 
-# je comprends pas pourquoi ça marche pas
+# en fait ça fait 1 heure que je crois que ça marche pas mais en fait c'est juste que on voit rien
+# par ce que c'est trop petit
+# merveilleux
 ```
 
 ```{r}
-# Visualisation des trois zones à travers les rh98 :
+# On va essayer de voir ça sur qgis alors
+# setwd(path_to_R_folder)
+# saveRDS(Guinean_table,"sub_sample_Guinean.RDS")
 
-# Comptez 3 minutes pour l'affichage des graphiques
-# (cartes déjà dispos dans les figures)
+require(sf)
 
-for (i in 1:3){
-  
-  start <- Sys.time()
+sf_obj <- st_as_sf(Guinean_table,coords = c("x", "y"),crs = 4326)
 
-  name <- names[i]
-  print(name)
-  
-  corresponding_table <- corresponding_tables[[i]]
-  print(paste("Nb lignes :",round(nrow(corresponding_table),-3)))
+setwd(file.path(path_to_Savanna_structure_GEDI_folder,"geojson_files"))
 
-  # Pas de données manquantes pour les rh98
-  
-  # Affichage :
-  
-  plot2 <- ggplot() +
-    
-  geom_raster(data = corresponding_table ,
-              aes(x = x, y = y,
-                  fill = rh98)) +
-  scale_fill_gradient(low = "palegreen", high = "darkgreen") +
+# st_write(sf_obj, "sub_sample_Guinean_table.geojson")
 
-  scale_alpha(range = c(0.15, 0.65), guide = "none") +
-  ggtitle("rh98") +
-  coord_quickmap() +
-  ggtitle(name)
-
-  print(plot2)
-  
-  print(Sys.time() - start)
-}
-
+setwd(path_to_R_folder)
 ```
 
 

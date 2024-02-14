@@ -1,0 +1,151 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r}
+# For the accents é ù û etc
+options(Encoding="latin1")
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R",encoding="latin1")
+# Setting the current path
+path_to_R_folder = file.path(
+                             path_to_Savanna_structure_GEDI_folder,
+                             "R"
+                             )
+setwd(path_to_R_folder)
+getwd()
+
+# Libraries
+library(fst)
+library(ggplot2)
+
+# # Pour avoir les pourcentages de données manquantes :
+# 
+# # Chargement du tableau missing_data_percentages.csv
+# 
+# setwd(file.path(
+#                 path_to_Savanna_structure_GEDI_folder,
+#                 "figures"
+#                 )
+#       )
+# 
+# missing_data_percentages <- read.csv("missing_data_percentages.csv",row.names=1)
+# 
+# sub_missing_data_percentages <- missing_data_percentages[c("Guinean_forest-savanna",
+#                                                            "West_Sudanian",
+#                                                            "Sahelian_Acacia"),]
+  
+setwd(path_to_R_folder)
+```
+
+```{r}
+# Chargement des données des 3 écorégions et
+# sous-échantillonage 10**4 pour tester CAR par la suite
+
+set.seed(0)
+# Nb de sous-échantillon
+n <- 10**4
+
+setwd(path_to_GEDI_raw_data)
+names = c("Guinean_forest-savanna","West_Sudanian","Sahelian_Acacia")
+corresponding_tables = list()
+
+i = 0
+
+for (name in names){
+  
+  i <- i + 1
+  
+  corresponding_table = fst::read.fst(paste0(name,".fst"))
+
+  print(" ")
+  print(name)
+  print(paste("Nb lignes :",round(nrow(corresponding_table),-3)))
+  
+  TRUE_FALSE_is_fire_freq_NA <- is.na(corresponding_table[,"fire_freq"])
+  corresponding_table["fire_freq_NA"] <- TRUE_FALSE_is_fire_freq_NA
+  
+  # To replace the NA by zeros :
+  corresponding_table[which(TRUE_FALSE_is_fire_freq_NA),"fire_freq"] <- 0
+  print("0 <- fire NA")
+
+  # print("Mean_precip :")
+  # print(summary(corresponding_table[,"mean_precip"]))
+  
+  old_number_rows <- round(nrow(corresponding_table),-3)
+  
+  # Suppression des NA
+  corresponding_table <- corresponding_table[complete.cases(corresponding_table[,c("canopy_cover",
+                                                                                   "mean_precip",
+                                                                                   "mean_temp")]
+                                                            ),]
+    
+  print("suppression des NA canopy_cover + mean_precip + mean_temp")
+  print(paste(
+    "Nb lignes :",
+     round(nrow(corresponding_table),-3),
+     "soit",
+     round(nrow(corresponding_table)/old_number_rows,2),
+     "% de lignes restantes"
+  ))
+  #
+  
+  # Sous-échantillonage random dans l'espace :
+  
+  sub_sample <- sort(sample(1:nrow(corresponding_table), n, replace=FALSE))
+  corresponding_table <- corresponding_table[sub_sample,] 
+  rownames(corresponding_table) <- 1:n
+  
+  corresponding_tables[[i]] <- corresponding_table
+  
+  print(paste("Nb lignes post sous-échantillonage :",round(nrow(corresponding_tables[[i]]),-3)))
+}
+
+Guinean_table <- corresponding_tables[[1]]
+Sudanian_table <- corresponding_tables[[2]]
+Sahelian_table <- corresponding_tables[[3]]
+
+rm(corresponding_table,i,name,old_number_rows)
+rm(TRUE_FALSE_is_fire_freq_NA)
+
+setwd(path_to_R_folder)
+```
+
+```{r}
+# On va essayer de voir ça sur qgis alors
+
+require(sf)
+
+sf_Guinean <- st_as_sf(Guinean_table,coords = c("x", "y"),crs = 4326)
+sf_Sudanian <- st_as_sf(Sudanian_table,coords = c("x", "y"),crs = 4326)
+sf_Sahelian <- st_as_sf(Sahelian_table,coords = c("x", "y"),crs = 4326)
+
+setwd(file.path(path_to_Savanna_structure_GEDI_folder,"geojson_files"))
+
+# st_write(sf_Guinean, "Guinean.geojson")
+# st_write(sf_Sudanian, "Sudania.geojson")
+# st_write(sf_Sahelian, "Sahelian.geojson")
+
+setwd(path_to_R_folder)
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+
+
