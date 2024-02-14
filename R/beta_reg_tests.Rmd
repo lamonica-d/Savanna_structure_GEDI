@@ -170,9 +170,6 @@ mod <- brm(
 
 ```{r}
 summary(mod)
-
-
-
 ```
 
 ```{r}

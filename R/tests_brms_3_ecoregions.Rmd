@@ -80,7 +80,7 @@ Sahelian_table <- corresponding_tables[[3]]
 rm(corresponding_table,i,name)
 rm(TRUE_FALSE_is_fire_freq_NA)
 
-setwd(path_to_GEDI_raw_data)
+setwd(path_to_R_folder)
 ```
 
 ```{r}
@@ -206,15 +206,10 @@ default_prior = get_prior(
                           )
 
 View(default_prior)
+
+# On pourra mettre des priors loi normale au lieu des prior plats impropres pour la pluie etc.
 ```
 ```{r}
-# Sous-échantillonage pas homogène juste pour voir le temps que ça prend
-print(round(nrow(Guinean_table),-3))
-sub_Guinean_table <- Guinean_table[1:10**4,]
-```
-
-```{r}
-
 start <- Sys.time()
 print(start)
 
@@ -223,7 +218,7 @@ mod <- brm(
             formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
             # +  (1 | machin) pour effet aléatoire machin
             
-            data = sub_Guinean_table,
+            data = Guinean_table,
             
             family = brmsfamily(family = "Gamma"),
             # à voir comment spécifier le lien et lequel est utilisé
@@ -231,8 +226,8 @@ mod <- brm(
             prior = NULL,
             # prior = NULL pour utiliser les priors par défaut,
 
-            warmup = 100,
-            iter = 5*10**2,
+            warmup = 10**3,
+            iter = 5*10**3,
             thin = 10,
 
             chains = 3,
@@ -250,9 +245,135 @@ mod <- brm(
 
 print(Sys.time() - start)
 
-# Il faudrait regarder combien de temps prends glm() pour la même tâche
+# 1000 transitions using 10 leapfrog steps per transition would take 15755.6 seconds.
+# i.e. 4 hours 20 minutes
+# so 5*10**3 iters is one day.
 
-# Ca sent le besoin de sous-échantilloner :DD
+# 1000 transitions 15700 secondes ça fait 15 secondes l'itération
+# Peut-être un problème de capacité puisque R me dit unable to save this file.
+```
+
+```{r}
+setwd(path_to_R_folder)
+
+# saveRDS(mod,file="test_brms_Guinean.RDS")
+# mod <- readRDS("test_brms_Guinean.RDS")
+```
+
+```{r}
+summary(mod)
+plot(mod,ask=FALSE)
+```
+
+```{r}
+require(brms)
+# Essai sur un sous-échantillon
+
+# On enlève les NA pour être sûr de la taille du sous-échantillon
+sub_Guinean_table <- Guinean_table[complete.cases(Guinean_table[,c("mean_precip",
+                                                                       "mean_temp",
+                                                                       "fire_freq")]
+                                                 ),]
+sub_Guinean_table <- sub_Guinean_table[1:10**5,]
+
+
+
+start <- Sys.time()
+print(start)
+
+mod <- brm(
+
+            formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
+            # +  (1 | machin) pour effet aléatoire machin
+            
+            data = sub_Guinean_table,
+            
+            family = brmsfamily(family = "Gamma"),
+            # à voir comment spécifier le lien et lequel est utilisé
+
+            prior = NULL,
+            # prior = NULL pour utiliser les priors par défaut,
+
+            warmup = 10**3,
+            iter = 5*10**3,
+            thin = 10,
+            
+            file = "test_brms_Guinean2.RDS",
+
+            chains = 3,
+            cores = 3,
+            # Number of cores to use when executing the chains in parallel.
+            
+            # control = list(adapt_delta = 0.95), 
+            # A named list of parameters to control the sampler's behavior.
+            # On peut être amené à ajouter ce paramètre suite à une erreur qui suggère
+            # de rajouter cette commande. Je ne sais pas pourquoi.
+            
+            silent = 0
+            # Pour avoir les détails de l'évolution de la chaîne
+            )
+
+print(Sys.time() - start)
+
+# 1000 transitions using 10 leapfrog steps per transition would take 304.2 seconds.
+# Soit 1 itération = 0.3 seconde
+# 5 000 itérations = 1500 secondes = 25 minutes...
+
+# Au final pour la chaîne la plus rapide :
+# Chain 3:  Elapsed Time: 1199.11 seconds (Warm-up)
+# Chain 3:                21933.8 seconds (Sampling)
+# Chain 3:                23132.9 seconds (Total)
+# donc on est loin des 1500 secondes
+
+# Chain 2:  Elapsed Time: 804.439 seconds (Warm-up)
+# Chain 2:                28692.5 seconds (Sampling)
+# Chain 2:                29497 seconds (Total)
+# Chain 2: 
+
+# pendant ce temps-là la chaîne 1 n'en est qu'à 40% :D
+# Chain 1: Iteration: 2000 / 5000 [ 40%]  (Sampling)
+
+# Chain 1:  Elapsed Time: 1563.88 seconds (Warm-up)
+# Chain 1:                73514.6 seconds (Sampling)
+# Chain 1:                75078.5 seconds (Total)
+
+# > print(Sys.time() - start)
+# Time difference of 20.87102 hours
+# (sur mon ordi perso)
+
+summary(mod)
+plot(mod,ask=FALSE)
+```
+```{r}
+setwd(path_to_R_folder)
+
+# Pour enregistrer manuellement la chaîne sans utiliser l'argument "file" dans brm() :
+
+# saveRDS(mod,file="test_brms_Guinean2.RDS")
+# mod2 <- readRDS("test_brms_Guinean2.RDS")
+
+# Pour enregistrer en pdf le visuel des chaînes :
+
+# pdf("chaines_Guinean_100000_lignes.pdf")
+# plot(mod,ask=FALSE)
+# dev.off()
+```
+
+```{r}
+posterior_summary(mod)
+
+# posterior_samples.brmsfit
+# (Deprecated) Extract Posterior Samples
+# 
+# Extract posterior samples of specified parameters. The posterior_samples method is deprecated.
+# We recommend using the more modern and consistent as_draws_* extractor functions of the posterior
+# package instead.
+
+ok <- as.data.frame(mod)
+View(ok)
+# semble marcher mais les chaînes sont mises à la suite les une des autres
+# Est-ce grave d'avoir de l'autocorrélation entre itérations pour une régression ?
+# je ne sais pas
 ```
 
 ```{r}
@@ -267,6 +388,6 @@ print(Sys.time() - start)
 
 ```
 
-```{r}
 
-```
+
+
