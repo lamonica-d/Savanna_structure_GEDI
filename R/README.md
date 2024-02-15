@@ -25,5 +25,8 @@
 ## Tests brms
 
 - **"tests_brms_3_ecoregions.Rmd"** : premiers essais glm sur les 3 écorégions Guinean forest-savanna, West_Sudanian et Sahelian Acacia   
-- **chaines_Guinean_100000_lignes.pdf** : sauvegarde du visuel des chaînes pour les premières 10**5 données de Guinean avec tests_brms_3_ecoregions.Rmd             
-- **test_brms_on_sub_sample_10_4_Guinean** : la suite mais sur 10^4 données au lieu de 10^5, et sur un sample homogène dans l'espace
+- **chaines_Guinean_100000_lignes.pdf** : sauvegarde du visuel des chaînes pour les premières 10**5 données de Guinean avec **tests_brms_3_ecoregions.Rmd**          
+
+- **generate_sub_samples_of_3_ecoregions.Rmd** : génère des sous-échantillons randoms 10^4 lignes des 3 écorégions
+- **sub_sample_Guinean.RDS** : sous-échantillon random 10^4 lignes de Guinean généré avec **generate_sub_samples_of_3_ecoregions.Rmd**
+- **test_car_model.Rmd** : tentative de car() dans brm() sur **sub_sample_10_4_Guinean.RDS**
