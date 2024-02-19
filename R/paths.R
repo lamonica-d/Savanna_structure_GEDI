@@ -38,7 +38,7 @@ if(Sys.info()[['effective_user']] == "Aur?lien"){
 if(Sys.info()[['effective_user']] == "lamonica"){
 
     path_to_Documents = file.path(
-      "home",
+      "/home",
       "lamonica",
       "Documents"
     )
