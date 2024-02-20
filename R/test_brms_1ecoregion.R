@@ -74,7 +74,7 @@ default_prior = get_prior(
   # ? voir comment sp?cifier le lien et lequel est utilis?
 )
 
-print(default_prior)
+View(default_prior)
 
 # Essai sur un sous-?chantillon
 
@@ -107,7 +107,7 @@ mod <- brm(
   iter = 5*10**3,
   thin = 10,
   
-  file = "outputs/test_brms_Guinean_dom1.RDS",
+  file = "outputs/test_brms_Guinean_dom0.RDS",
   
   chains = 3,
   cores = 3,          # Number of cores to use when executing the chains in parallel.
