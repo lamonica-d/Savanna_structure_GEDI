@@ -1,9 +1,6 @@
 
-options(Encoding="latin1")
-# encoding en latin1 pour l'accent de Aur?lien
-
-################################ Chemins Aur?lien
-if(Sys.info()[['effective_user']] == "Aur?lien"){
+################################ Chemins Aurélien
+if(Sys.info()[['effective_user']] == "Aurélien"){
   
   path_to_Documents = file.path(
     "C:",
