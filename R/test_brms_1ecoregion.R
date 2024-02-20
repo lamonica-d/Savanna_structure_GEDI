@@ -114,11 +114,8 @@ mod <- brm(
   
   # control = list(adapt_delta = 0.95), 
   # A named list of parameters to control the sampler's behavior.
-  # On peut ?tre amen? ? ajouter ce param?tre suite ? une erreur qui sugg?re
-  # de rajouter cette commande. Je ne sais pas pourquoi.
-  
+ 
   silent = 0
-  # Pour avoir les d?tails de l'?volution de la cha?ne
 )
 
 print(Sys.time() - start)
