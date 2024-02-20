@@ -186,7 +186,7 @@ require(brms)
 # get_prior donne la liste des priors utilisés par défaut (qu'on peut changer individuellement)
 # avec la commande brms pour une formule donnée
 
-# Pour avoir des d?tails sur une loi et se(s) lien(s) pour un glm :
+# Pour avoir des détails sur une loi et se(s) lien(s) pour un glm :
 
 # vignette("brms_families")
 # browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
@@ -195,7 +195,7 @@ require(brms)
 
 default_prior = get_prior(
                           formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
-                          # +  (1 | machin) pour effet al?atoire machin
+                          # +  (1 | machin) pour effet aléatoire machin
                           
                           data = Guinean_table,
                           
@@ -238,7 +238,7 @@ View(default_prior)
 #             # de rajouter cette commande. Je ne sais pas pourquoi.
 #             
 #             silent = 0
-#             # Pour avoir les détails de l'évolution de la cha?ne
+#             # Pour avoir les détails de l'évolution de la chaine
 #             )
 # 
 # print(Sys.time() - start)
@@ -305,7 +305,7 @@ mod2 <- brm(
             # control = list(adapt_delta = 0.95), 
             
             silent = 0
-            # Pour avoir les d?tails de l'évolution de la cha?ne
+            # Pour avoir les détails de l'évolution de la chaine
             )
 
 print(Sys.time() - start)
@@ -314,7 +314,7 @@ print(Sys.time() - start)
 # Soit 1 itération = 0.3 seconde
 # 5 000 itérations = 1500 secondes = 25 minutes...
 
-# Au final pour la cha?ne la plus rapide :
+# Au final pour la chaine la plus rapide :
 # Chain 3:  Elapsed Time: 1199.11 seconds (Warm-up)
 # Chain 3:                21933.8 seconds (Sampling)
 # Chain 3:                23132.9 seconds (Total)
@@ -347,7 +347,7 @@ setwd(path_to_R_folder)
 # saveRDS(mod,file="test_brms_Guinean2.RDS")
 # mod2 <- readRDS("test_brms_Guinean2.RDS")
 
-# Pour enregistrer en pdf le visuel des cha?nes :
+# Pour enregistrer en pdf le visuel des chaines :
 
 # pdf("chaines_Guinean_100000_lignes.pdf")
 # plot(mod,ask=FALSE)

@@ -2,7 +2,7 @@
 # Cleaning the environment
 rm(list=ls())
 # Getting the paths
-source("R/paths.R")# ,encoding="latin1")
+source("R/paths.R")
 
 # Libraries
 library(fst)
@@ -48,44 +48,25 @@ rm(TRUE_FALSE_is_fire_freq_NA)
 print(round(nrow(Guinean_table),-3))
 
 summary(Guinean_table[,"rh98"])
-# On va tester sur le rh98 avec une loi Gamma pour commencer
-# pour ne pas avoir le probl?me du beta inflated avec canopy_cover dans [0,1[
-
 print(colnames(Guinean_table))
 
-
-# get_prior donne la liste des priors utilis?s par d?faut (qu'on peut changer individuellement)
-# avec la commande brms pour une formule donn?e
-
-# Pour avoir des d?tails sur une loi et se(s) lien(s) pour un glm :
 
 # vignette("brms_families")
 # browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
 
-# Pour plus d'infos j'ai mis toute la doc dans Forest_savanna_project -> _Documents -> brms
-
 default_prior = get_prior(
   formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
-  # +  (1 | machin) pour effet al?atoire machin
-  
   data = Guinean_table,
-  
   family = brmsfamily(family = "Gamma")
-  # ? voir comment sp?cifier le lien et lequel est utilis?
 )
 
 View(default_prior)
 
-# Essai sur un sous-?chantillon
-
-# On enl?ve les NA pour ?tre s?r de la taille du sous-?chantillon
 sub_Guinean_table <- Guinean_table[complete.cases(Guinean_table[,c("mean_precip",
                                                                    "mean_temp",
                                                                    "fire_freq")]
 ),]
 sub_Guinean_table <- sub_Guinean_table[1:10**5,]
-
-
 
 start <- Sys.time()
 print(start)
@@ -93,16 +74,11 @@ print(start)
 mod <- brm(
   
   formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
-  # +  (1 | machin) pour effet al?atoire machin
-  
-  data = sub_Guinean_table,
+ data = sub_Guinean_table,
   
   family = brmsfamily(family = "Gamma"),
-  # ? voir comment sp?cifier le lien et lequel est utilis?
-  
-  prior = NULL,
-  # prior = NULL pour utiliser les priors par d?faut,
-  
+ prior = NULL,
+ 
   warmup = 1*10**3,
   iter = 5*10**3,
   thin = 10,
@@ -110,11 +86,7 @@ mod <- brm(
   file = "outputs/test_brms_Guinean_dom0.RDS",
   
   chains = 3,
-  cores = 3,          # Number of cores to use when executing the chains in parallel.
-  
-  # control = list(adapt_delta = 0.95), 
-  # A named list of parameters to control the sampler's behavior.
- 
+  cores = 3,    
   silent = 0
 )
 
@@ -125,12 +97,12 @@ summary(mod)
 plot(mod)
 setwd(path_to_R_folder)
 
-# Pour enregistrer manuellement la cha?ne sans utiliser l'argument "file" dans brm() :
+# Pour enregistrer manuellement la chi?ne sans utiliser l'argument "file" dans brm() :
 
 # saveRDS(mod,file="test_brms_Guinean2.RDS")
 # mod2 <- readRDS("test_brms_Guinean2.RDS")
 
-# Pour enregistrer en pdf le visuel des cha?nes :
+# Pour enregistrer en pdf le visuel des chaines :
 
 # pdf("chaines_Guinean_100000_lignes.pdf")
 # plot(mod,ask=FALSE)
