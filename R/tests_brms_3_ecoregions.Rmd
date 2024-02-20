@@ -5,8 +5,7 @@ date: "`r Sys.Date()`"
 ---
 
 ```{r}
-# For the accents
-options(Encoding="latin1")
+
 # Cleaning the environment
 rm(list=ls())
 # Getting the paths
