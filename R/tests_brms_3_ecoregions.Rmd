@@ -5,7 +5,7 @@ date: "`r Sys.Date()`"
 ---
 
 ```{r}
-# For the accents ? ? ? etc
+# For the accents
 options(Encoding="latin1")
 # Cleaning the environment
 rm(list=ls())
@@ -23,7 +23,7 @@ getwd()
 library(fst)
 library(ggplot2)
 
-# # Pour avoir les pourcentages de donn?es manquantes :
+# # Pour avoir les pourcentages de données manquantes :
 # 
 # # Chargement du tableau missing_data_percentages.csv
 # 
@@ -43,7 +43,7 @@ setwd(path_to_R_folder)
 ```
 
 ```{r}
-# Chargement des donn?es des 3 ?cor?gions
+# Chargement des donn?es des 3 écorégions
 
 setwd(path_to_GEDI_raw_data)
 names = c("Guinean_forest-savanna","West_Sudanian","Sahelian_Acacia")
@@ -83,10 +83,10 @@ setwd(path_to_R_folder)
 ```
 
 ```{r}
-# Visualisation des trois zones ? travers les canopy_cover :
+# Visualisation des trois zones à travers les canopy_cover :
 
 # Comptez 3 minutes pour l'affichage des graphiques
-# (cartes d?j? dispos dans les figures)
+# (cartes déjà dispos dans les figures)
 
 for (i in 1:3){
   
@@ -132,10 +132,10 @@ for (i in 1:3){
 ```
 
 ```{r}
-# Visualisation des trois zones ? travers les rh98 :
+# Visualisation des trois zones à travers les rh98 :
 
 # Comptez 3 minutes pour l'affichage des graphiques
-# (cartes d?j? dispos dans les figures)
+# (cartes déjà dispos dans les figures)
 
 for (i in 1:3){
   
@@ -147,7 +147,7 @@ for (i in 1:3){
   corresponding_table <- corresponding_tables[[i]]
   print(paste("Nb lignes :",round(nrow(corresponding_table),-3)))
 
-  # Pas de donn?es manquantes pour les rh98
+  # Pas de données manquantes pour les rh98
   
   # Affichage :
   
@@ -171,21 +171,21 @@ for (i in 1:3){
 ```
 
 ```{r}
-# Premier test brms juste pour voir si brms encaisse le volume de donn?es
-# m?me sans corr?lation spatiale pour commencer
+# Premier test brms juste pour voir si brms encaisse le volume de données
+# même sans corrélation spatiale pour commencer
 
 print(round(nrow(Guinean_table),-3))
 
 summary(Guinean_table[,"rh98"])
 # On va tester sur le rh98 avec une loi Gamma pour commencer
-# pour ne pas avoir le probl?me du beta inflated avec canopy_cover dans [0,1[
+# pour ne pas avoir le problème du beta inflated avec canopy_cover dans [0,1[
 
 print(colnames(Guinean_table))
 
 require(brms)
 
-# get_prior donne la liste des priors utilis?s par d?faut (qu'on peut changer individuellement)
-# avec la commande brms pour une formule donn?e
+# get_prior donne la liste des priors utilisés par défaut (qu'on peut changer individuellement)
+# avec la commande brms pour une formule donnée
 
 # Pour avoir des d?tails sur une loi et se(s) lien(s) pour un glm :
 
@@ -201,7 +201,7 @@ default_prior = get_prior(
                           data = Guinean_table,
                           
                           family = brmsfamily(family = "Gamma")
-                          # ? voir comment sp?cifier le lien et lequel est utilis?
+                          # à voir comment spécifier le lien et lequel est utilisé
                           )
 
 View(default_prior)
@@ -215,15 +215,15 @@ View(default_prior)
 # mod <- brm(
 # 
 #             formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
-#             # +  (1 | machin) pour effet al?atoire machin
+#             # +  (1 | machin) pour effet aléatoire machin
 #             
 #             data = Guinean_table,
 #             
 #             family = brmsfamily(family = "Gamma"),
-#             # ? voir comment sp?cifier le lien et lequel est utilis?
+#             # à voir comment spécifier le lien et lequel est utilisé
 # 
 #             prior = NULL,
-#             # prior = NULL pour utiliser les priors par d?faut,
+#             # prior = NULL pour utiliser les priors par défaut,
 # 
 #             warmup = 10**3,
 #             iter = 5*10**3,
@@ -235,11 +235,11 @@ View(default_prior)
 #             
 #             # control = list(adapt_delta = 0.95), 
 #             # A named list of parameters to control the sampler's behavior.
-#             # On peut ?tre amen? ? ajouter ce param?tre suite ? une erreur qui sugg?re
+#             # On peut être amené à ajouter ce paramètre suite à une erreur qui suggère
 #             # de rajouter cette commande. Je ne sais pas pourquoi.
 #             
 #             silent = 0
-#             # Pour avoir les d?tails de l'?volution de la cha?ne
+#             # Pour avoir les détails de l'évolution de la cha?ne
 #             )
 # 
 # print(Sys.time() - start)
@@ -248,8 +248,8 @@ View(default_prior)
 # i.e. 4 hours 20 minutes
 # so 5*10**3 iters is one day.
 
-# 1000 transitions 15700 secondes ?a fait 15 secondes l'it?ration
-# Peut-?tre un probl?me de capacit? puisque R me dit unable to save this file.
+# 1000 transitions 15700 secondes ça fait 15 secondes l'itération
+# Peut-être un problème de capacité puisque R me dit unable to save this file.
 ```
 
 ```{r}
@@ -266,9 +266,9 @@ View(default_prior)
 
 ```{r}
 require(brms)
-# Essai sur un sous-?chantillon
+# Essai sur un sous-échantillon
 
-# On enl?ve les NA pour ?tre s?r de la taille du sous-?chantillon
+# On enlève les NA pour être sûr de la taille du sous-échantillon
 sub_Guinean_table <- Guinean_table[complete.cases(Guinean_table[,c("mean_precip",
                                                                        "mean_temp",
                                                                        "fire_freq")]
@@ -283,15 +283,16 @@ print(start)
 mod2 <- brm(
 
             formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
-            # +  (1 | machin) pour effet al?atoire machin
+            # +  (1 | machin) pour effet aléatoire machin
             
             data = Guinean_table,
             
             family = brmsfamily(family = "Gamma"),
-            # ? voir comment sp?cifier le lien et lequel est utilis?
+           #à voir comment spécifier le lien et lequel est utilisé
+
 
             prior = NULL,
-            # prior = NULL pour utiliser les priors par d?faut,
+            # prior = NULL pour utiliser les priors par défaut,
 
             warmup = 10**3,
             iter = 5*10**3,
@@ -303,19 +304,16 @@ mod2 <- brm(
             cores = 3,          # Number of cores to use when executing the chains in parallel.
             
             # control = list(adapt_delta = 0.95), 
-            # A named list of parameters to control the sampler's behavior.
-            # On peut ?tre amen? ? ajouter ce param?tre suite ? une erreur qui sugg?re
-            # de rajouter cette commande. Je ne sais pas pourquoi.
             
             silent = 0
-            # Pour avoir les d?tails de l'?volution de la cha?ne
+            # Pour avoir les d?tails de l'évolution de la cha?ne
             )
 
 print(Sys.time() - start)
 
 # 1000 transitions using 10 leapfrog steps per transition would take 304.2 seconds.
-# Soit 1 it?ration = 0.3 seconde
-# 5 000 it?rations = 1500 secondes = 25 minutes...
+# Soit 1 itération = 0.3 seconde
+# 5 000 itérations = 1500 secondes = 25 minutes...
 
 # Au final pour la cha?ne la plus rapide :
 # Chain 3:  Elapsed Time: 1199.11 seconds (Warm-up)
@@ -328,7 +326,7 @@ print(Sys.time() - start)
 # Chain 2:                29497 seconds (Total)
 # Chain 2: 
 
-# pendant ce temps-l? la cha?ne 1 n'en est qu'? 40% :D
+# pendant ce temps-là la chaine 1 n'en est qu'à 40% :D
 # Chain 1: Iteration: 2000 / 5000 [ 40%]  (Sampling)
 
 # Chain 1:  Elapsed Time: 1563.88 seconds (Warm-up)
@@ -345,7 +343,7 @@ plot(mod,ask=FALSE)
 ```{r}
 setwd(path_to_R_folder)
 
-# Pour enregistrer manuellement la cha?ne sans utiliser l'argument "file" dans brm() :
+# Pour enregistrer manuellement la chaine sans utiliser l'argument "file" dans brm() :
 
 # saveRDS(mod,file="test_brms_Guinean2.RDS")
 # mod2 <- readRDS("test_brms_Guinean2.RDS")
@@ -369,8 +367,8 @@ posterior_summary(mod)
 
 ok <- as.data.frame(mod)
 View(ok)
-# semble marcher mais les cha?nes sont mises ? la suite les une des autres
-# Est-ce grave d'avoir de l'autocorr?lation entre it?rations pour une r?gression ?
+# semble marcher mais les chanes sont mises à la suite les une des autres
+# Est-ce grave d'avoir de l'autocorrélation entre itérations pour une régression ?
 # je ne sais pas
 ```
 
