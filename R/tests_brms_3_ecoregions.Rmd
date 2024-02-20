@@ -9,7 +9,7 @@ date: "`r Sys.Date()`"
 # Cleaning the environment
 rm(list=ls())
 # Getting the paths
-source("paths.R",encoding="latin1")
+source("paths.R")
 # Setting the current path
 path_to_R_folder = file.path(
                              path_to_Savanna_structure_GEDI_folder,
