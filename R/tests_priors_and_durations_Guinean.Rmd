@@ -21,6 +21,7 @@ library(fst)
 library(ggplot2)
 library(brms)
 library(sf)
+library(terra)
 # Encoding :
 print("é è û")
 ```

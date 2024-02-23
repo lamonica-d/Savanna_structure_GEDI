@@ -66,7 +66,7 @@ sub_Guinean_table <- Guinean_table[complete.cases(Guinean_table[,c("mean_precip"
                                                                    "mean_temp",
                                                                    "fire_freq")]
 ),]
-sub_Guinean_table <- sub_Guinean_table[1:10**5,]
+sub_Guinean_table <- sub_Guinean_table[1:10**6,]
 
 start <- Sys.time()
 print(start)
@@ -80,10 +80,10 @@ mod <- brm(
  prior = NULL,
  
   warmup = 1*10**3,
-  iter = 5*10**3,
+  iter = 2*10**3,
   thin = 10,
   
-  file = "outputs/test_brms_Guinean_dom0.RDS",
+  file = "outputs/test_brms_Guinean_dom1.RDS",
   
   chains = 3,
   cores = 3,    
