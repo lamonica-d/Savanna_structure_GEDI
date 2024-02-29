@@ -63,6 +63,8 @@ sub_Guinean_table <- sub_table_std_list[[1]]
 sub_Sahelian_table <- sub_table_std_list[[2]]
 sub_WestSudanian_table <- sub_table_std_list[[3]]
 
+
+####### tree height (rh98) #############
 default_prior = get_prior(
   formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
   data = sub_WestSudanian_table,
@@ -74,8 +76,8 @@ print(start)
 
 mod <- brm(
   
-  formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
-  data = sub_WestSudanian_table,
+  formula = rh98 ~ mean_precip + mean_temp+ fire_freq,
+  data = sub_Guinean_table,
   
   family = brmsfamily(family = "Gamma"),
   prior = NULL,
@@ -84,7 +86,39 @@ mod <- brm(
   iter = 6*10**3,
   thin = 10,
   
-  file = "outputs/test_brms_Sahelian_dom1.RDS",
+  file = "outputs/test_brms_Sahelian_rh98_dom1.RDS",
+  
+  chains = 3,
+  cores = 3,    
+  silent = 0
+)
+
+print(Sys.time() - start)
+plot(mod)
+
+####### canopy cover #############
+default_prior = get_prior(
+  formula = canopy_cover ~ mean_precip + mean_temp + fire_freq,
+  data = sub_WestSudanian_table,
+  family = brmsfamily(family = "zero_one_inflated_beta")
+)
+
+start <- Sys.time()
+print(start)
+
+mod <- brm(
+  
+  formula = canopy_cover ~ mean_precip + mean_temp  + fire_freq,
+  data = sub_WestSudanian_table,
+  
+  family = brmsfamily(family = "zero_one_inflated_beta"),
+  prior = NULL,
+  
+  warmup = 2*10**3,
+  iter = 6*10**3,
+  thin = 10,
+  
+  file = "outputs/test_brms_WSudanian_canopycover_dom1.RDS",
   
   chains = 3,
   cores = 3,    
@@ -94,4 +128,5 @@ mod <- brm(
 print(Sys.time() - start)
 
 plot(mod)
+
 
