@@ -24,6 +24,7 @@ library(sf)
 library(terra)
 # Encoding :
 print("é è û")
+print("test git")
 ```
 
 ```{r}
