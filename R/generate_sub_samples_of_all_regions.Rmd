@@ -93,6 +93,7 @@ for (i in 1:length(dir(path_to_GEDI_raw_data))){
 
 rm(TRUE_FALSE_is_fire_freq_NA)
 ```
+
 ```{r}
 # saveRDS(
 #         object = complete_corresponding_table,
@@ -110,6 +111,14 @@ complete_corresponding_table <- readRDS(
                                                   "complete_corresponding_table.RDS"
                                                   )
                                         )
+
+without_duplicate <- readRDS(
+                              file.path(
+                                        path_to_Savanna_structure_GEDI_folder,
+                                        "rawdata",
+                                        "without_duplicate.RDS"
+                                        )
+                              )
 ```
 
 ```{r}
@@ -228,7 +237,12 @@ require(sf)
 ```
 
 ```{r}
-
+test <- without_duplicate[without_duplicate[,"ecoregion"] == "Sahelian_Acacia", ]
+nrow(test)
+test2 <- without_duplicate[without_duplicate[,"ecoregion"] == "West_Sudanian", ]
+nrow(test2)
+test3 <- without_duplicate[without_duplicate[,"ecoregion"] == "Guinean_forest-savanna", ]
+nrow(test3)
 ```
 
 ```{r}
