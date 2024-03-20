@@ -1,0 +1,259 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r}
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R")
+# Setting the current path
+path_to_R_folder = file.path(
+                             path_to_Savanna_structure_GEDI_folder,
+                             "R"
+                             )
+setwd(path_to_R_folder)
+getwd()
+
+# Libraries
+library(fst)
+# Encoding :
+print("é è û")
+```
+
+```{r}
+# Concatenation of all data in complete_corresponding_table
+
+complete_corresponding_table = data.frame(matrix(nrow=0,ncol=9))
+
+colnames(complete_corresponding_table) <-  c("x",
+                                             "y",
+                                             "rh98",
+                                             "canopy_cover",
+                                             "fire_freq",
+                                             "mean_precip",
+                                             "mean_temp",
+                                             "ecoregion",
+                                             "fire_freq_NA")
+
+for (i in 1:length(dir(path_to_GEDI_raw_data))){
+#for (i in 1:1){
+
+  name = dir(path_to_GEDI_raw_data)[i]
+
+  corresponding_table = fst::read.fst(file.path(path_to_GEDI_raw_data,name))
+  
+  # Let's only keep the following columns :
+  
+  corresponding_table <- corresponding_table[ ,c("x",
+                                                 "y",
+                                                 "rh98",
+                                                 "canopy_cover",
+                                                 "fire_freq",
+                                                 "mean_precip",
+                                                 "mean_temp",
+                                                 "ecoregion"
+                                                 )]
+  
+  # Let's get rid of the ".fst" in the graph name
+  name <- substr(name, start = 1, stop =  nchar(name) - 4)
+  print(name)
+  
+  # Creation of a "fire_freq_NA" column and NA fire_freq replacement by 0s :
+  
+  TRUE_FALSE_is_fire_freq_NA <- is.na(corresponding_table[,"fire_freq"])
+  corresponding_table["fire_freq_NA"] <- TRUE_FALSE_is_fire_freq_NA
+  corresponding_table[which(TRUE_FALSE_is_fire_freq_NA),"fire_freq"] <- 0
+  
+  # Let's keep only the complete rows :
+  # (45 millions of rows if we do this, 48 without this)
+  
+  corresponding_table <- corresponding_table[
+    complete.cases(
+      corresponding_table[,c("x",
+                             "y",
+                             "rh98",
+                             "canopy_cover",
+                             "fire_freq",
+                             "mean_precip",
+                             "mean_temp",
+                             "ecoregion",
+                             "fire_freq_NA"
+                             )]
+                  ),]
+
+  
+  # Concatenation of corresponding_table with the previous ones :
+  
+  complete_corresponding_table = rbind(complete_corresponding_table,corresponding_table)
+  
+}
+
+rm(TRUE_FALSE_is_fire_freq_NA)
+```
+
+```{r}
+# saveRDS(
+#         object = complete_corresponding_table,
+#         file = file.path(
+#                          path_to_Savanna_structure_GEDI_folder,
+#                          "rawdata",
+#                          "complete_corresponding_table.RDS"
+#                          )
+#         )
+
+complete_corresponding_table <- readRDS(
+                                        file.path(
+                                                  path_to_Savanna_structure_GEDI_folder,
+                                                  "rawdata",
+                                                  "complete_corresponding_table.RDS"
+                                                  )
+                                        )
+
+without_duplicate <- readRDS(
+                              file.path(
+                                        path_to_Savanna_structure_GEDI_folder,
+                                        "rawdata",
+                                        "without_duplicate.RDS"
+                                        )
+                              )
+```
+
+```{r}
+# Y a-t-il des doublons ?
+nrow(complete_corresponding_table)
+# [1] 45727445
+# nrow(unique(complete_corresponding_table[c("x","y")]))
+# [1] 45724087
+# attention ça a fait chauffer ma machine ce truc...
+# ah quelques doublons quand même sur les x et y avec des valeurs un peu différentes pour les autres variables
+nrow(unique(complete_corresponding_table))
+# [1] 45727445
+# duplicates <- complete_corresponding_table[duplicated(complete_corresponding_table[ , c("x","y")]),]    
+# en fait ça a l'air d'être des dupliqués sur x OU y alors qu'on veut x ET y
+# require(dplyr)
+# duplicates2 <- complete_corresponding_table %>% distinct(x, y, .keep_all = TRUE)
+# [1] 45724087
+# hum, je veux voir les "doublons" pour être sûr
+require(janitor)
+duplicates <- janitor::get_dupes(complete_corresponding_table, "x", "y")
+nrow(complete_corresponding_table)
+# [1] 45727445
+nrow(duplicates)
+# [1] 6716
+nrow(complete_corresponding_table) - nrow(duplicates)/2
+# [1] 45724087
+
+# without_duplicate <- unique(complete_corresponding_table[c("x","y")])
+# same as the previous line but keeping other columns :
+require(dplyr)
+without_duplicate <- complete_corresponding_table %>% distinct(x, y, .keep_all = TRUE)
+nrow(without_duplicate)
+# [1] 45724087
+# without_duplicate2 <- unique(complete_corresponding_table[c("x")])
+# 8 400 du coup oui la commande unique(complete_corresponding_table[c("x","y")]) semble être la bonne,
+# d'autant qu'elle redonne 45724087 le bon nombre de lignes 45727445 - 6716/2
+# de même pour complete_corresponding_table %>% distinct(x, y, .keep_all = TRUE)
+# car ok <- complete_corresponding_table %>% distinct(x, .keep_all = TRUE) donne 8 400 aussi
+```
+
+```{r}
+# saveRDS(
+#         object = without_duplicate,
+#         file = file.path(
+#                          path_to_Savanna_structure_GEDI_folder,
+#                          "rawdata",
+#                          "without_duplicate.RDS"
+#                          )
+#         )
+```
+
+```{r}
+# Exploration des doublons :
+unique(duplicates[,"ecoregion"])
+
+# [1] "Guinean_forest-savanna"  "West_Sudanian"           "Angolan_mopane"          "Angolan_wet"            
+# [5] "Dry_miombo"              "Central_Zambezian"       "Zambezian-Limpopo_mixed" "Zambezian_mopane"   
+
+# saveRDS(
+#         object = duplicates,
+#         file = file.path(
+#                          path_to_Savanna_structure_GEDI_folder,
+#                          "rawdata",
+#                          "duplicates.RDS"
+#                          )
+#         )
+
+# write.csv(
+#           duplicates,
+#           file = file.path(
+#                            path_to_Savanna_structure_GEDI_folder,
+#                            "rawdata",
+#                            "duplicates.csv"
+#                            )
+#           )
+```
+
+
+```{r}
+# Selection of a subset to plot in qgis :
+
+# n = 10**5
+# 
+# sub_sample <- sort(
+#                    sample(1:nrow(complete_corresponding_table),
+#                           n,
+#                           replace=FALSE)
+#                   )
+# 
+# complete_corresponding_table2 <- complete_corresponding_table[sub_sample,]
+# rownames(complete_corresponding_table2) <- 1:n
+```
+
+```{r}
+require(sf)
+# Enregistrement du subset
+
+# sf_obj <- st_as_sf(complete_corresponding_table2,coords = c("x", "y"),crs = 4326)
+# 
+# st_write(sf_obj,
+#          file.path(path_to_Savanna_structure_GEDI_folder,
+#                    "geojson_files",
+#                    "global_random_10_5_subset.geojson"
+#                    )
+#          )
+# # Enregistrement du total
+# 
+# sf_obj <- st_as_sf(complete_corresponding_table,coords = c("x", "y"),crs = 4326)
+# 
+# st_write(sf_obj,
+#          file.path(path_to_Savanna_structure_GEDI_folder,
+#                    "geojson_files",
+#                    "global.geojson"
+#                    )
+#          )
+```
+
+```{r}
+test <- without_duplicate[without_duplicate[,"ecoregion"] == "Sahelian_Acacia", ]
+nrow(test)
+test2 <- without_duplicate[without_duplicate[,"ecoregion"] == "West_Sudanian", ]
+nrow(test2)
+test3 <- without_duplicate[without_duplicate[,"ecoregion"] == "Guinean_forest-savanna", ]
+nrow(test3)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
