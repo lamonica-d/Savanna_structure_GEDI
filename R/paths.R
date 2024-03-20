@@ -18,6 +18,11 @@ if(Sys.info()[['effective_user']] == "Aurélien"){
     path_to_Github_folder,
     "Forest_savanna_project"
   )
+  
+  path_to_tp_bayes_aurelien = file.path(
+    path_to_Forest_savanna_project_folder,
+    "tp_bayes_aurelien"
+  )
 
   path_to_Savanna_structure_GEDI_folder = file.path(
     path_to_Github_folder,
@@ -45,6 +50,14 @@ if(Sys.info()[['effective_user']] == "lamonica"){
       "dessfor",
       "stage_aurelien_thiriet",
       "Forest_savanna_project"
+    )
+    
+    path_to_tp_bayes_aurelien = file.path(
+      path_to_Documents,
+      "dessfor",
+      "stage_aurelien_thiriet",
+      "Forest_savanna_project",
+      "tp_bayes_aurelien"
     )
     
     path_to_Savanna_structure_GEDI_folder = file.path(
@@ -80,6 +93,11 @@ if(Sys.info()[['effective_user']] == "thiriet"){
   path_to_Forest_savanna_project_folder = file.path(
     path_to_Github_folder,
     "Forest_savanna_project"
+  )
+
+  path_to_tp_bayes_aurelien = file.path(
+    path_to_Forest_savanna_project_folder,
+    "tp_bayes_aurelien"
   )
   
   path_to_Savanna_structure_GEDI_folder = file.path(
