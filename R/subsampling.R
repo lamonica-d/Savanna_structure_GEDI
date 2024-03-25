@@ -6,7 +6,7 @@ source("R/paths.R")
 library(fst)
 library(brms)
 
-vect_names <- list.files(path = path_to_GEDI_raw_data)
+(vect_names <- list.files(path = path_to_GEDI_raw_data))
 
 #####compute mean and sd of mean_temp, mean_prec, fire_frq for all data####
 temp_vect <- as.numeric()
@@ -38,6 +38,38 @@ df_for_std <- data.frame(precip = c(mean_prec, sd_prec),
 ############
 load(file="outputs/values_for_covariables_standardisation")
 
+###grid resampling
+#0) load data
+table <- fst::read.fst(paste0(path_to_GEDI_raw_data,"/",vect_names[1], sep=""))
+# To replace the NA by zeros :
+table[is.na(table[,"fire_freq"]),"fire_freq"] <- 0
+table <- table[complete.cases(table[,c("mean_precip","mean_temp","fire_freq")]),]
+x <- table[1:1000,]
+rm(table)
+#1) setting resolution
+#from data.frame to spatvector
+x <- terra::vect(x, geom = c("x", "y"), crs = "+proj=longlat +datum=WGS84") 
+#get x "window" : xmin, xmax, ymin, ymax
+x_ext <- terra::ext(x)
+#set a cell length, in meter
+cell <- 500
+dx <- geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[2],x_ext[3]))
+dy <- geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[1],x_ext[4]))
+target_ncol <- round(dx/cell)
+target_nrow <- round(dy/cell)
+
+#2) resampling
+y <- terra::rast(x, ncol = target_ncol, nrow = target_nrow)
+z <- terra::rasterize(x, y, fun = sample, size =1, field = colnames(values(x)))
+trsf_data <- data.frame(cbind(crds(y), values(z)))
+sub_table <- trsf_data[!is.na(trs_data$rh98),]
+
+#3) standardisation
+sub_table$fire_freq <- (sub_table$fire_freq-df_for_std$fire[1])/df_for_std$fire[2]
+sub_table$mean_precip <- (sub_table$mean_precip-df_for_std$precip[1])/df_for_std$precip[2]
+sub_table$mean_temp <- (sub_table$mean_temp -df_for_std$temp[1])/df_for_std$temp[2]
+
+########JUST RANDOM SAMPLING##############
 #load and transform data for the three selected ecoregions
 (vect_names_3 <- vect_names[c(10,17,20)])
 sub_table_std_list <- list()
@@ -58,11 +90,20 @@ sub_table$mean_temp <- (sub_table$mean_temp -df_for_std$temp[1])/df_for_std$temp
 sub_table_std_list[[i]] <- sub_table
 rm(sub_table)
 }
-
 sub_Guinean_table <- sub_table_std_list[[1]]
 sub_Sahelian_table <- sub_table_std_list[[2]]
 sub_WestSudanian_table <- sub_table_std_list[[3]]
+#############################################
 
+####VARIOGRAMMES
+#coords in lat/long, should they be in meters ?
+table <- fst::read.fst(paste0(path_to_GEDI_raw_data,"/",vect_names[7], sep=""))
+table[is.na(table[,"fire_freq"]),"fire_freq"] <- 0
+table <- table[complete.cases(table[,c("mean_precip","mean_temp","fire_freq")]),]
+meter_coord <- proj4::project(xy = table[,1:2], proj = "+proj=utm +datum=WGS84")
+meter_coord <- data.frame(x = meter_coord$x, y = meter_coord$y)
+var_rh98 <- geoR::variog(coords = meter_coord[(1:(9*10^4)),],
+                         data = table$rh98[(1:(9*10^4))])
 
 ####### tree height (rh98) #############
 default_prior = get_prior(
