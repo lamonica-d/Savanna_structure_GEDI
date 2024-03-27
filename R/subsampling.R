@@ -34,9 +34,9 @@ sd_fire <- sd(fire_vect, na.rm = T)
 df_for_std <- data.frame(precip = c(mean_prec, sd_prec), 
                          temp = c(mean_temp, sd_temp),
                          fire = c(mean_fire, sd_fire))
-#save(df_for_std, file="outputs/values_for_covariables_standardisation")
+#save(df_for_std, file="outputs/values_for_covariables_standardisation.RDS")
 ############
-load(file="outputs/values_for_covariables_standardisation")
+load(file="outputs/values_for_covariables_standardisation.RDS")
 
 ###grid resampling
 #0) load data

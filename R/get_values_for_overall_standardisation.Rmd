@@ -1,0 +1,54 @@
+---
+title: "get_values_for_overall_standardisation"
+author: "lamonica-d"
+date: "2024-03-27"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+rm(list=ls())
+# Getting the paths
+source("R/paths.R")
+# Libraries
+library(fst)
+library(brms)
+
+(vect_names <- list.files(path = path_to_GEDI_raw_data))
+```
+
+
+```{r}
+#####compute mean and sd of mean_temp, mean_prec, fire_frq for all data####
+temp_vect <- as.numeric()
+prec_vect <- as.numeric()
+fire_vect <- as.numeric()
+
+for (i in 1:length(names)){
+  
+  table <- fst::read.fst(paste0(path_to_GEDI_raw_data,"/",vect_names[i],sep=""))
+  table[is.na(table[,"fire_freq"]),"fire_freq"] <- 0
+  table <- table[complete.cases(table[,c("mean_precip","mean_temp","fire_freq")]),]
+  
+  temp_vect <- c(temp_vect, table$mean_temp)
+  prec_vect <- c(prec_vect, table$mean_precip)
+  fire_vect <- c(fire_vect, table$fire_freq)
+}
+rm(table)
+mean_temp <- mean(temp_vect, na.rm = T)
+mean_prec <- mean(prec_vect, na.rm = T)
+mean_fire <- mean(fire_vect, na.rm = T)
+sd_temp <- sd(temp_vect, na.rm = T)
+sd_prec <- sd(prec_vect, na.rm = T)
+sd_fire <- sd(fire_vect, na.rm = T)
+
+df_for_std <- data.frame(precip = c(mean_prec, sd_prec), 
+                         temp = c(mean_temp, sd_temp),
+                         fire = c(mean_fire, sd_fire))
+save(df_for_std, file="outputs/values_for_covariables_standardisation.RDS")
+```
+
