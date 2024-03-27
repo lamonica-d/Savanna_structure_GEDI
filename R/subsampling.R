@@ -40,11 +40,11 @@ load(file="outputs/values_for_covariables_standardisation")
 
 ###grid resampling
 #0) load data
-table <- fst::read.fst(paste0(path_to_GEDI_raw_data,"/",vect_names[1], sep=""))
+table <- fst::read.fst(paste0(path_to_GEDI_raw_data,"/",vect_names[20], sep=""))
 # To replace the NA by zeros :
 table[is.na(table[,"fire_freq"]),"fire_freq"] <- 0
 table <- table[complete.cases(table[,c("mean_precip","mean_temp","fire_freq")]),]
-x <- table[1:1000,]
+x <- table
 rm(table)
 #1) setting resolution
 #from data.frame to spatvector
@@ -52,15 +52,15 @@ x <- terra::vect(x, geom = c("x", "y"), crs = "+proj=longlat +datum=WGS84")
 #get x "window" : xmin, xmax, ymin, ymax
 x_ext <- terra::ext(x)
 #set a cell length, in meter
-cell <- 500
-dx <- geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[2],x_ext[3]))
-dy <- geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[1],x_ext[4]))
-target_ncol <- round(dx/cell)
-target_nrow <- round(dy/cell)
+cell <- 20000
+dx <- geodist::geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[2],x_ext[3]), measure = "haversine")
+dy <- geodist::geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[1],x_ext[4]), measure = "haversine")
+(target_ncol <- round(dx/cell))
+(target_nrow <- round(dy/cell))
 
 #2) resampling
 y <- terra::rast(x, ncol = target_ncol, nrow = target_nrow)
-z <- terra::rasterize(x, y, fun = sample, size =1, field = colnames(values(x)))
+z <- terra::rasterize(x, y, fun = sample, size =1, field = colnames(terra::values(x)))
 trsf_data <- data.frame(cbind(crds(y), values(z)))
 sub_table <- trsf_data[!is.na(trs_data$rh98),]
 
