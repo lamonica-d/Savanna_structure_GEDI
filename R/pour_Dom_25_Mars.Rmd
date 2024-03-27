@@ -1,0 +1,105 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r}
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R")
+# Setting the current path
+path_to_R_folder = file.path(
+                             path_to_Savanna_structure_GEDI_folder,
+                             "R"
+                             )
+setwd(path_to_R_folder)
+getwd()
+
+# Libraries
+library(fst)
+# Encoding :
+print("é è û")
+```
+
+```{r}
+# Lecture du fichier généré avec generate_sub_samples_of_all_regions
+# (données totales sans NA (sauf feu) ni doublons)
+
+without_duplicate = readRDS(file = file.path(
+                                             path_to_Savanna_structure_GEDI_folder,
+                                             "rawdata",
+                                             "without_duplicate.RDS"
+                                             )
+                            )
+
+head(without_duplicate)
+
+require(janitor)
+duplicates <- janitor::get_dupes(without_duplicate, "x", "y")
+# On doit avoir le message :
+# -> No duplicate combinations found of: x, y
+```
+
+```{r}
+# List of all ecoregions :
+unique(without_duplicate[,"ecoregion"])
+
+# Selection of ecoregions :
+table_Sahelian_Acacia <- without_duplicate[without_duplicate[,"ecoregion"] == "Sahelian_Acacia", ]
+nrow(table_Sahelian_Acacia)
+table_West_Sudanian <- without_duplicate[without_duplicate[,"ecoregion"] == "West_Sudanian", ]
+nrow(table_West_Sudanian)
+table_Guinean <- without_duplicate[without_duplicate[,"ecoregion"] == "Guinean_forest-savanna", ]
+nrow(table_Guinean)
+
+# "Sahelian_Acacia" : 21 422 708 points
+# "West_Sudanian" : 6 967 519 points
+# "Guinean_forest-savanna" : 3 248 787 points
+```
+
+```{r}
+# Selection of a subset of a table :
+
+n = 10**5
+
+sub_sample_indices <- sort(
+                           sample(1:nrow(table),
+                                  n,
+                                  replace=FALSE)
+                          )
+
+table2 <- complete_corresponding_table[sub_sample_indices,]
+rownames(complete_corresponding_table2) <- 1:n
+```
+
+```{r}
+# Pour enregistrer un fichier .geojson
+
+require(sf)
+
+# Enregistrement du subset
+
+# sf_obj <- st_as_sf(complete_corresponding_table2,coords = c("x", "y"),crs = 4326)
+# 
+# st_write(sf_obj,
+#          file.path(path_to_Savanna_structure_GEDI_folder,
+#                    "geojson_files",
+#                    "machin.geojson"
+#                    )
+#          )
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
