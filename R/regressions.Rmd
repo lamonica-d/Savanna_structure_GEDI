@@ -42,34 +42,23 @@ print("é è û")
 ```
 
 ```{r}
-# Vérification qu'il n'y a pas de doublons :
-
-without_duplicate = readRDS(file = file.path(
-                                             path_to_Savanna_structure_GEDI_folder,
-                                             "rawdata",
-                                             "complete_corresponding_table_without_duplicate_standardized.RDS"
-                                             )
-                            )
-```
-
-```{r}
-# List of all ecoregions :
-unique(without_duplicate[,"ecoregion"])
-
 # Selection of ecoregions :
-table_Sahelian_Acacia <- without_duplicate[without_duplicate[,"ecoregion"] == "Sahelian_Acacia", ]
-nrow(table_Sahelian_Acacia)
-table_West_Sudanian <- without_duplicate[without_duplicate[,"ecoregion"] == "West_Sudanian", ]
-nrow(table_West_Sudanian)
-table_table_Guinean <- without_duplicate[without_duplicate[,"ecoregion"] == "Guinean_forest-savanna", ]
+
+name = "Guinean_forest-savanna"
+
+table_Guinean <- readRDS(
+                         file.path(
+                                   path_to_Savanna_structure_GEDI_folder,
+                                   "transformed_data",
+                                   paste0(name,".RDS")
+                                   )
+                          )
 nrow(table_Guinean)
 
-# "Sahelian_Acacia" : 21 422 708 points
-# "West_Sudanian" : 6 967 519 points
-# "Guinean_forest-savanna" : 3 248 787 points
-
 colSums(is.na(table_Guinean))
+# "Sahelian_Acacia" "West_Sudanian"
 ```
+
 ```{r}
 # all families' names (*) :
 browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")

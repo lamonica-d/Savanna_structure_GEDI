@@ -149,7 +149,7 @@ colnames(conserved_sub_table)[2] = "y_center_cell"
 
 colnames(conserved_sub_table)
 
-# Normalement les données ne comportant déjà plus de NA, donc ligne suivante inutile
+# NA taken away
 conserved_sub_table <- conserved_sub_table[
                         complete.cases(conserved_sub_table[,c("x_center_cell",
                                                               "y_center_cell",
@@ -209,6 +209,8 @@ table <- table[complete.cases(table[,c("mean_precip","mean_temp","fire_freq")]),
 set.seed(1234)
 sub_table <- table[sample(1:nrow(table),2*10**4, replace = F),]
 rm(table)
+
+
 #standardisation
 sub_table$fire_freq <- (sub_table$fire_freq-df_for_std$fire[1])/df_for_std$fire[2]
 sub_table$mean_precip <- (sub_table$mean_precip-df_for_std$precip[1])/df_for_std$precip[2]

@@ -93,27 +93,6 @@ for (i in 1:length(dir(path_to_GEDI_raw_data))){
 rm(TRUE_FALSE_is_fire_freq_NA)
 ```
 ```{r}
-# Save/Read the concatenation of all data (complete_corresponding_table)
-
-# saveRDS(
-#         object = complete_corresponding_table,
-#         file = file.path(
-#                          path_to_Savanna_structure_GEDI_folder,
-#                          "rawdata",
-#                          "complete_corresponding_table.RDS"
-#                          )
-#         )
-# 
-# complete_corresponding_table <- readRDS(
-#                                         file.path(
-#                                                   path_to_Savanna_structure_GEDI_folder,
-#                                                   "rawdata",
-#                                                   "complete_corresponding_table.RDS"
-#                                                   )
-#                                         )
-```
-
-```{r}
 # Y a-t-il des doublons ?
 
 # nrow(complete_corresponding_table)
@@ -202,16 +181,21 @@ sub_table <- readRDS(file = file.path(
                                        )
                      )
 
-load(file.path(
-               path_to_Savanna_structure_GEDI_folder,
-               "outputs",
-               "values_for_covariables_standardisation"
-               )
-)
+sub_table = cbind(sub_table,as.vector(scale(sub_table$fire_freq, center = TRUE, scale = TRUE)))
+sub_table = cbind(sub_table,as.vector(scale(sub_table$mean_precip, center = TRUE, scale = TRUE)))
+sub_table = cbind(sub_table,as.vector(scale(sub_table$mean_temp, center = TRUE, scale = TRUE)))
 
-sub_table$fire_freq <- (sub_table$fire_freq - df_for_std$fire[1])/df_for_std$fire[2]
-sub_table$mean_precip <- (sub_table$mean_precip - df_for_std$precip[1])/df_for_std$precip[2]
-sub_table$mean_temp <- (sub_table$mean_temp - df_for_std$temp[1])/df_for_std$temp[2]
+colnames(sub_table)
+ncol(sub_table)
+
+colnames(sub_table)[10] = "fire_freq_std"
+colnames(sub_table)[11] = "mean_precip_std"
+colnames(sub_table)[12] = "mean_temp_std"
+
+colnames(sub_table)
+
+summary(sub_table)
+colnames(sub_table)
 
 # saveRDS(
 #         object = sub_table,
@@ -224,25 +208,20 @@ sub_table$mean_temp <- (sub_table$mean_temp - df_for_std$temp[1])/df_for_std$tem
 ```
 
 ```{r}
-# List of all ecoregions :
-unique(without_duplicate[,"ecoregion"])
-
-# Selection of ecoregions :
-table_Sahelian_Acacia <- without_duplicate[without_duplicate[,"ecoregion"] == "Sahelian_Acacia", ]
-nrow(table_Sahelian_Acacia)
-table_West_Sudanian <- without_duplicate[without_duplicate[,"ecoregion"] == "West_Sudanian", ]
-nrow(table_West_Sudanian)
-table_Guinean <- without_duplicate[without_duplicate[,"ecoregion"] == "Guinean_forest-savanna", ]
-nrow(table_Guinean)
-
-# "Sahelian_Acacia" : 21 422 708 points
-# "West_Sudanian" : 6 967 519 points
-# "Guinean_forest-savanna" : 3 248 787 points
-```
-
-
-```{r}
-
+# # List of all ecoregions :
+# unique(without_duplicate[,"ecoregion"])
+# 
+# # Selection of ecoregions :
+# table_Sahelian_Acacia <- without_duplicate[without_duplicate[,"ecoregion"] == "Sahelian_Acacia", ]
+# nrow(table_Sahelian_Acacia)
+# table_West_Sudanian <- without_duplicate[without_duplicate[,"ecoregion"] == "West_Sudanian", ]
+# nrow(table_West_Sudanian)
+# table_Guinean <- without_duplicate[without_duplicate[,"ecoregion"] == "Guinean_forest-savanna", ]
+# nrow(table_Guinean)
+# 
+# # "Sahelian_Acacia" : 21 422 708 points
+# # "West_Sudanian" : 6 967 519 points
+# # "Guinean_forest-savanna" : 3 248 787 points
 ```
 
 ```{r}
