@@ -30,3 +30,8 @@
 - **generate_sub_samples_of_3_ecoregions.Rmd** : génère des sous-échantillons randoms 10^4 lignes des 3 écorégions
 - **sub_sample_Guinean.RDS** : sous-échantillon random 10^4 lignes de Guinean généré avec **generate_sub_samples_of_3_ecoregions.Rmd**
 - **test_car_model.Rmd** : tentative de car() dans brm() sur **sub_sample_10_4_Guinean.RDS**
+
+## A partir du 25 Mars
+
+- **tests_regressions_STAN.Rmd** : tests STAN génériques pas spécifiques à nos données, liés aux fichiers stan dans le folder STAN_models
+- 
