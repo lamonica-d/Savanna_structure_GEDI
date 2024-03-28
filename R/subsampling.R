@@ -1,11 +1,13 @@
-#subsampling of ecoregion tables
+# subsampling of ecoregion tables
 rm(list=ls())
 # Getting the paths
-source("R/paths.R")
+source("paths.R")
 # Libraries
 library(fst)
 library(brms)
+library(terra)
 
+getwd()
 (vect_names <- list.files(path = path_to_GEDI_raw_data))
 
 #####compute mean and sd of mean_temp, mean_prec, fire_frq for all data####
@@ -34,11 +36,11 @@ sd_fire <- sd(fire_vect, na.rm = T)
 df_for_std <- data.frame(precip = c(mean_prec, sd_prec), 
                          temp = c(mean_temp, sd_temp),
                          fire = c(mean_fire, sd_fire))
-#save(df_for_std, file="outputs/values_for_covariables_standardisation")
+# save(df_for_std, file="outputs/values_for_covariables_standardisation")
 ############
 load(file="outputs/values_for_covariables_standardisation")
 
-###grid resampling
+### grid resampling
 #0) load data
 table <- fst::read.fst(paste0(path_to_GEDI_raw_data,"/",vect_names[20], sep=""))
 # To replace the NA by zeros :
@@ -46,12 +48,14 @@ table[is.na(table[,"fire_freq"]),"fire_freq"] <- 0
 table <- table[complete.cases(table[,c("mean_precip","mean_temp","fire_freq")]),]
 x <- table
 rm(table)
+
+########################################## x <- la_table_propre_de_l_autre_fichier_la
 #1) setting resolution
 #from data.frame to spatvector
 x <- terra::vect(x, geom = c("x", "y"), crs = "+proj=longlat +datum=WGS84") 
 #get x "window" : xmin, xmax, ymin, ymax
 x_ext <- terra::ext(x)
-#set a cell length, in meter
+# set a cell length, in meter
 cell <- 20000
 dx <- geodist::geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[2],x_ext[3]), measure = "haversine")
 dy <- geodist::geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[1],x_ext[4]), measure = "haversine")
@@ -62,15 +66,108 @@ dy <- geodist::geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[1],x_ext[4]), measu
 y <- terra::rast(x, ncol = target_ncol, nrow = target_nrow)
 z <- terra::rasterize(x, y, fun = sample, size =1, field = colnames(terra::values(x)))
 trsf_data <- data.frame(cbind(crds(y), values(z)))
-sub_table <- trsf_data[!is.na(trs_data$rh98),]
+
+grid_of_distant_cells <- function(target_nrow,target_ncol,plot_grid=FALSE){
+  
+  # first sub-grid
+  conserved1 <- rep(rep(c(TRUE,FALSE),each=target_ncol),times=target_nrow%/%2)
+  if (target_nrow%%2==1){ conserved1 <- c(conserved1,rep(TRUE,times=target_ncol)) }
+  
+  # second sub-grid
+  if (target_ncol%%2==0){ 
+    conserved2 <- rep(rep(c(TRUE,FALSE),times=target_ncol%/%2),times=target_nrow)
+  }
+  if (target_ncol%%2==1){ 
+    conserved2 <- rep(c(rep(c(TRUE,FALSE),times=target_ncol%/%2),TRUE),times=target_nrow)
+  }
+  
+  # final sub-grid
+  conserved = rep(TRUE,length(conserved1))
+  for (s in 1:length(conserved)){
+    if(conserved1[s] == FALSE | conserved2[s] == FALSE){conserved[s] = FALSE}
+  }
+  
+  if (plot_grid==TRUE){
+    test_conserved <- matrix(conserved,ncol=target_ncol,byrow=TRUE)
+    print(paste(target_nrow,"x",target_ncol,"matrix"))
+    print(paste("length(conserved) =",length(conserved)))
+    print(test_conserved)
+  }
+  
+  return(conserved)
+}
+
+# Tests of odd/even cases :
+conserved <- grid_of_distant_cells(3,5,TRUE)
+conserved <- grid_of_distant_cells(4,5,TRUE)
+conserved <- grid_of_distant_cells(3,6,TRUE)
+conserved <- grid_of_distant_cells(4,6,TRUE)
+
+conserved <- grid_of_distant_cells(target_nrow,target_ncol)
+
+length(conserved)
+summary(conserved)
+mean(conserved)
+
+conserved_indices = rep(NA,length(conserved))
+
+# deletions
+for (s in 1:length(conserved)){
+  if(conserved[s] == TRUE){conserved_indices[s] = s}
+}
+
+conserved_indices
+conserved_indices <- conserved_indices[!is.na(conserved_indices)]
+conserved_indices
+sum(is.na(conserved_indices))
+
+summary(conserved)
+length(conserved_indices)
+
+summary(conserved_indices)
+nrow(trsf_data)
+
+conserved_sub_table <- trsf_data[conserved_indices,]
+nrow(conserved_sub_table)
+
+# Normalement les données ne comportant déjà plus de NA, donc ligne suivante inutile
+conserved_sub_table <- conserved_sub_table[
+                        complete.cases(conserved_sub_table[,c("x",
+                                                              "y",
+                                                              "rh98",
+                                                              "canopy_cover",
+                                                              "fire_freq",
+                                                              "mean_precip",
+                                                              "mean_temp",
+                                                              "ecoregion"
+                                                              # "fire_freq_NA"
+                                                               )
+                                                           ]
+                                        ),]
+
+nrow(conserved_sub_table)
+
+# Pour enregistrer les 850 points en .geojson
+require(sf)
+
+sf_obj <- st_as_sf(conserved_sub_table,coords = c("x", "y"),crs = 4326)
+
+# st_write(sf_obj,
+#          file.path(path_to_Savanna_structure_GEDI_folder,
+#                    "geojson_files",
+#                    "machin.geojson"
+#                    )
+#          )
+
+########################################## 
 
 #3) standardisation
 sub_table$fire_freq <- (sub_table$fire_freq-df_for_std$fire[1])/df_for_std$fire[2]
 sub_table$mean_precip <- (sub_table$mean_precip-df_for_std$precip[1])/df_for_std$precip[2]
 sub_table$mean_temp <- (sub_table$mean_temp -df_for_std$temp[1])/df_for_std$temp[2]
 
-########JUST RANDOM SAMPLING##############
-#load and transform data for the three selected ecoregions
+######## JUST RANDOM SAMPLING##############
+# load and transform data for the three selected ecoregions
 (vect_names_3 <- vect_names[c(10,17,20)])
 sub_table_std_list <- list()
 for (i in 1:3){
