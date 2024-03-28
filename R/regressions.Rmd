@@ -47,7 +47,7 @@ print("é è û")
 without_duplicate = readRDS(file = file.path(
                                              path_to_Savanna_structure_GEDI_folder,
                                              "rawdata",
-                                             "without_duplicate.RDS"
+                                             "complete_corresponding_table_without_duplicate_standardized.RDS"
                                              )
                             )
 ```

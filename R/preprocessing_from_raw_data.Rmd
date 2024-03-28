@@ -103,14 +103,14 @@ rm(TRUE_FALSE_is_fire_freq_NA)
 #                          "complete_corresponding_table.RDS"
 #                          )
 #         )
-
-complete_corresponding_table <- readRDS(
-                                        file.path(
-                                                  path_to_Savanna_structure_GEDI_folder,
-                                                  "rawdata",
-                                                  "complete_corresponding_table.RDS"
-                                                  )
-                                        )
+# 
+# complete_corresponding_table <- readRDS(
+#                                         file.path(
+#                                                   path_to_Savanna_structure_GEDI_folder,
+#                                                   "rawdata",
+#                                                   "complete_corresponding_table.RDS"
+#                                                   )
+#                                         )
 ```
 
 ```{r}
@@ -161,17 +161,17 @@ nrow(without_duplicate)
 #         file = file.path(
 #                          path_to_Savanna_structure_GEDI_folder,
 #                          "rawdata",
-#                         "complete_corresponding_table_without_duplicate.RDS"
+#                          "complete_corresponding_table_without_duplicate.RDS"
 #                          )
 #         )
-
-without_duplicate <- readRDS(
-                              file.path(
-                                        path_to_Savanna_structure_GEDI_folder,
-                                        "rawdata",
-                        "complete_corresponding_table_without_duplicate.RDS"
-                                        )
-                              )
+# 
+# without_duplicate <- readRDS(
+#                               file.path(
+#                                         path_to_Savanna_structure_GEDI_folder,
+#                                         "rawdata",
+#                                         "complete_corresponding_table_without_duplicate.RDS"
+#                                         )
+#                               )
 ```
 
 ```{r}
@@ -196,27 +196,31 @@ duplicates <- janitor::get_dupes(without_duplicate, "x", "y")
 # Standardisation des données :
 
 sub_table <- readRDS(file = file.path(
-                                             path_to_Savanna_structure_GEDI_folder,
-                                             "rawdata",
-                                             "complete_corresponding_table_without_duplicate.RDS"
-                                             )
-                            )
+                                       path_to_Savanna_structure_GEDI_folder,
+                                       "rawdata",
+                                       "complete_corresponding_table_without_duplicate.RDS"
+                                       )
+                     )
 
-load(file="outputs/values_for_covariables_standardisation")
+load(file.path(
+               path_to_Savanna_structure_GEDI_folder,
+               "outputs",
+               "values_for_covariables_standardisation"
+               )
+)
 
-sub_table$fire_freq <- (sub_table$fire_freq-df_for_std$fire[1])/df_for_std$fire[2]
-sub_table$mean_precip <- (sub_table$mean_precip-df_for_std$precip[1])/df_for_std$precip[2]
-sub_table$mean_temp <- (sub_table$mean_temp -df_for_std$temp[1])/df_for_std$temp[2]
+sub_table$fire_freq <- (sub_table$fire_freq - df_for_std$fire[1])/df_for_std$fire[2]
+sub_table$mean_precip <- (sub_table$mean_precip - df_for_std$precip[1])/df_for_std$precip[2]
+sub_table$mean_temp <- (sub_table$mean_temp - df_for_std$temp[1])/df_for_std$temp[2]
 
-saveRDS(
-        object = sub_table,
-        file = file.path(
-                         path_to_Savanna_structure_GEDI_folder,
-                         "rawdata",
-                        "complete_corresponding_table_without_duplicate_standardized.RDS"
-                         )
-        )
-
+# saveRDS(
+#         object = sub_table,
+#         file = file.path(
+#                          path_to_Savanna_structure_GEDI_folder,
+#                          "rawdata",
+#                          "complete_corresponding_table_without_duplicate_standardized.RDS"
+#                          )
+#         )
 ```
 
 ```{r}
@@ -236,37 +240,6 @@ nrow(table_Guinean)
 # "Guinean_forest-savanna" : 3 248 787 points
 ```
 
-```{r}
-# Selection of a subset of a table :
-
-n = 10**5
-
-sub_sample_indices <- sort(
-                           sample(1:nrow(table),
-                                  n,
-                                  replace=FALSE)
-                          )
-
-table2 <- complete_corresponding_table[sub_sample_indices,]
-rownames(complete_corresponding_table2) <- 1:n
-```
-
-```{r}
-# Pour enregistrer un fichier .geojson
-
-require(sf)
-
-# Enregistrement du subset
-
-# sf_obj <- st_as_sf(complete_corresponding_table2,coords = c("x", "y"),crs = 4326)
-# 
-# st_write(sf_obj,
-#          file.path(path_to_Savanna_structure_GEDI_folder,
-#                    "geojson_files",
-#                    "machin.geojson"
-#                    )
-#          )
-```
 
 ```{r}
 
