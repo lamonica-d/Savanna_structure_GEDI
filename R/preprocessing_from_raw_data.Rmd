@@ -197,14 +197,14 @@ colnames(sub_table)
 summary(sub_table)
 colnames(sub_table)
 
-# saveRDS(
-#         object = sub_table,
-#         file = file.path(
-#                          path_to_Savanna_structure_GEDI_folder,
-#                          "rawdata",
-#                          "complete_corresponding_table_without_duplicate_standardized.RDS"
-#                          )
-#         )
+saveRDS(
+        object = sub_table,
+        file = file.path(
+                         path_to_Savanna_structure_GEDI_folder,
+                         "rawdata",
+                         "complete_corresponding_table_without_duplicate_standardized.RDS"
+                         )
+        )
 ```
 
 ```{r}

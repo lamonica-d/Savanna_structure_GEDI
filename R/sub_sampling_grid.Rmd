@@ -26,12 +26,12 @@ print("é è û")
 ```{r}
 # Data loading
 
-complete_table = readRDS(file = file.path(
-                                           path_to_Savanna_structure_GEDI_folder,
-                                           "rawdata",
-                                           "complete_corresponding_table_without_duplicate_standardized.RDS"
-                                           )
-                          )
+# complete_table = readRDS(file = file.path(
+#                                            path_to_Savanna_structure_GEDI_folder,
+#                                            "rawdata",
+#                                            "complete_corresponding_table_without_duplicate_standardized.RDS"
+#                                            )
+#                           )
 
 # To verify the standardisation and NAs :
 summary(complete_table)
@@ -87,17 +87,26 @@ cell <- 10**4
 
 names = c("Guinean_forest-savanna","West_Sudanian","Sahelian_Acacia") # for testing the loop
 # names = unique(complete_table$ecoregion) for all ecoregions
-corresponding_tables = list()
+#corresponding_tables = list()
 
 i = 0
 
 for (name in names){
+  
+  complete_table = readRDS(file = file.path(
+                                           path_to_Savanna_structure_GEDI_folder,
+                                           "rawdata",
+                                           "complete_corresponding_table_without_duplicate_standardized.RDS"
+                                           )
+                          )
   
   i <- i +1
   
   print(name)
   
   x <- complete_table[complete_table[,"ecoregion"] == name, ]
+  
+  rm(complete_table)
 
   x <- cbind(x$x,x$y,x)
   
@@ -128,6 +137,10 @@ for (name in names){
   z <- terra::rasterize(x, y, fun = sample, size = 1, field = colnames(terra::values(x)))
   # fun = sample , size = 1 to get one random sample in the cell
   trsf_data <- data.frame(cbind(crds(y), values(z)))
+  
+  rm(x)
+  rm(y)
+  rm(z)
   
   conserved <- grid_of_distant_cells(target_nrow,target_ncol)
   
@@ -214,25 +227,25 @@ for (name in names){
                            )
           )
   
-  sf_obj <- st_as_sf(conserved_sub_table,coords = c("x_center_cell", "y_center_cell"),crs = 4326)
-  
-  st_write(
-           sf_obj,
-           file.path(path_to_Savanna_structure_GEDI_folder,
-                     "transformed_data",
-                     paste0(name,"_center_cells.geojson")
-                     )
-           )
-  
-  sf_obj2 <- st_as_sf(conserved_sub_table,coords = c("x_TRUE", "y_TRUE"),crs = 4326)
-  
-  st_write(
-           sf_obj2,
-           file.path(path_to_Savanna_structure_GEDI_folder,
-                     "transformed_data",
-                      paste0(name,"_TRUE_positions.geojson")
-           )
-  )
+  # sf_obj <- st_as_sf(conserved_sub_table,coords = c("x_center_cell", "y_center_cell"),crs = 4326)
+  # 
+  # st_write(
+  #          sf_obj,
+  #          file.path(path_to_Savanna_structure_GEDI_folder,
+  #                    "transformed_data",
+  #                    paste0(name,"_center_cells.geojson")
+  #                    )
+  #          )
+  # 
+  # sf_obj2 <- st_as_sf(conserved_sub_table,coords = c("x_TRUE", "y_TRUE"),crs = 4326)
+  # 
+  # st_write(
+  #          sf_obj2,
+  #          file.path(path_to_Savanna_structure_GEDI_folder,
+  #                    "transformed_data",
+  #                     paste0(name,"_TRUE_positions.geojson")
+  #          )
+  # )
   print(paste(paste0(name,".RDS"),paste0(name,"center_cells.geojson"),paste0(name,"TRUE_positions.geojson"),"DONE"))
 }
 ```
