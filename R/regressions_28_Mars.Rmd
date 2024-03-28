@@ -1,0 +1,398 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r}
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R")
+# Setting the current path
+path_to_R_folder = file.path(
+                             path_to_Savanna_structure_GEDI_folder,
+                             "R"
+                             )
+setwd(path_to_R_folder)
+getwd()
+
+# Libraries
+library(fst)
+library(rjags)
+library(rstan)
+stan_version()
+
+# Rstan commands :
+options(mc.cores = parallel::detectCores())
+# if you are using rstan locally on a multicore machine and have plenty of RAM
+# to estimate your model in parallel
+rstan_options(auto_write = TRUE)
+# which allows you to automatically save a bare version of a compiled Stan program
+# to the hard disk so that it does not need to be recompiled (unless you change it).
+# You will need to run these commands each time you load the rstan library.
+
+# To verify rstan installation :
+# example(stan_model, package = "rstan", run.dontrun = TRUE)
+
+library(brms)
+
+# Encoding :
+print("é è û")
+```
+
+```{r}
+# Vérification qu'il n'y a pas de doublons :
+
+without_duplicate = readRDS(file = file.path(
+                                             path_to_Savanna_structure_GEDI_folder,
+                                             "rawdata",
+                                             "without_duplicate.RDS"
+                                             )
+                            )
+```
+
+```{r}
+# List of all ecoregions :
+unique(without_duplicate[,"ecoregion"])
+
+# Selection of ecoregions :
+table_Sahelian_Acacia <- without_duplicate[without_duplicate[,"ecoregion"] == "Sahelian_Acacia", ]
+nrow(table_Sahelian_Acacia)
+table_West_Sudanian <- without_duplicate[without_duplicate[,"ecoregion"] == "West_Sudanian", ]
+nrow(table_West_Sudanian)
+table_table_Guinean <- without_duplicate[without_duplicate[,"ecoregion"] == "Guinean_forest-savanna", ]
+nrow(table_Guinean)
+
+# "Sahelian_Acacia" : 21 422 708 points
+# "West_Sudanian" : 6 967 519 points
+# "Guinean_forest-savanna" : 3 248 787 points
+
+colSums(is.na(table_Guinean))
+```
+```{r}
+# all families' names (*) :
+browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
+
+require(brms)
+
+# prior
+default_prior = get_prior(
+                          formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
+
+                          data = table_Guinean,
+                          
+                          family = brmsfamily(family = "Gamma")
+                          # no info about the links in (*)
+                          # unlike the beta inflated
+                          )
+
+View(default_prior)
+
+# verify that the priors indeed found their way into Stan's model code
+make_stancode(formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
+
+              data = table_Guinean,
+                          
+              family = brmsfamily(family = "Gamma"),
+              # no info about the links in (*)
+              # unlike the beta inflated
+              
+              prior = default_prior
+              )
+
+# // generated with brms 2.20.4
+# functions {
+# }
+# data {
+#   int<lower=1> N;  // total number of observations
+#   vector[N] Y;  // response variable
+#   int<lower=1> K;  // number of population-level effects
+#   matrix[N, K] X;  // population-level design matrix
+#   int<lower=1> Kc;  // number of population-level effects after centering
+#   int prior_only;  // should the likelihood be ignored?
+# }
+# transformed data {
+#   matrix[N, Kc] Xc;  // centered version of X without an intercept
+#   vector[Kc] means_X;  // column means of X before centering
+#   for (i in 2:K) {
+#     means_X[i - 1] = mean(X[, i]);
+#     Xc[, i - 1] = X[, i] - means_X[i - 1];
+#   }
+# }
+# parameters {
+#   vector[Kc] b;  // regression coefficients
+#   real Intercept;  // temporary intercept for centered predictors !!
+#   real<lower=0> shape;  // shape parameter
+# }
+# transformed parameters {
+#   real lprior = 0;  // prior contributions to the log posterior
+#   lprior += student_t_lpdf(Intercept | 3, 2.1, 2.5);
+#   lprior += gamma_lpdf(shape | 0.01, 0.01);
+# }
+# model {
+#   // likelihood including constants
+#   if (!prior_only) {
+#     // initialize linear predictor term
+#     vector[N] mu = rep_vector(0.0, N);
+#     mu += Intercept + Xc * b;
+#     mu = exp(mu);
+#     target += gamma_lpdf(Y | shape, shape ./ mu);
+#   }
+#   // priors including constants
+#   target += lprior;
+# }
+# generated quantities {
+#   // actual population-level intercept
+#   real b_Intercept = Intercept - dot_product(means_X, b);
+# }
+```
+
+```{r}
+# set_prior documentation
+
+# set_prior(
+#           prior,
+#           prior A character string defining a distribution in Stan language
+#           
+#           class = "b",
+#           The parameter class. Defaults to "b" (i.e. population-level effects).
+#           See ’Details’ for other valid parameter classes.
+#           
+#           coef = "",
+#           Name of the coefficient within the parameter class.
+#           
+#           
+#           lb = NA,
+#           Lower bound for parameter restriction.
+#           Currently only allowed for classes "b".
+#           Defaults to NULL, that is no restriction.
+#           
+#           ub = NA,
+#           Upper bound for parameter restriction.
+#           Currently only allowed for classes "b". 
+#           Defaults to NULL, that is no restriction.
+#           
+#           )
+
+# si met des bornes, est-ce que ça contredit pas une distribution non-bornée ?
+
+# prior(): Alias of set_prior allowing to specify arguments as expressions without quotation marks.
+```
+
+```{r}
+summary(table_Guinean)
+```
+
+```{r}
+# all families' names (*) :
+# browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
+
+prior_1 = c(
+            prior(
+                  normal(1400,100),
+                  class="b",
+                  coef = mean_precip
+                  ),
+            
+            prior(
+                  normal(26,4),
+                  class="b",
+                  coef = mean_temp
+                  ),
+            
+            prior(
+                  normal(0.25,0.5),
+                  class="b",
+                  coef = fire_freq
+                  )
+            )
+
+View(prior_1)
+
+# verify that the priors indeed found their way into Stan's model code
+make_stancode(formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
+
+              data = table_Guinean,
+                          
+              family = brmsfamily(family = "Gamma"),
+              # no info about the links in (*)
+              # unlike the beta inflated 
+              
+              prior = prior_1
+              )
+```
+
+
+```{r}
+start <- Sys.time()
+print(start)
+
+mod2 <- brm(
+
+            formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
+
+            data = table_Guinean,
+            
+            family = brmsfamily(family = "Gamma"),
+            # no info about the links in (*)
+            # unlike the beta inflated 
+
+            prior = prior_1,
+
+            warmup = 10**3,
+            iter = 5*10**3,
+            thin = 10,
+            
+            # to save/load the file automatically
+            
+            # file = file.path(path_to_GEDI_raw_data,
+            #                  "outputs",
+            #                  "table_Guinean_1.RDS"),
+
+            chains = 3,
+            cores = 3,          
+            
+            # control = list(adapt_delta = 0.95), 
+            
+            silent = 0
+            # full comments
+            )
+
+print(Sys.time() - start)
+```
+
+
+```{r}
+# all families' names :
+# browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
+
+require(brms)
+
+# prior :
+
+# family = "zero_inflated_beta" might be sufficient for canopy_cover
+# as we have values in [0,1[
+# family = "zero_inflated_beta" should also work (takes [0,1])
+# (coi parameter in addition) 
+
+default_prior = get_prior(
+                          formula = canopy_cover ~ mean_precip + mean_temp  + fire_freq,
+
+                          data = table_Guinean,
+                          
+                          family = brmsfamily(
+                                              family = "zero_inflated_beta",
+                                              link = "logit",
+                                              link_phi = "log",
+                                              link_zi = "logit"
+                                              )
+                          )
+
+View(default_prior)
+
+# verify that the priors indeed found their way into Stan's model code
+make_stancode(formula = canopy_cover ~ mean_precip + mean_temp  + fire_freq,
+
+              data = table_Guinean,
+                          
+              family = brmsfamily(
+                                  family = "zero_inflated_beta",
+                                  link = "logit",
+                                  link_phi = "log",
+                                  link_zi = "logit"
+                                  ),
+              
+              prior = default_prior
+              )
+```
+
+
+```{r}
+# all families' names :
+# browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
+
+prior_2 = c(
+            prior(
+                  normal(1400,100),
+                  class="b",
+                  coef = mean_precip
+                  ),
+            
+            prior(
+                  normal(26,4),
+                  class="b",
+                  coef = mean_temp
+                  ),
+            
+            prior(
+                  normal(0.25,0.5),
+                  class="b",
+                  coef = fire_freq
+                  )
+            )
+
+View(prior_2)
+
+# verify that the priors indeed found their way into Stan's model code
+make_stancode(formula = canopy_cover ~ mean_precip + mean_temp  + fire_freq,
+
+              data = table_Guinean,
+                          
+              family = brmsfamily(
+                                  family = "zero_inflated_beta",
+                                  link = "logit",
+                                  link_phi = "log",
+                                  link_zi = "logit"
+                                  ),
+              
+              prior = prior_2
+              )
+```
+
+
+```{r}
+start <- Sys.time()
+print(start)
+
+mod2 <- brm(
+
+            formula = canopy_cover ~ mean_precip + mean_temp  + fire_freq,
+
+            data = table_Guinean,
+                          
+            family = brmsfamily(
+                                family = "zero_inflated_beta",
+                                link = "logit",
+                                link_phi = "log",
+                                link_zi = "logit"
+                                ),
+            
+            prior = prior_2,
+
+            warmup = 10**3,
+            iter = 5*10**3,
+            thin = 10,
+            
+            # to save/load the file automatically
+            
+            # file = file.path(path_to_GEDI_raw_data,
+            #                  "outputs",
+            #                  "table_Guinean_2.RDS"),
+
+            chains = 3,
+            cores = 3,          
+            
+            # control = list(adapt_delta = 0.95), 
+            
+            silent = 0
+            # full comments
+            )
+
+print(Sys.time() - start)
+```
+
+
+```{r}
+
+```

@@ -50,13 +50,23 @@ x <- table
 rm(table)
 
 ########################################## x <- la_table_propre_de_l_autre_fichier_la
+
+x <- cbind(x$x,x$y,x)
+colnames(x)
+ncol(x)
+
+colnames(x)[1] = "x_TRUE"
+colnames(x)[2] = "y_TRUE"
+
+colnames(x)
+
 #1) setting resolution
 #from data.frame to spatvector
 x <- terra::vect(x, geom = c("x", "y"), crs = "+proj=longlat +datum=WGS84") 
-#get x "window" : xmin, xmax, ymin, ymax
+# get x "window" : xmin, xmax, ymin, ymax
 x_ext <- terra::ext(x)
 # set a cell length, in meter
-cell <- 20000
+cell <- 10000
 dx <- geodist::geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[2],x_ext[3]), measure = "haversine")
 dy <- geodist::geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[1],x_ext[4]), measure = "haversine")
 (target_ncol <- round(dx/cell))
@@ -64,7 +74,8 @@ dy <- geodist::geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[1],x_ext[4]), measu
 
 #2) resampling
 y <- terra::rast(x, ncol = target_ncol, nrow = target_nrow)
-z <- terra::rasterize(x, y, fun = sample, size =1, field = colnames(terra::values(x)))
+z <- terra::rasterize(x, y, fun = sample, size = 1, field = colnames(terra::values(x)))
+# fun = sample , size = 1 to get one random sample in the cell
 trsf_data <- data.frame(cbind(crds(y), values(z)))
 
 grid_of_distant_cells <- function(target_nrow,target_ncol,plot_grid=FALSE){
@@ -97,11 +108,11 @@ grid_of_distant_cells <- function(target_nrow,target_ncol,plot_grid=FALSE){
   return(conserved)
 }
 
-# Tests of odd/even cases :
-conserved <- grid_of_distant_cells(3,5,TRUE)
-conserved <- grid_of_distant_cells(4,5,TRUE)
-conserved <- grid_of_distant_cells(3,6,TRUE)
-conserved <- grid_of_distant_cells(4,6,TRUE)
+# # Tests of odd/even cases :
+# conserved <- grid_of_distant_cells(3,5,TRUE)
+# conserved <- grid_of_distant_cells(4,5,TRUE)
+# conserved <- grid_of_distant_cells(3,6,TRUE)
+# conserved <- grid_of_distant_cells(4,6,TRUE)
 
 conserved <- grid_of_distant_cells(target_nrow,target_ncol)
 
@@ -130,10 +141,20 @@ nrow(trsf_data)
 conserved_sub_table <- trsf_data[conserved_indices,]
 nrow(conserved_sub_table)
 
+colnames(conserved_sub_table)
+ncol(conserved_sub_table)
+
+colnames(conserved_sub_table)[1] = "x_center_cell"
+colnames(conserved_sub_table)[2] = "y_center_cell"
+
+colnames(conserved_sub_table)
+
 # Normalement les données ne comportant déjà plus de NA, donc ligne suivante inutile
 conserved_sub_table <- conserved_sub_table[
-                        complete.cases(conserved_sub_table[,c("x",
-                                                              "y",
+                        complete.cases(conserved_sub_table[,c("x_center_cell",
+                                                              "y_center_cell",
+                                                              "x_TRUE",
+                                                              "y_TRUE",
                                                               "rh98",
                                                               "canopy_cover",
                                                               "fire_freq",
@@ -150,14 +171,23 @@ nrow(conserved_sub_table)
 # Pour enregistrer les 850 points en .geojson
 require(sf)
 
-sf_obj <- st_as_sf(conserved_sub_table,coords = c("x", "y"),crs = 4326)
+sf_obj <- st_as_sf(conserved_sub_table,coords = c("x_center_cell", "y_center_cell"),crs = 4326)
 
-# st_write(sf_obj,
-#          file.path(path_to_Savanna_structure_GEDI_folder,
-#                    "geojson_files",
-#                    "machin.geojson"
-#                    )
-#          )
+st_write(sf_obj,
+         file.path(path_to_Savanna_structure_GEDI_folder,
+                   "geojson_files",
+                   "center_cells.geojson"
+                   )
+         )
+
+sf_obj2 <- st_as_sf(conserved_sub_table,coords = c("x_TRUE", "y_TRUE"),crs = 4326)
+
+st_write(sf_obj2,
+         file.path(path_to_Savanna_structure_GEDI_folder,
+                   "geojson_files",
+                   "TRUE_positions.geojson"
+         )
+)
 
 ########################################## 
 
