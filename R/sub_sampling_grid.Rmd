@@ -87,9 +87,10 @@ cell <- 10**4
 
 names = c("Guinean_forest-savanna","West_Sudanian","Sahelian_Acacia") # for testing the loop
 # names = unique(complete_table$ecoregion) for all ecoregions
-#corresponding_tables = list()
 
-i = 0
+save_rds_files = FALSE
+save_coords_TRUE_geojson = FALSE
+save_coords_TRUE_geojson = FALSE
 
 for (name in names){
   
@@ -99,8 +100,6 @@ for (name in names){
                                            "complete_corresponding_table_without_duplicate_standardized.RDS"
                                            )
                           )
-  
-  i <- i +1
   
   print(name)
   
@@ -218,6 +217,8 @@ for (name in names){
   
   # Data saving in the transformed_data folder
   
+  if (save_rds_files ==TRUE){
+    
   saveRDS(
           object = conserved_sub_table,
           file = file.path(
@@ -225,28 +226,44 @@ for (name in names){
                            "transformed_data",
                            paste0(name,".RDS")
                            )
-          )
+          )    
   
-  # sf_obj <- st_as_sf(conserved_sub_table,coords = c("x_center_cell", "y_center_cell"),crs = 4326)
-  # 
-  # st_write(
-  #          sf_obj,
-  #          file.path(path_to_Savanna_structure_GEDI_folder,
-  #                    "transformed_data",
-  #                    paste0(name,"_center_cells.geojson")
-  #                    )
-  #          )
-  # 
-  # sf_obj2 <- st_as_sf(conserved_sub_table,coords = c("x_TRUE", "y_TRUE"),crs = 4326)
-  # 
-  # st_write(
-  #          sf_obj2,
-  #          file.path(path_to_Savanna_structure_GEDI_folder,
-  #                    "transformed_data",
-  #                     paste0(name,"_TRUE_positions.geojson")
-  #          )
-  # )
-  print(paste(paste0(name,".RDS"),paste0(name,"center_cells.geojson"),paste0(name,"TRUE_positions.geojson"),"DONE"))
+  print(paste(paste0(name,".RDS"),"DONE"))
+  
+  }
+  
+  if (save_center_cells_geojson ==TRUE){
+  
+  sf_obj <- st_as_sf(conserved_sub_table,coords = c("x_center_cell", "y_center_cell"),crs = 4326)
+
+  st_write(
+           sf_obj,
+           file.path(path_to_Savanna_structure_GEDI_folder,
+                     "transformed_data",
+                     paste0(name,"_center_cells.geojson")
+                     )
+           )
+  
+  print(paste(paste0(name,"center_cells.geojson"),"DONE"))
+
+  }
+  
+  if (save_coords_TRUE_geojson ==TRUE){
+    
+  sf_obj2 <- st_as_sf(conserved_sub_table,coords = c("x_TRUE", "y_TRUE"),crs = 4326)
+
+  st_write(
+           sf_obj2,
+           file.path(path_to_Savanna_structure_GEDI_folder,
+                     "transformed_data",
+                      paste0(name,"_TRUE_positions.geojson")
+           )
+  )
+  
+  print(paste(paste0(name,"TRUE_positions.geojson"),"DONE"))
+  
+  }
+  
 }
 ```
 
