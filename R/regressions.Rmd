@@ -60,6 +60,33 @@ colSums(is.na(table_Guinean))
 ```
 
 ```{r}
+# Quick summaries
+
+summary(table_Guinean[,c("rh98","canopy_cover")])
+print("-_____-")
+summary(table_Guinean[,c("fire_freq","mean_precip","mean_temp")])
+print("-_____________________-")
+summary(table_Guinean[,c("fire_freq_std","mean_precip_std","mean_temp_std")])
+
+```
+```{r}
+# Quick summaries
+
+summary(table_Guinean[,c("rh98","canopy_cover")])
+print("-_____-")
+summary(table_Guinean[,c("fire_freq","mean_precip","mean_temp")])
+print("-_____________________-")
+summary(table_Guinean[,c("fire_freq_std","mean_precip_std","mean_temp_std")])
+
+# see Savanna_structure_GEDI/figures/hists_canopy_rain_fire
+# for histograms of rh98 and canopy_cover
+
+# Online gadgets to see beta and gamma densities :
+browseURL("https://mathlets.org/mathlets/beta-distribution/")
+browseURL("https://www.desmos.com/calculator/vk2tqrxpk5?lang=fr")
+```
+
+```{r}
 # all families' names (*) :
 browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
 
