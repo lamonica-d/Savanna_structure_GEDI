@@ -87,12 +87,15 @@ cell <- 10**4
 
 names = c("Guinean_forest-savanna","West_Sudanian","Sahelian_Acacia") # for testing the loop
 # names = unique(complete_table$ecoregion) for all ecoregions
+# names = c("Guinean_forest-savanna")
 
-save_rds_files = TRUE
-save_center_cells_geojson = TRUE
-save_coords_TRUE_geojson = TRUE
+save_rds_files = 1
+save_center_cells_geojson = 1
+save_coords_TRUE_geojson = 1
 
 for (name in names){
+  
+  print(name)
   
   complete_table = readRDS(file = file.path(
                                            path_to_Savanna_structure_GEDI_folder,
@@ -101,13 +104,11 @@ for (name in names){
                                            )
                           )
   
-  print(name)
-  
   x <- complete_table[complete_table[,"ecoregion"] == name, ]
   
   rm(complete_table)
-
-  x <- cbind(x$x,x$y,x)
+  x <- cbind(x$x, x$y, x, index = 1:nrow(x))
+  x_new <- data.frame(coordx = x$x, coordy = x$y,index = 1:nrow(x))
   
   # print("colnames(x)")
   # print(colnames(x))
@@ -123,19 +124,22 @@ for (name in names){
   
   #1) setting resolution
   # from data.frame to spatvector
-  x <- terra::vect(x, geom = c("x", "y"), crs = "+proj=longlat +datum=WGS84") 
+  x_new_spatvector <- terra::vect(x_new, geom = c("coordx", "coordy"), crs = "+proj=longlat +datum=WGS84") 
   # get x "window" : xmin, xmax, ymin, ymax
-  x_ext <- terra::ext(x)
+  x_ext <- terra::ext(x_new_spatvector)
   dx <- geodist::geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[2],x_ext[3]), measure = "haversine")
   dy <- geodist::geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[1],x_ext[4]), measure = "haversine")
   (target_ncol <- round(dx/cell))
   (target_nrow <- round(dy/cell))
+
   
   #2) resampling
-  y <- terra::rast(x, ncol = target_ncol, nrow = target_nrow)
-  z <- terra::rasterize(x, y, fun = sample, size = 1, field = colnames(terra::values(x)))
+  y <- terra::rast(x_new_spatvector, ncol = target_ncol, nrow = target_nrow)
+  z <- terra::rasterize(x_new_spatvector, y, fun=sample, size = 1, field = "index")
   # fun = sample , size = 1 to get one random sample in the cell
-  trsf_data <- data.frame(cbind(crds(y), values(z)))
+  
+  #PROBLEME ICI, RECUP LES COORDONNEES DE LA GRILLE Y
+  #trsf_data <- merge(x,data.frame(index = z$index, crds(y)), by = "index")
   
   rm(x)
   rm(y)
@@ -187,17 +191,18 @@ for (name in names){
   # print("nrow(conserved_sub_table)")
   # print(nrow(conserved_sub_table))
   
-  colnames(conserved_sub_table)[1] = "x_center_cell"
-  colnames(conserved_sub_table)[2] = "y_center_cell"
+  colnames(conserved_sub_table)[4] = "x_center_cell"
+  colnames(conserved_sub_table)[5] = "y_center_cell"
   
   # print("colnames(conserved_sub_table)")
   # print(colnames(conserved_sub_table))
   
   conserved_sub_table <- conserved_sub_table[
-                        complete.cases(conserved_sub_table[,c("x_center_cell",
-                                                              "y_center_cell",
+                        complete.cases(conserved_sub_table[,c("index",
                                                               "x_TRUE",
                                                               "y_TRUE",
+                                                              "x_center_cell",
+                                                              "y_center_cell",
                                                               "rh98",
                                                               "canopy_cover",
                                                               "fire_freq",

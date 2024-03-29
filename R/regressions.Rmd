@@ -80,21 +80,66 @@ summary(table_Guinean[,c("fire_freq_std","mean_precip_std","mean_temp_std")])
 
 # see Savanna_structure_GEDI/figures/hists_canopy_rain_fire
 # for histograms of rh98 and canopy_cover
-
-# Online gadgets to see beta and gamma densities :
-browseURL("https://mathlets.org/mathlets/beta-distribution/")
-browseURL("https://www.desmos.com/calculator/vk2tqrxpk5?lang=fr")
 ```
 
 ```{r}
-# all families' names (*) :
-browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
+# Tests de corrélation sur la sous-grille
 
+cor(table_Guinean[,"rh98"],table_Guinean[,"canopy_cover"])
+# 0.36 mais j'avais 0.82 sur tout le jeu de données... hum
+
+complete_table = readRDS(file = file.path(
+                                           path_to_Savanna_structure_GEDI_folder,
+                                           "rawdata",
+                                           "complete_corresponding_table_without_duplicate_standardized.RDS"
+                                           )
+                          )
+
+complete_Guinean = complete_table[complete_table[,"ecoregion"] == "Guinean_forest-savanna",]
+rm(complete_table)
+
+paste(nrow(table_Guinean),nrow(complete_Guinean))
+
+cor(complete_Guinean[,"rh98"],complete_Guinean[,"canopy_cover"])
+
+summary(table_Guinean[,c("rh98","canopy_cover")])
+summary(complete_Guinean[,c("rh98","canopy_cover")])
+
+hist(table_Guinean[,c("rh98")],breaks=40)
+hist(complete_Guinean[,c("rh98")],breaks=40)
+
+hist(table_Guinean[,c("canopy_cover")],breaks=40)
+hist(complete_Guinean[,c("canopy_cover")],breaks=40)
+
+ok <- lm(canopy_cover ~ rh98, data = table_Guinean)
+plot(table_Guinean[,c("rh98","canopy_cover")])
+abline(ok$coefficients[1],ok$coefficients[2],col="red")
+
+ok <- lm(canopy_cover ~ rh98, data = complete_Guinean)
+plot(complete_Guinean[sample(1:nrow(complete_Guinean),1746,replace=FALSE),
+                      c("rh98","canopy_cover")]
+     )
+abline(ok$coefficients[1],ok$coefficients[2],col="red")
+
+summary(complete_Guinean[,c("rh98","canopy_cover","mean_precip_std","fire_freq_std")])
+```
+
+```{r}
+# Online gadgets to see beta and gamma densities :
+browseURL("https://mathlets.org/mathlets/beta-distribution/")
+browsURL("https://www.desmos.com/calculator/mnvwjlvnyj?lang=fr")
+browseURL("https://www.desmos.com/calculator/vk2tqrxpk5?lang=fr")
+# all brms families' names (*) :
+browseURL("https://rdrr.io/cran/brms/man/brmsfamily.html")
+# all see vignettes in zotero -> brms folder (or STAN folder)
+```
+
+```{r}
 require(brms)
 
 # prior
 default_prior = get_prior(
-                          formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
+                          formula = rh98 ~ fire_freq_std + mean_precip_std,
 
                           data = table_Guinean,
                           
