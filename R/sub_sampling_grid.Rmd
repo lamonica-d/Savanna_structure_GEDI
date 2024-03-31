@@ -107,8 +107,8 @@ for (name in names){
   x <- complete_table[complete_table[,"ecoregion"] == name, ]
   
   rm(complete_table)
-  x <- cbind(x$x, x$y, x, index = 1:nrow(x))
-  x_new <- data.frame(coordx = x$x, coordy = x$y,index = 1:nrow(x))
+  x <- cbind(x$x, x$y, x, index_point = 1:nrow(x))
+  x_new <- data.frame(coordx = x$x, coordy = x$y,index_point = 1:nrow(x))
   
   # print("colnames(x)")
   # print(colnames(x))
@@ -135,15 +135,18 @@ for (name in names){
   
   #2) resampling
   y <- terra::rast(x_new_spatvector, ncol = target_ncol, nrow = target_nrow)
-  z <- terra::rasterize(x_new_spatvector, y, fun=sample, size = 1, field = "index")
+  z <- terra::rasterize(x_new_spatvector, y, fun=sample, size = 1, field = "index_point")
   # fun = sample , size = 1 to get one random sample in the cell
   
   #PROBLEME ICI, RECUP LES COORDONNEES DE LA GRILLE Y
-  #trsf_data <- merge(x,data.frame(index = z$index, crds(y)), by = "index")
+  z2 <- data.frame(cbind(crds(y), values(z)))
+
+  trsf_data <- merge(x[,-c(3:4)],z2, by = "index_point")
   
   rm(x)
   rm(y)
   rm(z)
+  rm(z2)
   
   conserved <- grid_of_distant_cells(target_nrow,target_ncol)
   
@@ -191,18 +194,15 @@ for (name in names){
   # print("nrow(conserved_sub_table)")
   # print(nrow(conserved_sub_table))
   
-  colnames(conserved_sub_table)[4] = "x_center_cell"
-  colnames(conserved_sub_table)[5] = "y_center_cell"
+  colnames(conserved_sub_table)[ncol(conserved_sub_table)-1] = "x_center_cell"
+  colnames(conserved_sub_table)[ncol(conserved_sub_table)] = "y_center_cell"
   
   # print("colnames(conserved_sub_table)")
   # print(colnames(conserved_sub_table))
   
   conserved_sub_table <- conserved_sub_table[
-                        complete.cases(conserved_sub_table[,c("index",
-                                                              "x_TRUE",
+                        complete.cases(conserved_sub_table[,c( "x_TRUE",
                                                               "y_TRUE",
-                                                              "x_center_cell",
-                                                              "y_center_cell",
                                                               "rh98",
                                                               "canopy_cover",
                                                               "fire_freq",
@@ -212,7 +212,10 @@ for (name in names){
                                                               "fire_freq_NA",
                                                               "fire_freq_std",
                                                               "mean_precip_std",
-                                                              "mean_temp_std"
+                                                              "mean_temp_std",
+                                                               "x_center_cell",
+                                                              "y_center_cell",
+                                                              "index_point"
                                                                )
                                                            ]
                                         ),]
@@ -237,6 +240,7 @@ for (name in names){
   
   }
   
+  
   if (save_center_cells_geojson == TRUE){
   
   sf_obj <- st_as_sf(conserved_sub_table,coords = c("x_center_cell", "y_center_cell"),crs = 4326)
@@ -246,7 +250,7 @@ for (name in names){
            file.path(path_to_Savanna_structure_GEDI_folder,
                      "transformed_data",
                      paste0(name,"_center_cells.geojson")
-                     )
+                     ), delete_dsn = T
            )
   
   print(paste(paste0(name,"_center_cells.geojson"),"DONE"))
@@ -262,7 +266,7 @@ for (name in names){
            file.path(path_to_Savanna_structure_GEDI_folder,
                      "transformed_data",
                       paste0(name,"_TRUE_positions.geojson")
-           )
+           ), delete_dsn = T
   )
   
   print(paste(paste0(name,"_TRUE_positions.geojson"),"DONE"))
