@@ -5,3 +5,4 @@
 *.RDS
 .Rproj.user
 *.RDataTmp
+*.geojson
