@@ -35,4 +35,5 @@
 
 - **tests_regressions_STAN.Rmd** : tests STAN génériques pas spécifiques à nos données, liés aux fichiers stan dans le folder STAN_models
 - **preprocessing_from_raw_data.Rmd** : create *complete_corresponding_table_without_duplicate.RDS* and *complete_corresponding_table_without_duplicate_standardized.RDS* from raw data
-- **regressions.Rmd**
+- **sub_sampling_grid.RMD** : create the .RDS files for regressions and .geojson files to check if the sampling is fine, and for having global visualisations
+- **regressions_script.R** : 
