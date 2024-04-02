@@ -85,9 +85,9 @@ require(sf)
 cell <- 10**4
 # set a cell length, in meter
 
-names = c("Guinean_forest-savanna","West_Sudanian","Sahelian_Acacia") # for testing the loop
+# names = c("Guinean_forest-savanna","West_Sudanian","Sahelian_Acacia") # for testing the loop
 # names = unique(complete_table$ecoregion) for all ecoregions
-# names = c("Guinean_forest-savanna")
+names = c("Guinean_forest-savanna")
 
 save_rds_files = 1
 save_center_cells_geojson = 1
@@ -104,49 +104,84 @@ for (name in names){
                                            )
                           )
   
-  x <- complete_table[complete_table[,"ecoregion"] == name, ]
+  specific_table <- complete_table[complete_table[,"ecoregion"] == name, ]
   
   rm(complete_table)
-  x <- cbind(x$x, x$y, x, index_point = 1:nrow(x))
-  x_new <- data.frame(coordx = x$x, coordy = x$y,index_point = 1:nrow(x))
   
-  # print("colnames(x)")
-  # print(colnames(x))
-  # 
+  #
+  rownames(specific_table) = 1:nrow(specific_table)
+  specific_table <- cbind(
+                          1:nrow(specific_table),
+                          specific_table$x,
+                          specific_table$y,
+                          specific_table
+                          )
+  colnames(specific_table)[1] = "index"
+  colnames(specific_table)[2] = "x_TRUE"
+  colnames(specific_table)[3] = "y_TRUE"
+  # then "x" and "y" columns can be modified as x_TRUE and y_TRUE are saved
+  
+  table_new <- data.frame(
+                          index_point = specific_table$index,
+                          coordxTRUE = specific_table$x_TRUE,
+                          coordyTRUE = specific_table$y_TRUE
+                          )
+  # we just keep index x_TRUE and y_TRUE in table_new
+  
   # print("ncol(x)")
   # print(ncol(x))
-  
-  colnames(x)[1] = "x_TRUE"
-  colnames(x)[2] = "y_TRUE"
-  
   # print("colnames(x)")
   # print(colnames(x))
   
   #1) setting resolution
   # from data.frame to spatvector
-  x_new_spatvector <- terra::vect(x_new, geom = c("coordx", "coordy"), crs = "+proj=longlat +datum=WGS84") 
-  # get x "window" : xmin, xmax, ymin, ymax
-  x_ext <- terra::ext(x_new_spatvector)
-  dx <- geodist::geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[2],x_ext[3]), measure = "haversine")
-  dy <- geodist::geodist(x = c(x_ext[1],x_ext[3]), y = c(x_ext[1],x_ext[4]), measure = "haversine")
+  new_spatvector <- terra::vect(table_new, geom = c("coordxTRUE", "coordyTRUE"), crs = "+proj=longlat +datum=WGS84") 
+  # get new_spatvector "window" : xmin, xmax, ymin, ymax
+  window <- terra::ext(new_spatvector)
+  dx <- geodist::geodist(x = c(window[1],window[3]), y = c(window[2],window[3]), measure = "haversine")
+  dy <- geodist::geodist(x = c(window[1],window[3]), y = c(window[1],window[4]), measure = "haversine")
   (target_ncol <- round(dx/cell))
+  # Guinean 10**4 cells : 133
   (target_nrow <- round(dy/cell))
-
+  # Guinean 10**4 cells : 108
+  
+  # 133*108 = 14364
+  # dimensions of y an z : 108, 333, 1  (nrow, ncol, nlyr)
   
   #2) resampling
-  y <- terra::rast(x_new_spatvector, ncol = target_ncol, nrow = target_nrow)
-  z <- terra::rasterize(x_new_spatvector, y, fun=sample, size = 1, field = "index_point")
+  y <- terra::rast(new_spatvector, ncol = target_ncol, nrow = target_nrow)
+  z <- terra::rasterize(new_spatvector, y, fun=sample, size = 1, field = "index_point")
   # fun = sample , size = 1 to get one random sample in the cell
   
-  #PROBLEME ICI, RECUP LES COORDONNEES DE LA GRILLE Y
-  z2 <- data.frame(cbind(crds(y), values(z)))
-
-  trsf_data <- merge(x[,-c(3:4)],z2, by = "index_point")
+ #  > summary(z)
+ #  index_point     
+ # Min.   :    406  
+ # 1st Qu.:1014929  
+ # Median :1736696  
+ # Mean   :1754895  
+ # 3rd Qu.:2605406  
+ # Max.   :3248765  
+ # NA's   :29001    
   
-  rm(x)
+  intermediate_table = data.frame(cbind(crds(y), values(z)))
+  colnames(intermediate_table)[1] = "x_center_cell"
+  colnames(intermediate_table)[2] = "y_center_cell"
+  
+  # nrow(crds(y)) 35964
+  # length(values(z)) 35964 ok
+  
+  colnames(specific_table)[1] = "index_point"
+  # we add x_center_cell and y_center_cell to the specific_table thanks to index_point
+  trsf_data <- merge(intermediate_table,
+                     subset(specific_table, select = -c(x,y)),
+                     by = "index_point")
+  
+  rm(specific_table)
+  rm(new_spatvector)
   rm(y)
   rm(z)
-  rm(z2)
+  rm(intermediate_table)
+  rm(table_new)
   
   conserved <- grid_of_distant_cells(target_nrow,target_ncol)
   
@@ -163,14 +198,18 @@ for (name in names){
   
   # deletions
   for (s in 1:length(conserved)){
-    if(conserved[s] == TRUE){conserved_indices[s] = s}
+    if(s%%2 ==0
+      #conserved[s] == TRUE
+       ){conserved_indices[s] = s}
   }
   
   # print("conserved_indices")
   # print(conserved_indices[1:1000])
   
+  # On ne supprime les indices qu'ici et pas avant pour garder l'ordre des indices des lignes !
   conserved_indices <- conserved_indices[!is.na(conserved_indices)]
-  
+  # onserved_indices = 1:nrow(trsf_data) # no selection if this line is unquote
+    
   # print("conserved_indices")
   # print(conserved_indices[1:1000])
   # 
@@ -179,7 +218,7 @@ for (name in names){
   # 
   # print("length(conserved_indices)")
   # print(length(conserved_indices))
-  # 
+    
   # print("summary(conserved)")
   # print(summary(conserved))
   # 
@@ -194,14 +233,14 @@ for (name in names){
   # print("nrow(conserved_sub_table)")
   # print(nrow(conserved_sub_table))
   
-  colnames(conserved_sub_table)[ncol(conserved_sub_table)-1] = "x_center_cell"
-  colnames(conserved_sub_table)[ncol(conserved_sub_table)] = "y_center_cell"
-  
   # print("colnames(conserved_sub_table)")
   # print(colnames(conserved_sub_table))
   
   conserved_sub_table <- conserved_sub_table[
-                        complete.cases(conserved_sub_table[,c( "x_TRUE",
+                        complete.cases(conserved_sub_table[,c("index_point",
+                                                              "x_center_cell",
+                                                              "y_center_cell",
+                                                              "x_TRUE",
                                                               "y_TRUE",
                                                               "rh98",
                                                               "canopy_cover",
@@ -212,11 +251,8 @@ for (name in names){
                                                               "fire_freq_NA",
                                                               "fire_freq_std",
                                                               "mean_precip_std",
-                                                              "mean_temp_std",
-                                                               "x_center_cell",
-                                                              "y_center_cell",
-                                                              "index_point"
-                                                               )
+                                                              "mean_temp_std"
+                                                              )
                                                            ]
                                         ),]
   
