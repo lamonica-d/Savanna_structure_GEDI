@@ -103,7 +103,7 @@ mod_rh98 <- brm(
   
   # control = list(adapt_delta = 0.95), 
   
-  silent = 0
+  silent = 1
   # full comments
 )
 
@@ -185,7 +185,7 @@ mod_canopy_cover <- brm(
   
   # control = list(adapt_delta = 0.95), 
   
-  silent = 0
+  silent = 1
   # full comments
 )
 
