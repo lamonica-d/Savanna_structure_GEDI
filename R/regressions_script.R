@@ -2,11 +2,8 @@
 # Cleaning the environment
 rm(list=ls())
 # Getting the paths
-source("R/paths.R")
-path_to_R_folder = file.path(
-  path_to_Savanna_structure_GEDI_folder,
-  "R"
-)
+source("paths.R")
+path_to_R_folder = file.path(path_to_Savanna_structure_GEDI_folder,"R")
 
 # Libraries
 library(fst)
@@ -15,6 +12,7 @@ library(rstan)
 stan_version()
 library(stringr) 
 library(brms)
+library(corrplot)
 
 # Rstan commands :
 options(mc.cores = parallel::detectCores())
@@ -28,9 +26,15 @@ rstan_options(auto_write = TRUE)
 # To verify rstan installation :
 # example(stan_model, package = "rstan", run.dontrun = TRUE)
 
-(vect_names <- str_sub(list.files(path = path_to_GEDI_raw_data),end = -5))
+# (vect_names <- str_sub(list.files(path = path_to_GEDI_raw_data),end = -5))
+vect_names = c("Guinean_forest-savanna","West_Sudanian","Sahelian_Acacia")
+name = "Guinean_forest-savanna"
 
-for (name in vect_names[c(10,17,20)]){
+save_rds_files = FALSE
+plotland = TRUE
+# for (name in vect_names){
+
+print(name)
 
 table_region <- readRDS(
   file.path(
@@ -39,15 +43,50 @@ table_region <- readRDS(
     paste0(name,".RDS")
   )
 )
+
+table_region = subset(table_region, select = -c(index_point,keep) )
+
 print(nrow(table_region))
+cor_matrix <- cor(table_region[,c("rh98","canopy_cover","mean_precip_std","fire_freq_std","mean_temp_std")])
+cor_matrix[lower.tri(cor_matrix)] <- NA
+round(cor_matrix,2)
+
+if(plotland == TRUE){
+  
+  # Quick summaries
+  
+  print(summary(table_region[,c("rh98","canopy_cover")]))
+  print("-_____-")
+  print(summary(table_region[,c("fire_freq","mean_precip","mean_temp")]))
+  print("-_____________________-")
+  print(summary(table_region[,c("fire_freq_std","mean_precip_std","mean_temp_std")]))
+  
+  # see Savanna_structure_GEDI/figures/hists_canopy_rain_fire
+  # for histograms of rh98 and canopy_cover
+  
+plot(table_region[,c("canopy_cover","rh98")],
+     main=round(cor(table_region[,c("canopy_cover","rh98")]),2))
+
+plot(table_region[,c("mean_precip_std","rh98")],
+     main=round(cor(table_region[,c("mean_precip_std","rh98")]),2))
+plot(table_region[,c("fire_freq_std","rh98")],
+     main=round(cor(table_region[,c("fire_freq_std","rh98")]),2))
+plot(table_region[,c("mean_temp_std","rh98")],
+     main=round(cor(table_region[,c("mean_temp_std","rh98")]),2))
 
 
+plot(table_region[,c("mean_precip_std","canopy_cover")],
+     main=round(cor(table_region[,c("mean_precip_std","canopy_cover")]),2))
+plot(table_region[,c("fire_freq_std","canopy_cover")],
+     main=round(cor(table_region[,c("fire_freq_std","canopy_cover")]),2))
+plot(table_region[,c("mean_temp_std","canopy_cover")],
+     main=round(cor(table_region[,c("mean_temp_std","canopy_cover")]),2))
+
+}
 # prior
 default_prior = get_prior(
   formula = rh98 ~ fire_freq_std + mean_precip_std,
-  
   data = table_region,
-  
   family = brmsfamily(family = "Gamma")
   # no info about the links in (*)
   # unlike the beta inflated
@@ -73,33 +112,34 @@ prior_1 = c(
   )
 )
 
+#############################################"
 start <- Sys.time()
 print(start)
 
 mod_rh98 <- brm(
   
-  formula = rh98 ~ mean_precip + mean_temp  + fire_freq,
-  
+  formula = rh98 ~ mean_precip  + fire_freq,
   data = table_region,
-  
   family = brmsfamily(family = "Gamma"),
   # no info about the links in (*)
   # unlike the beta inflated 
   
   prior = prior_1,
   
-  warmup = 10**3,
-  iter = 5*10**3,
+  warmup = 2*10**3,
+  iter = 10**4,
   thin = 10,
   
   # to save/load the file automatically
   
-  # file = file.path(path_to_GEDI_raw_data,
-  #                  "outputs",
-  #                  "table_Guinean_1.RDS"),
+  file = file.path(
+                  path_to_Savanna_structure_GEDI_folder,
+                  "outputs",
+                  paste0(name,"_regression_rh98.RDS")
+                  ),
   
-  chains = 3,
-  cores = 3,          
+  chains = 4,
+  cores = 4,          
   
   # control = list(adapt_delta = 0.95), 
   
@@ -107,18 +147,20 @@ mod_rh98 <- brm(
   # full comments
 )
 
+
+################################################################################
 print(Sys.time() - start)
 
-saveRDS(mod_rh98,
-        file.path(
-          path_to_Savanna_structure_GEDI_folder,
-          "outputs",
-          paste0(name,"_regression_rh98.RDS")
-        )
-)
+# saveRDS(mod_rh98,
+#         file.path(
+#           path_to_Savanna_structure_GEDI_folder,
+#           "outputs",
+#           paste0(name,"_regression_rh98.RDS")
+#         )
+# )
 
 default_prior = get_prior(
-  formula = canopy_cover ~ mean_precip + mean_temp  + fire_freq,
+  formula = canopy_cover ~ mean_precip + fire_freq,
   
   data = table_region,
   
@@ -191,6 +233,7 @@ mod_canopy_cover <- brm(
 
 print(Sys.time() - start)
 
+if (save_rds_files ==TRUE){
 saveRDS(mod_canopy_cover,
         file.path(
           path_to_Savanna_structure_GEDI_folder,
@@ -198,5 +241,8 @@ saveRDS(mod_canopy_cover,
           paste0(name,"_regression_canopy_cover.RDS")
         )
 )
-
+  
+print(paste(paste0(name,"_regression_canopy_cover.RDS"),"DONE"))
 }
+
+# } # loop end
