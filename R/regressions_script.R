@@ -2,7 +2,7 @@
 # Cleaning the environment
 rm(list=ls())
 # Getting the paths
-source("R/paths.R")
+source("paths.R")
 path_to_R_folder = file.path(path_to_Savanna_structure_GEDI_folder,"R")
 setwd(path_to_R_folder)
 
@@ -145,6 +145,7 @@ mod_rh98 <- brm(
                 file = file.path(
                                 path_to_Savanna_structure_GEDI_folder,
                                 "outputs",
+                                "rh98",
                                 paste0(name,"_regression_rh98.RDS")
                                 ),
                 
@@ -164,6 +165,7 @@ print(Sys.time() - start)
 #           file.path(
 #             path_to_Savanna_structure_GEDI_folder,
 #             "outputs",
+#             "rh98",
 #             paste0(name,"_regression_rh98.RDS"))
 #           )
 #   
@@ -230,6 +232,7 @@ mod_canopy_cover <- brm(
                         file = file.path(
                                          path_to_Savanna_structure_GEDI_folder,
                                          "outputs",
+                                         "canopy_cover",
                                          paste0(name,"_regression_canopy_cover.RDS")
                         ),
                         
@@ -249,6 +252,7 @@ if (save_rds_files ==TRUE){
                                   file.path(
                                     path_to_Savanna_structure_GEDI_folder,
                                     "outputs",
+                                    "canopy_cover",
                                     paste0(name,"_regression_canopy_cover.RDS")
                                   )
 )
@@ -273,8 +277,9 @@ getwd()
 require(shinystan)
 lancer_shinystan = FALSE
 
-list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs"),full.names=TRUE)
-names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs"),full.names=FALSE)
+### rh98
+list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=TRUE)
+names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=FALSE)
 
 print("..･ヾ(。￣□￣)ﾂ")
 for(i in 1:length(list_of_ouputs)){
@@ -291,8 +296,104 @@ print(mcmc_output)
 # plot(mcmc_output,ask=FALSE)
 stancode(mcmc_output)
 
+### canopy_cover
+list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=TRUE)
+names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=FALSE)
+
+print("..･ヾ(。￣□￣)ﾂ")
+for(i in 1:length(list_of_ouputs)){
+  print(names_of_outputs[i])
+  print("########################################")
+  
+  mcmc_output <- readRDS(list_of_ouputs[i])
+  print(summary(mcmc_output))
+  if(lancer_shinystan == TRUE ){launch_shinystan(mcmc_output)}
+  print("########################################")
+}
+
+print(mcmc_output)
+# plot(mcmc_output,ask=FALSE)
+stancode(mcmc_output)
+
+########################################### Predictive density
 
 
+list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs"),full.names=TRUE)
+names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs"),full.names=FALSE)
 
+# test Gamma rh98 Guinean
+
+print(names_of_outputs[2]) 
+mcmc_output <- readRDS(list_of_ouputs[2])
+summary(mcmc_output)
+ls(summary(mcmc_output))
+
+summary(mcmc_output)$fixed
+summary(mcmc_output)$fixed$Estimate
+
+ls(summary(mcmc_output))
+summary(mcmc_output)$spec_pars
+summary(mcmc_output)$spec_pars$Estimate
+
+beta = as.matrix(summary(mcmc_output)$fixed$Estimate)
+table_region <- readRDS(
+                        file.path(
+                          path_to_Savanna_structure_GEDI_folder,
+                          "transformed_data",
+                          paste0("Guinean_forest-savanna",".RDS"))
+                        )
+
+table_region_rows = as.matrix(
+                             cbind(rep(1,nrow(table_region)),
+                                subset(table_region, select = c(fire_freq_std,mean_precip_std))
+                                  )
+                             )
+                         
+linear_predictor = table_region_rows%*%beta
+dim(linear_predictor)
+
+brms_theta = exp(linear_predictor)
+brms_shape = summary(mcmc_output)$spec_pars$Estimate
+
+# c(1,1)/c(2,3)
+R_scale = brms_theta/brms_shape
+R_shape = brms_shape
+
+simu_gamma
+for(i in 1:n=nrow(linear_predictor)){
+  
+          simu_gamma <- rgamma(
+            n=1000,
+            shape = R_shape, 
+            scale = R_scale[i]
+          )
+}
+
+plot(simu_gamma)
+hist(simu_gamma,breaks=30,freq=FALSE)
+
+hist(simu_gamma,breaks=50,freq=FALSE)
+hist(table_region$rh98,breaks=50,freq=FALSE)
+hist(table_region$canopy_cover,breaks=50,freq=FALSE)
+hist(table_region$mean_precip,breaks=50,freq=FALSE)
+
+{
+plot(table_region$rh98,simu_gamma)
+abline(0,1,col="red")
+}
+##### LOOP for all rh98 predictive densities :
+
+print("..･ヾ(。￣□￣)ﾂ")
+for(i in 1:length(list_of_ouputs)){
+  print(names_of_outputs[i])
+  print("########################################")
+  
+  mcmc_output <- readRDS(list_of_ouputs[i])
+  print(summary(mcmc_output))
+  if(lancer_shinystan == TRUE ){launch_shinystan(mcmc_output)}
+  print("########################################")
+}
+
+print(names_of_outputs[2])
 
 
