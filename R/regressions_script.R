@@ -2,7 +2,7 @@
 # Cleaning the environment
 rm(list=ls())
 # Getting the paths
-source("paths.R")
+source("R/paths.R")
 path_to_R_folder = file.path(path_to_Savanna_structure_GEDI_folder,"R")
 setwd(path_to_R_folder)
 
@@ -31,8 +31,9 @@ rstan_options(auto_write = TRUE)
 vect_names = c("Guinean_forest-savanna","West_Sudanian","Sahelian_Acacia")
 # name = "Guinean_forest-savanna"
 
-save_rds_files = TRUE
+save_rds_files = FALSE
 plotland = FALSE
+print_correlations = TRUE
 
 ############ LOOP
 
@@ -52,9 +53,13 @@ table_region = subset(table_region, select = -c(index_point,keep) )
 print("nrow(table_region)")
 print(nrow(table_region))
 
+if(print_correlations == TRUE){
+  
 cor_matrix <- cor(table_region[,c("rh98","canopy_cover","mean_precip_std","fire_freq_std","mean_temp_std")])
 cor_matrix[lower.tri(cor_matrix)] <- NA
 print(round(cor_matrix,2))
+
+}
 
 if(plotland == TRUE){
   
@@ -128,9 +133,7 @@ print("rh98 ~ fire_freq_std + mean_precip_std")
 mod_rh98 <- brm(
                 formula = rh98 ~ fire_freq_std + mean_precip_std,
                 data = table_region,
-                family = brmsfamily(family = "Gamma"),
-                # no info about the links in (*)
-                # unlike the beta inflated 
+                family = brmsfamily(family = "Gamma",link="log"),
                 
                 prior = NULL,
                 
@@ -139,7 +142,6 @@ mod_rh98 <- brm(
                 thin = 10,
                 
                 # to save/load the file automatically
-                
                 file = file.path(
                                 path_to_Savanna_structure_GEDI_folder,
                                 "outputs",
@@ -156,17 +158,17 @@ mod_rh98 <- brm(
 
 print(Sys.time() - start)
 
-if(save_rds_files==TRUE){
-  
-  saveRDS(mod_rh98,
-          file.path(
-            path_to_Savanna_structure_GEDI_folder,
-            "outputs",
-            paste0(name,"_regression_rh98.RDS"))
-          )
-  
-  print(paste(paste0(name,"_regression_rh98.RDS"),"DONE"))
-}
+# if(save_rds_files==TRUE){
+#   
+#   saveRDS(mod_rh98,
+#           file.path(
+#             path_to_Savanna_structure_GEDI_folder,
+#             "outputs",
+#             paste0(name,"_regression_rh98.RDS"))
+#           )
+#   
+#   print(paste(paste0(name,"_regression_rh98.RDS"),"DONE"))
+# }
 
 
 ############################################# canopy_cover
@@ -223,11 +225,13 @@ mod_canopy_cover <- brm(
                         warmup = 2*10**3,
                         iter = 10**4,
                         thin = 10,
-                        # to save/load the file automatically
                         
-                        # file = file.path(path_to_GEDI_raw_data,
-                        #                  "outputs",
-                        #                  "table_Guinean_2.RDS"),
+                        # to save/load the file automatically
+                        file = file.path(
+                                         path_to_Savanna_structure_GEDI_folder,
+                                         "outputs",
+                                         paste0(name,"_regression_canopy_cover.RDS")
+                        ),
                         
                         chains = 3,
                         cores = 3,          
@@ -256,21 +260,24 @@ print(paste(paste0(name,"_regression_canopy_cover.RDS"),"DONE"))
 
 
 ########################### RESULT ANALYSIS
-getwd()
 
-n <- length(
-            list.files(
-                       path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs"),
-                       full.names=TRUE # to have the complete path
-                       )
-            )
+#################################### Cleaning the environment if needed
+rm(list=ls())
+# Getting the paths
+source("paths.R")
+path_to_R_folder = file.path(path_to_Savanna_structure_GEDI_folder,"R")
+setwd(path_to_R_folder)
+getwd()
+#######################################################################
 
 require(shinystan)
 lancer_shinystan = FALSE
+
 list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs"),full.names=TRUE)
 names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs"),full.names=FALSE)
 
-for(i in 1:n){
+print("..･ヾ(。￣□￣)ﾂ")
+for(i in 1:length(list_of_ouputs)){
   print(names_of_outputs[i])
   print("########################################")
   
