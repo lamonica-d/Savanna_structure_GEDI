@@ -4,6 +4,7 @@ rm(list=ls())
 # Getting the paths
 source("paths.R")
 path_to_R_folder = file.path(path_to_Savanna_structure_GEDI_folder,"R")
+setwd(path_to_R_folder)
 
 # Libraries
 library(fst)
@@ -28,28 +29,32 @@ rstan_options(auto_write = TRUE)
 
 # (vect_names <- str_sub(list.files(path = path_to_GEDI_raw_data),end = -5))
 vect_names = c("Guinean_forest-savanna","West_Sudanian","Sahelian_Acacia")
-name = "Guinean_forest-savanna"
+# name = "Guinean_forest-savanna"
 
-save_rds_files = FALSE
-plotland = TRUE
-# for (name in vect_names){
+save_rds_files = TRUE
+plotland = FALSE
+
+############ LOOP
+
+for (name in vect_names){
 
 print(name)
 
 table_region <- readRDS(
-  file.path(
-    path_to_Savanna_structure_GEDI_folder,
-    "transformed_data",
-    paste0(name,".RDS")
-  )
-)
+                        file.path(
+                          path_to_Savanna_structure_GEDI_folder,
+                          "transformed_data",
+                          paste0(name,".RDS"))
+                        )
 
 table_region = subset(table_region, select = -c(index_point,keep) )
 
+print("nrow(table_region)")
 print(nrow(table_region))
+
 cor_matrix <- cor(table_region[,c("rh98","canopy_cover","mean_precip_std","fire_freq_std","mean_temp_std")])
 cor_matrix[lower.tri(cor_matrix)] <- NA
-round(cor_matrix,2)
+print(round(cor_matrix,2))
 
 if(plotland == TRUE){
   
@@ -83,166 +88,204 @@ plot(table_region[,c("mean_temp_std","canopy_cover")],
      main=round(cor(table_region[,c("mean_temp_std","canopy_cover")]),2))
 
 }
-# prior
-default_prior = get_prior(
-  formula = rh98 ~ fire_freq_std + mean_precip_std,
-  data = table_region,
-  family = brmsfamily(family = "Gamma")
-  # no info about the links in (*)
-  # unlike the beta inflated
-)
 
-prior_1 = c(
-  prior(
-    normal(1400,100),
-    class="b",
-    coef = mean_precip
-  ),
-  
-  prior(
-    normal(26,4),
-    class="b",
-    coef = mean_temp
-  ),
-  
-  prior(
-    normal(0.25,0.5),
-    class="b",
-    coef = fire_freq
-  )
-)
+############################################# rh98
 
-#############################################"
-start <- Sys.time()
-print(start)
+###### Priors
 
-mod_rh98 <- brm(
-  
-  formula = rh98 ~ mean_precip  + fire_freq,
-  data = table_region,
-  family = brmsfamily(family = "Gamma"),
-  # no info about the links in (*)
-  # unlike the beta inflated 
-  
-  prior = prior_1,
-  
-  warmup = 2*10**3,
-  iter = 10**4,
-  thin = 10,
-  
-  # to save/load the file automatically
-  
-  file = file.path(
-                  path_to_Savanna_structure_GEDI_folder,
-                  "outputs",
-                  paste0(name,"_regression_rh98.RDS")
-                  ),
-  
-  chains = 4,
-  cores = 4,          
-  
-  # control = list(adapt_delta = 0.95), 
-  
-  silent = 1
-  # full comments
-)
-
-
-################################################################################
-print(Sys.time() - start)
-
-# saveRDS(mod_rh98,
-#         file.path(
-#           path_to_Savanna_structure_GEDI_folder,
-#           "outputs",
-#           paste0(name,"_regression_rh98.RDS")
-#         )
+# default_prior = get_prior(
+#   formula = rh98 ~ fire_freq_std + mean_precip_std,
+#   data = table_region,
+#   family = brmsfamily(family = "Gamma")
+#   # no info about the links in (*)
+#   # unlike the beta inflated
 # )
 
-default_prior = get_prior(
-  formula = canopy_cover ~ mean_precip + fire_freq,
-  
-  data = table_region,
-  
-  family = brmsfamily(
-    family = "zero_inflated_beta",
-    link = "logit",
-    link_phi = "log",
-    link_zi = "logit"
-  )
+# prior_1 = c(
+#   prior(
+#     normal(1400,100),
+#     class="b",
+#     coef = mean_precip
+#   ),
+#   
+#   prior(
+#     normal(26,4),
+#     class="b",
+#     coef = mean_temp
+#   ),
+#   
+#   prior(
+#     normal(0.25,0.5),
+#     class="b",
+#     coef = fire_freq
+#   )
+# )
+
+start <- Sys.time()
+print(start)
+print("rh98 ~ fire_freq_std + mean_precip_std")
+
+mod_rh98 <- brm(
+                formula = rh98 ~ fire_freq_std + mean_precip_std,
+                data = table_region,
+                family = brmsfamily(family = "Gamma"),
+                # no info about the links in (*)
+                # unlike the beta inflated 
+                
+                prior = NULL,
+                
+                warmup = 2*10**3,
+                iter = 10**4,
+                thin = 10,
+                
+                # to save/load the file automatically
+                
+                file = file.path(
+                                path_to_Savanna_structure_GEDI_folder,
+                                "outputs",
+                                paste0(name,"_regression_rh98.RDS")
+                                ),
+                
+                chains = 4,
+                cores = 4,          
+                
+                # control = list(adapt_delta = 0.95), 
+                
+                silent = 1 # full comments
 )
 
+print(Sys.time() - start)
 
-prior_2 = c(
-  prior(
-    normal(1400,100),
-    class="b",
-    coef = mean_precip
-  ),
+if(save_rds_files==TRUE){
   
-  prior(
-    normal(26,4),
-    class="b",
-    coef = mean_temp
-  ),
+  saveRDS(mod_rh98,
+          file.path(
+            path_to_Savanna_structure_GEDI_folder,
+            "outputs",
+            paste0(name,"_regression_rh98.RDS"))
+          )
   
-  prior(
-    normal(0.25,0.5),
-    class="b",
-    coef = fire_freq
-  )
-)
+  print(paste(paste0(name,"_regression_rh98.RDS"),"DONE"))
+}
+
+
+############################################# canopy_cover
+
+# default_prior = get_prior(
+#                           formula = canopy_cover ~ mean_precip + fire_freq,
+#                           
+#                           data = table_region,
+#                           
+#                           family = brmsfamily(
+#                             family = "zero_inflated_beta",
+#                             link = "logit",
+#                             link_phi = "log",
+#                             link_zi = "logit"
+#                           )
+#                           )
+# 
+# 
+# prior_2 = c(
+#             prior(
+#               normal(1400,100),
+#               class="b",
+#               coef = mean_precip
+#             ),
+#             
+#             prior(
+#               normal(26,4),
+#               class="b",
+#               coef = mean_temp
+#             ),
+#             
+#             prior(
+#               normal(0.25,0.5),
+#               class="b",
+#               coef = fire_freq
+#             )
+# )
 
 
 start <- Sys.time()
 print(start)
+print("canopy_cover ~ fire_freq_std + mean_precip_std")
 
 mod_canopy_cover <- brm(
-  
-  formula = canopy_cover ~ mean_precip + mean_temp  + fire_freq,
-  
-  data = table_region,
-  
-  family = brmsfamily(
-    family = "zero_inflated_beta",
-    link = "logit",
-    link_phi = "log",
-    link_zi = "logit"
-  ),
-  
-  prior = prior_2,
-  
-  warmup = 10**3,
-  iter = 5*10**3,
-  thin = 10,
-  
-  # to save/load the file automatically
-  
-  # file = file.path(path_to_GEDI_raw_data,
-  #                  "outputs",
-  #                  "table_Guinean_2.RDS"),
-  
-  chains = 3,
-  cores = 3,          
-  
-  # control = list(adapt_delta = 0.95), 
-  
-  silent = 1
-  # full comments
+                        formula = canopy_cover ~ fire_freq_std + mean_precip_std,
+                        data = table_region,
+                        family = brmsfamily(
+                          family = "zero_inflated_beta",
+                          link = "logit",
+                          link_phi = "log",
+                          link_zi = "logit"
+                        ),
+                        prior = NULL,
+                        warmup = 2*10**3,
+                        iter = 10**4,
+                        thin = 10,
+                        # to save/load the file automatically
+                        
+                        # file = file.path(path_to_GEDI_raw_data,
+                        #                  "outputs",
+                        #                  "table_Guinean_2.RDS"),
+                        
+                        chains = 3,
+                        cores = 3,          
+                        
+                        # control = list(adapt_delta = 0.95), 
+                        
+                        silent = 1
+                        # full comments
 )
 
 print(Sys.time() - start)
 
 if (save_rds_files ==TRUE){
-saveRDS(mod_canopy_cover,
-        file.path(
-          path_to_Savanna_structure_GEDI_folder,
-          "outputs",
-          paste0(name,"_regression_canopy_cover.RDS")
-        )
+                          saveRDS(mod_canopy_cover,
+                                  file.path(
+                                    path_to_Savanna_structure_GEDI_folder,
+                                    "outputs",
+                                    paste0(name,"_regression_canopy_cover.RDS")
+                                  )
 )
   
 print(paste(paste0(name,"_regression_canopy_cover.RDS"),"DONE"))
 }
 
-# } # loop end
+} # loop end
+
+
+########################### RESULT ANALYSIS
+getwd()
+
+n <- length(
+            list.files(
+                       path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs"),
+                       full.names=TRUE # to have the complete path
+                       )
+            )
+
+require(shinystan)
+lancer_shinystan = FALSE
+list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs"),full.names=TRUE)
+names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs"),full.names=FALSE)
+
+for(i in 1:n){
+  print(names_of_outputs[i])
+  print("########################################")
+  
+  mcmc_output <- readRDS(list_of_ouputs[i])
+  print(summary(mcmc_output))
+  if(lancer_shinystan == TRUE ){launch_shinystan(mcmc_output)}
+  print("########################################")
+}
+
+print(mcmc_output)
+# plot(mcmc_output,ask=FALSE)
+stancode(mcmc_output)
+
+
+
+
+
+
