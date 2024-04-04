@@ -1,5 +1,7 @@
 set.seed(1234)
-
+rm(list=ls())
+source("paths.R")
+require(terra)
 grid_of_distant_cells <- function(target_nrow,target_ncol,plot_grid=FALSE){
   
   # first sub-grid
@@ -34,10 +36,11 @@ cell <- 10**4
 name = c("Guinean_forest-savanna")
 # complete_table = readRDS(file = file.path(
 #   path_to_Savanna_structure_GEDI_folder,
-#   "rawdata",
+#   "rawdata_post_preprocessing",
 #   "complete_corresponding_table_without_duplicate_standardized.RDS"
 # )
 # )
+
 specific_table <- complete_table[complete_table[,"ecoregion"] == name, ]
 rownames(specific_table) = 1:nrow(specific_table)
 specific_table <- cbind(
@@ -89,18 +92,33 @@ trsf_data <- merge(intermediate_table,
 
 conserved_sub_table <- trsf_data[trsf_data$keep==1,]
 
-table <- conserved_sub_table
+# table <- conserved_sub_table
+# dist_cc_TRUE <- as.numeric()
+# for (i in 1:nrow(table)){
+#   dist_cc_TRUE[i] = (1/1000) * geodist::geodist(x = table[i,3:4], y = table[i, 5:6])
+# }
+# (summary(dist_cc_TRUE))
+# dist_cc_TRUE[which(dist_cc_TRUE > sqrt(2)*10)]
+# (vect_indices <- table$index_point[which(dist_cc_TRUE > sqrt(2)*10)])
+# 
+# table0 <- specific_table[vect_indices,1:6]
+# tableF <- table[which(dist_cc_TRUE > sqrt(2)*10),1:7]
+# 
+# intermediate_table[which(intermediate_table$index_point == vect_indices[1]),]
+# table0[1,]
+# tableF[1,]
+
+### removing the "ejected" points in the sea and so on :
+colnames(conserved_sub_table)
+
 dist_cc_TRUE <- as.numeric()
-for (i in 1:nrow(table)){
-  dist_cc_TRUE[i] = (1/1000) * geodist::geodist(x = table[i,3:4], y = table[i, 5:6])
+for (i in 1:nrow(conserved_sub_table)){
+  dist_cc_TRUE[i] = (1/1000) * geodist::geodist(x = conserved_sub_table[i,3:4], y = conserved_sub_table[i, 5:6])
 }
-(summary(dist_cc_TRUE))
-dist_cc_TRUE[which(dist_cc_TRUE > sqrt(2)*10)]
-(vect_indices <- table$index_point[which(dist_cc_TRUE > sqrt(2)*10)])
+dist_cc_TRUE
+which(dist_cc_TRUE < sqrt(2)*10)
+length(which(dist_cc_TRUE < sqrt(2)*10))
+ultimate_conserved_sub_table <- conserved_sub_table[which(dist_cc_TRUE < sqrt(2)*10),]
+ultimate_conserved_sub_table <- subset(ultimate_conserved_sub_table, select = -c(index_point,keep) )
 
-table0 <- specific_table[vect_indices,1:6]
-tableF <- table[which(dist_cc_TRUE > sqrt(2)*10),1:7]
 
-intermediate_table[which(intermediate_table$index_point == vect_indices[1]),]
-table0[1,]
-tableF[1,]

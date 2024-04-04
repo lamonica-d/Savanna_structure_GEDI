@@ -21,6 +21,11 @@ getwd()
 library(fst)
 # Encoding :
 print("é è û")
+
+# Ecoregions :
+list.files(path = file.path(path_to_GEDI_raw_data),full.names=FALSE)
+# Specifically :
+list.files(path = file.path(path_to_GEDI_raw_data),full.names=FALSE)[c(10,18,19,23,26,27)]
 ```
 ```{r}
 # Concatenation of all data in complete_corresponding_table
@@ -93,9 +98,11 @@ for (i in 1:length(dir(path_to_GEDI_raw_data))){
 rm(TRUE_FALSE_is_fire_freq_NA)
 ```
 ```{r}
+# Les valeurs commentées sont celles de la première version des données, antérieure à Avril 2024 où Le Bien a ajouter et réorganiser des fichiers .fst
+
 # Y a-t-il des doublons ?
 
-# nrow(complete_corresponding_table)
+nrow(complete_corresponding_table)
 # [1] 45727445
 # nrow(unique(complete_corresponding_table[c("x","y")]))
 # [1] 45724087
@@ -139,7 +146,7 @@ nrow(without_duplicate)
 #         object = without_duplicate,
 #         file = file.path(
 #                          path_to_Savanna_structure_GEDI_folder,
-#                          "rawdata",
+#                          "rawdata_post_preprocessing",
 #                          "complete_corresponding_table_without_duplicate.RDS"
 #                          )
 #         )
@@ -147,7 +154,7 @@ nrow(without_duplicate)
 # without_duplicate <- readRDS(
 #                               file.path(
 #                                         path_to_Savanna_structure_GEDI_folder,
-#                                         "rawdata",
+#                                         "rawdata_post_preprocessing",
 #                                         "complete_corresponding_table_without_duplicate.RDS"
 #                                         )
 #                               )
@@ -158,7 +165,7 @@ nrow(without_duplicate)
 
 without_duplicate = readRDS(file = file.path(
                                              path_to_Savanna_structure_GEDI_folder,
-                                             "rawdata",
+                                             "rawdata_post_preprocessing",
                                              "complete_corresponding_table_without_duplicate.RDS"
                                              )
                             )
@@ -166,17 +173,17 @@ without_duplicate = readRDS(file = file.path(
 head(without_duplicate)
 
 require(janitor)
-duplicates <- janitor::get_dupes(without_duplicate, "x", "y")
+duplicates <- janitor::get_dupes(without_duplicate, "x", "y") # prend quelques minutes
 # On doit avoir le message :
 # -> No duplicate combinations found of: x, y
 ```
 
 ```{r}
-# Standardisation des données :
+# Standardisation des données sur toutes les données :
 
 sub_table <- readRDS(file = file.path(
                                        path_to_Savanna_structure_GEDI_folder,
-                                       "rawdata",
+                                       "rawdata_post_preprocessing",
                                        "complete_corresponding_table_without_duplicate.RDS"
                                        )
                      )
@@ -186,6 +193,7 @@ sub_table = cbind(sub_table,as.vector(scale(sub_table$mean_precip, center = TRUE
 sub_table = cbind(sub_table,as.vector(scale(sub_table$mean_temp, center = TRUE, scale = TRUE)))
 
 colnames(sub_table)
+head(sub_table)
 ncol(sub_table)
 
 colnames(sub_table)[10] = "fire_freq_std"
@@ -197,17 +205,66 @@ colnames(sub_table)
 summary(sub_table)
 colnames(sub_table)
 
-saveRDS(
-        object = sub_table,
-        file = file.path(
-                         path_to_Savanna_structure_GEDI_folder,
-                         "rawdata",
-                         "complete_corresponding_table_without_duplicate_standardized.RDS"
-                         )
-        )
+# saveRDS(
+#         object = sub_table,
+#         file = file.path(
+#                          path_to_Savanna_structure_GEDI_folder,
+#                          "rawdata_post_preprocessing",
+#                          "complete_corresponding_table_without_duplicate_standardized.RDS"
+#                          )
+#         )
+```
+```{r}
+# Standardisation et sauvegarde des données uniquement sur :
+
+list.files(path = file.path(path_to_GEDI_raw_data),full.names=FALSE)[c(10,18,19,23,26,27)]
+
+names = c("Guinean_forest-savanna","West_Sudanian_savanna","Sahelian_Acacia_savanna",
+          "Northern_Congolian_Forest-Savanna","Western_Congolian_forest-savanna","Southern_Congolian_forest-savanna")
+
+sub_table <- readRDS(file = file.path(
+                                       path_to_Savanna_structure_GEDI_folder,
+                                       "rawdata_post_preprocessing",
+                                       "complete_corresponding_table_without_duplicate.RDS"
+                                       )
+                     )
+
+nrow(sub_table)
+sub_table <- sub_table[which(sub_table[,"ecoregion"] %in% names), ]
+nrow(sub_table)
+
+unique(sub_table$ecoregion)
+
+sub_table = cbind(sub_table,as.vector(scale(sub_table$fire_freq, center = TRUE, scale = TRUE)))
+sub_table = cbind(sub_table,as.vector(scale(sub_table$mean_precip, center = TRUE, scale = TRUE)))
+sub_table = cbind(sub_table,as.vector(scale(sub_table$mean_temp, center = TRUE, scale = TRUE)))
+
+colnames(sub_table)
+head(sub_table)
+ncol(sub_table)
+
+colnames(sub_table)[10] = "fire_freq_std"
+colnames(sub_table)[11] = "mean_precip_std"
+colnames(sub_table)[12] = "mean_temp_std"
+
+colnames(sub_table)
+
+summary(sub_table)
+colnames(sub_table)
+
+# saveRDS(
+#         object = sub_table,
+#         file = file.path(
+#                          path_to_Savanna_structure_GEDI_folder,
+#                          "rawdata_post_preprocessing",
+#                          "6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS"
+#                          )
+#         )
 ```
 
 ```{r}
+# Les valeurs commentées sont celles de la première version des données, antérieure à Avril 2024 où Le Bien a ajouter et réorganiser des fichiers .fst
+
 # # List of all ecoregions :
 # unique(without_duplicate[,"ecoregion"])
 # 

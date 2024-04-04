@@ -27,18 +27,29 @@ rstan_options(auto_write = TRUE)
 # To verify rstan installation :
 # example(stan_model, package = "rstan", run.dontrun = TRUE)
 
+#################################################################
+
+vect_names = c("Guinean_forest-savanna","West_Sudanian_savanna","Sahelian_Acacia_savanna",
+          "Northern_Congolian_Forest-Savanna","Western_Congolian_forest-savanna","Southern_Congolian_forest-savanna")
+
+# vect_names = unique(complete_table$ecoregion) # for all ecoregions
+vect_names
+# if 6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS was loaded,
+# there are just the 6 ecoregions anyway
+
+# vect_names = c("Guinean_forest-savanna") # for testing the loop
+
 # (vect_names <- str_sub(list.files(path = path_to_GEDI_raw_data),end = -5))
-vect_names = c("Guinean_forest-savanna","West_Sudanian","Sahelian_Acacia")
-# name = "Guinean_forest-savanna"
 
 save_rds_files = FALSE
 plotland = FALSE
 print_correlations = TRUE
+launch_brms = FALSE
 
 ############ LOOP
 
 for (name in vect_names){
-
+print("###########################################################################")
 print(name)
 
 table_region <- readRDS(
@@ -47,8 +58,6 @@ table_region <- readRDS(
                           "transformed_data",
                           paste0(name,".RDS"))
                         )
-
-table_region = subset(table_region, select = -c(index_point,keep) )
 
 print("nrow(table_region)")
 print(nrow(table_region))
@@ -126,6 +135,8 @@ plot(table_region[,c("mean_temp_std","canopy_cover")],
 #   )
 # )
 
+if(launch_brms == TRUE){
+  
 start <- Sys.time()
 print(start)
 print("rh98 ~ fire_freq_std + mean_precip_std")
@@ -219,6 +230,7 @@ mod_canopy_cover <- brm(
                         data = table_region,
                         family = brmsfamily(
                           family = "zero_inflated_beta",
+                          # if in [0,1] with 1 included, we would need the zero_one_inflated_beta
                           link = "logit",
                           link_phi = "log",
                           link_zi = "logit"
@@ -259,6 +271,7 @@ if (save_rds_files ==TRUE){
   
 print(paste(paste0(name,"_regression_canopy_cover.RDS"),"DONE"))
 }
+} # end of brms part
 
 } # loop end
 
@@ -276,29 +289,11 @@ getwd()
 
 require(shinystan)
 lancer_shinystan = FALSE
-
-### rh98
-list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=TRUE)
-names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=FALSE)
-
-print("..･ヾ(。￣□￣)ﾂ")
-for(i in 1:length(list_of_ouputs)){
-  print(names_of_outputs[i])
-  print("########################################")
+# variable_name = "rh98"
+variable_name = "canopy_cover"
   
-  mcmc_output <- readRDS(list_of_ouputs[i])
-  print(summary(mcmc_output))
-  if(lancer_shinystan == TRUE ){launch_shinystan(mcmc_output)}
-  print("########################################")
-}
-
-print(mcmc_output)
-# plot(mcmc_output,ask=FALSE)
-stancode(mcmc_output)
-
-### canopy_cover
-list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=TRUE)
-names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=FALSE)
+list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs",variable_name),full.names=TRUE)
+names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs",variable_name),full.names=FALSE)
 
 print("..･ヾ(。￣□￣)ﾂ")
 for(i in 1:length(list_of_ouputs)){
@@ -317,25 +312,35 @@ stancode(mcmc_output)
 
 ########################################### Predictive density
 
-
-list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs"),full.names=TRUE)
-names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs"),full.names=FALSE)
-
 # test Gamma rh98 Guinean
 
-print(names_of_outputs[2]) 
-mcmc_output <- readRDS(list_of_ouputs[2])
-summary(mcmc_output)
-ls(summary(mcmc_output))
+variable_name = "rh98"
 
-summary(mcmc_output)$fixed
-summary(mcmc_output)$fixed$Estimate
+list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs",variable_name),full.names=TRUE)
+names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs",variable_name),full.names=FALSE)
 
-ls(summary(mcmc_output))
-summary(mcmc_output)$spec_pars
-summary(mcmc_output)$spec_pars$Estimate
+print(names_of_outputs[5])
+mcmc_output <- readRDS(list_of_ouputs[5])
 
-beta = as.matrix(summary(mcmc_output)$fixed$Estimate)
+# summary(mcmc_output)
+# ls(summary(mcmc_output))
+# 
+# summary(mcmc_output)$fixed
+# summary(mcmc_output)$fixed$Estimate
+# 
+# ls(summary(mcmc_output))
+# summary(mcmc_output)$spec_pars
+# summary(mcmc_output)$spec_pars$Estimate
+# 
+# beta_mean = as.matrix(summary(mcmc_output)$fixed$Estimate)
+
+mcmc_values <- as.data.frame(mcmc_output)
+nb_iter_mcmc <- nrow(mcmc_values)
+head(mcmc_values)
+mcmc_values[1,c("b_Intercept","b_fire_freq_std","b_mean_precip_std")]
+# mean(mcmc_values$b_Intercept)
+# summary(mcmc_output)$fixed
+
 table_region <- readRDS(
                         file.path(
                           path_to_Savanna_structure_GEDI_folder,
@@ -348,32 +353,50 @@ table_region_rows = as.matrix(
                                 subset(table_region, select = c(fire_freq_std,mean_precip_std))
                                   )
                              )
-                         
-linear_predictor = table_region_rows%*%beta
-dim(linear_predictor)
 
-brms_theta = exp(linear_predictor)
-brms_shape = summary(mcmc_output)$spec_pars$Estimate
+# linear_predictors_for_one_beta_draw_per_column <- table_region_rows%*%t(mcmc_values[1,c("b_Intercept","b_fire_freq_std","b_mean_precip_std")])
+# head(linear_predictors_for_one_beta_draw_per_column)
 
-# c(1,1)/c(2,3)
-R_scale = brms_theta/brms_shape
-R_shape = brms_shape
+linear_predictors_for_one_beta_draw_per_column = c()
+for(iter in 1:nb_iter_mcmc){
+  linear_predictors_for_one_beta_draw_per_column <- cbind(linear_predictors_for_one_beta_draw_per_column,
+                                                          table_region_rows%*%t(mcmc_values[iter,c("b_Intercept","b_fire_freq_std","b_mean_precip_std")]))
+}                     
+dim(linear_predictors_for_one_beta_draw_per_column)
+# nb_donnes * nb_iter_mcmc
 
-simu_gamma
-for(i in 1:n=nrow(linear_predictor)){
-  
-          simu_gamma <- rgamma(
-            n=1000,
-            shape = R_shape, 
-            scale = R_scale[i]
-          )
+simulations = matrix(nrow=nrow(linear_predictors_for_one_beta_draw_per_column),
+                      ncol=ncol(linear_predictors_for_one_beta_draw_per_column))
+
+I = nrow(simulations)
+J = ncol(simulations)
+
+for(i in 1:I){
+  for(j in 1:J){
+    print(paste("i",i,"/",I))
+    brms_theta = exp(linear_predictors_for_one_beta_draw_per_column[i,j])
+    brms_shape = mcmc_values[j,"shape"]
+    
+    R_scale = brms_theta/brms_shape
+    R_shape = brms_shape
+    
+    simulations[i,j] <- rgamma(n=1,shape = R_shape, scale = R_scale)
+  }
 }
 
-plot(simu_gamma)
-hist(simu_gamma,breaks=30,freq=FALSE)
+resultats_finaux = matrix(nrow=nrow(simulations),ncol=3)
+colnames(resultats_finaux) = c("quantile_inf","mean","quantile_sup")
 
-hist(simu_gamma,breaks=50,freq=FALSE)
+for(i in 1:nrow(simulations)){
+  resultats_finaux[i,] <- quantile(simulations[i,], probs = c(0.05,0.5,0.95))
+}
+
 hist(table_region$rh98,breaks=50,freq=FALSE)
+
+plot(1:nrow(simulations),resultats_finaux[,2])
+lines(1:nrow(simulations),resultats_finaux[,1],col="blue",type="p")
+lines(1:nrow(simulations),resultats_finaux[,3],col="darkblue",type="p")
+
 hist(table_region$canopy_cover,breaks=50,freq=FALSE)
 hist(table_region$mean_precip,breaks=50,freq=FALSE)
 

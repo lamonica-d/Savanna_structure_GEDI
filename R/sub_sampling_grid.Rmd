@@ -25,16 +25,20 @@ print("é è û")
 
 ```{r}
 # Data loading
+# HERE I take only the standardized data over :
+# names = c("Guinean_forest-savanna","West_Sudanian_savanna","Sahelian_Acacia_savanna",
+#           "Northern_Congolian_Forest-Savanna","Western_Congolian_forest-savanna","Southern_Congolian_forest-savanna")
 
-# complete_table = readRDS(file = file.path(
-#                                            path_to_Savanna_structure_GEDI_folder,
-#                                            "rawdata",
-#                                            "complete_corresponding_table_without_duplicate_standardized.RDS"
-#                                            )
-#                           )
+complete_table = readRDS(
+                         file = file.path(
+                         path_to_Savanna_structure_GEDI_folder,
+                         "rawdata_post_preprocessing",
+                         "6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS"
+                                          )
+                         )
 
 # To verify the standardisation and NAs :
-summary(complete_table)
+summary(complete_table) # you can see among other things if there are 1 for canopy_cover 
 colnames(complete_table)
 colSums(is.na(complete_table))
 ```
@@ -85,24 +89,34 @@ require(sf)
 cell <- 10**4
 # set a cell length, in meter
 
-names = c("Guinean_forest-savanna","West_Sudanian","Sahelian_Acacia") # for testing the loop
-# names = unique(complete_table$ecoregion) for all ecoregions
-# names = c("Guinean_forest-savanna")
+# names = c("Guinean_forest-savanna","West_Sudanian_savanna","Sahelian_Acacia_savanna",
+#           "Northern_Congolian_Forest-Savanna","Western_Congolian_forest-savanna","Southern_Congolian_forest-savanna")
 
-save_rds_files = 1
-save_center_cells_geojson = 1
-save_coords_TRUE_geojson = 1
+names = unique(complete_table$ecoregion) # for all ecoregions
+names
+# if 6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS was loaded,
+# there are just the 6 ecoregions anyway
+
+# names = c("Guinean_forest-savanna") # for testing the loop
+
+save_things = FALSE
+
+save_rds_files = save_things
+save_center_cells_geojson = save_things
+save_coords_TRUE_geojson = save_things
 
 for (name in names){
   
   print(name)
   
-  complete_table = readRDS(file = file.path(
-                                           path_to_Savanna_structure_GEDI_folder,
-                                           "rawdata",
-                                           "complete_corresponding_table_without_duplicate_standardized.RDS"
-                                           )
-                          )
+  complete_table = readRDS(
+                           file = file.path(
+                           path_to_Savanna_structure_GEDI_folder,
+                           "rawdata_post_preprocessing",
+                           "6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS"
+                                            )
+                           )
+
   
   specific_table <- complete_table[complete_table[,"ecoregion"] == name, ]
   
@@ -157,16 +171,6 @@ for (name in names){
   z <- terra::rasterize(new_spatvector, y, fun=sample, size = 1, field = "index_point")
   # fun = sample , size = 1 to get one random sample in the cell
   
-  #  > summary(z)
-  #  index_point     
-  # Min.   :    406  
-  # 1st Qu.:1014929  
-  # Median :1736696  
-  # Mean   :1754895  
-  # 3rd Qu.:2605406  
-  # Max.   :3248765  
-  # NA's   :29001    
-  
   intermediate_table = data.frame(cbind(values(y),crds(y), values(z)))
   colnames(intermediate_table)[1] = "keep"
   colnames(intermediate_table)[2] = "x_center_cell"
@@ -182,6 +186,18 @@ for (name in names){
                      by = "index_point")
   
   conserved_sub_table <- trsf_data[trsf_data$keep==1,]
+  conserved_sub_table <- subset(conserved_sub_table, select = -c(index_point,keep) )
+  
+  ### removing the "ejected" points in the sea and so on :
+  print(paste("nrow(conserved_sub_table) =",nrow(conserved_sub_table)))
+  print("goodbye points in the sea")
+  dist_cc_TRUE <- as.numeric()
+  for (i in 1:nrow(conserved_sub_table)){
+    dist_cc_TRUE[i] = (1/1000) * geodist::geodist(x = conserved_sub_table[i,1:2], y = conserved_sub_table[i, 3:4])
+  }
+  conserved_sub_table <- conserved_sub_table[which(dist_cc_TRUE < sqrt(2)*10),]
+  print(paste("nrow(conserved_sub_table) =",nrow(conserved_sub_table)))
+  ### 
   
   rm(specific_table)
   rm(new_spatvector)
@@ -262,6 +278,8 @@ for (name in names){
   }
   
 }
+
+print(list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"transformed_data"),full.names=FALSE))
 ```
 
 ```{r}
