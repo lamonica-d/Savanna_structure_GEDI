@@ -3,6 +3,7 @@
 rm(list=ls())
 # Getting the paths
 source("paths.R")
+source("R/paths.R")
 path_to_R_folder = file.path(path_to_Savanna_structure_GEDI_folder,"R")
 setwd(path_to_R_folder)
 
@@ -312,7 +313,7 @@ stancode(mcmc_output)
 
 ########################################### Predictive density
 
-# test Gamma rh98 Guinean
+# test Gamma rh98 West_Sudanian
 
 variable_name = "rh98"
 
@@ -345,7 +346,7 @@ table_region <- readRDS(
                         file.path(
                           path_to_Savanna_structure_GEDI_folder,
                           "transformed_data",
-                          paste0("Guinean_forest-savanna",".RDS"))
+                          paste0("West_Sudanian_savanna",".RDS"))
                         )
 
 table_region_rows = as.matrix(
@@ -372,8 +373,8 @@ I = nrow(simulations)
 J = ncol(simulations)
 
 for(i in 1:I){
+  print(paste("i",i,"/",I))
   for(j in 1:J){
-    print(paste("i",i,"/",I))
     brms_theta = exp(linear_predictors_for_one_beta_draw_per_column[i,j])
     brms_shape = mcmc_values[j,"shape"]
     
@@ -384,21 +385,33 @@ for(i in 1:I){
   }
 }
 
-resultats_finaux = matrix(nrow=nrow(simulations),ncol=3)
+resultats_finaux = matrix(nrow=I,ncol=3)
 colnames(resultats_finaux) = c("quantile_inf","mean","quantile_sup")
 
-for(i in 1:nrow(simulations)){
+for(i in 1:I){
   resultats_finaux[i,] <- quantile(simulations[i,], probs = c(0.05,0.5,0.95))
 }
 
-hist(table_region$rh98,breaks=50,freq=FALSE)
+hist(table_region$mean_precip,breaks=30)
+indices_of_increasing_mean_precip <- sort(table_region$mean_precip, index.return=TRUE)$ix
 
-plot(1:nrow(simulations),resultats_finaux[,2])
-lines(1:nrow(simulations),resultats_finaux[,1],col="blue",type="p")
-lines(1:nrow(simulations),resultats_finaux[,3],col="darkblue",type="p")
+plot(1:length(table_region$mean_precip),
+     table_region$mean_precip[indices_of_increasing_mean_precip],
+     xlab="indices ordonnés",
+     ylab="mean_precip croissant")
 
-hist(table_region$canopy_cover,breaks=50,freq=FALSE)
-hist(table_region$mean_precip,breaks=50,freq=FALSE)
+resultats_finaux <- resultats_finaux[indices_of_increasing_mean_precip,]
+
+{
+plot(1:I,
+     table_region$rh98[indices_of_increasing_mean_precip],
+     xlab="mean_precip croissant",
+     ylab="rh98"
+     )
+lines(1:I,resultats_finaux[,2],col="pink",lty=1)
+lines(1:I,resultats_finaux[,1],col="blue",lty=2)
+lines(1:I,resultats_finaux[,3],col="darkblue",lty=2)
+}
 
 {
 plot(table_region$rh98,simu_gamma)
