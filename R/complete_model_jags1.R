@@ -3,9 +3,8 @@
 # Cleaning the environment
 rm(list=ls())
 # Getting the paths
+source("paths.R")
 source("R/paths.R")
-path_to_R_folder = file.path(path_to_Savanna_structure_GEDI_folder,"R")
-
 # Libraries
 library(fst)
 library(rjags)
@@ -23,22 +22,29 @@ table_region <- readRDS(
       "transformed_data",
       paste0(name,".RDS"))
   )
-table_region = subset(table_region, select = -c(index_point,keep) )
+
+
 fire_freq_nozero <- table_region$fire_freq
 fire_freq_nozero[fire_freq_nozero == 0] <- 10**-4
+
 canopy_cover_nozero <- table_region$canopy_cover
 canopy_cover_nozero[canopy_cover_nozero == 0] <- 10**-4
+# ne vaut-il pas mieux faire un test type abs()<10**-14 ?
+
 table_region <- cbind(table_region, fire_freq_nozero = fire_freq_nozero,
                       canopy_cover_nozero = canopy_cover_nozero)
+head(table_region,2)
 
 data <- list(N = nrow(table_region), 
-             rh98 = table_region$rh98, fire_freq = table_region$fire_freq_nozero, 
+             rh98 = table_region$rh98,
+             fire_freq = table_region$fire_freq_nozero, 
              canopy_cover = table_region$canopy_cover_nozero,
-             prec_input = table_region$mean_precip_std, ff_input = table_region$fire_freq_std, 
+             prec_input = table_region$mean_precip_std,
+             ff_input = table_region$fire_freq_std, 
              cc_input = scale(table_region$canopy_cover, scale = T, center = T)[1:nrow(table_region)]
 ) 
 
-#model and jags inference
+# model and jags inference
 model1 <-  "
 model {
   

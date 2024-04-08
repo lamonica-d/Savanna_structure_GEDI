@@ -42,10 +42,10 @@ vect_names
 
 # (vect_names <- str_sub(list.files(path = path_to_GEDI_raw_data),end = -5))
 
-save_rds_files = FALSE
+save_rds_files = TRUE
 plotland = FALSE
 print_correlations = TRUE
-launch_brms = FALSE
+launch_brms = TRUE
 
 ############ LOOP
 
@@ -226,52 +226,53 @@ start <- Sys.time()
 print(start)
 print("canopy_cover ~ fire_freq_std + mean_precip_std")
 
-mod_canopy_cover <- brm(
-                        formula = canopy_cover ~ fire_freq_std + mean_precip_std,
-                        data = table_region,
-                        family = brmsfamily(
-                          family = "zero_inflated_beta",
-                          # if in [0,1] with 1 included, we would need the zero_one_inflated_beta
-                          link = "logit",
-                          link_phi = "log",
-                          link_zi = "logit"
-                        ),
-                        prior = NULL,
-                        warmup = 2*10**3,
-                        iter = 10**4,
-                        thin = 10,
-                        
-                        # to save/load the file automatically
-                        file = file.path(
-                                         path_to_Savanna_structure_GEDI_folder,
-                                         "outputs",
-                                         "canopy_cover",
-                                         paste0(name,"_regression_canopy_cover.RDS")
-                        ),
-                        
-                        chains = 3,
-                        cores = 3,          
-                        
-                        # control = list(adapt_delta = 0.95), 
-                        
-                        silent = 1
-                        # full comments
-)
+# mod_canopy_cover <- brm(
+#                         formula = canopy_cover ~ fire_freq_std + mean_precip_std,
+#                         data = table_region,
+#                         family = brmsfamily(
+#                           family = "zero_inflated_beta",
+#                           # if in [0,1] with 1 included, we would need the zero_one_inflated_beta
+#                           link = "logit",
+#                           link_phi = "log",
+#                           link_zi = "logit"
+#                         ),
+#                         prior = NULL,
+#                         warmup = 2*10**3,
+#                         iter = 10**4,
+#                         thin = 10,
+#                         
+#                         # to save/load the file automatically
+#                         file = file.path(
+#                                          path_to_Savanna_structure_GEDI_folder,
+#                                          "outputs",
+#                                          "canopy_cover",
+#                                          paste0(name,"_regression_canopy_cover.RDS")
+#                         ),
+#                         
+#                         chains = 3,
+#                         cores = 3,          
+#                         
+#                         # control = list(adapt_delta = 0.95), 
+#                         
+#                         silent = 1
+#                         # full comments
+# )
+# 
+# print(Sys.time() - start)
+# 
+# if (save_rds_files ==TRUE){
+#                           saveRDS(mod_canopy_cover,
+#                                   file.path(
+#                                     path_to_Savanna_structure_GEDI_folder,
+#                                     "outputs",
+#                                     "canopy_cover",
+#                                     paste0(name,"_regression_canopy_cover.RDS")
+#                                   )
+# )
 
-print(Sys.time() - start)
+# print(paste(paste0(name,"_regression_canopy_cover.RDS"),"DONE"))
+# }
 
-if (save_rds_files ==TRUE){
-                          saveRDS(mod_canopy_cover,
-                                  file.path(
-                                    path_to_Savanna_structure_GEDI_folder,
-                                    "outputs",
-                                    "canopy_cover",
-                                    paste0(name,"_regression_canopy_cover.RDS")
-                                  )
-)
-  
-print(paste(paste0(name,"_regression_canopy_cover.RDS"),"DONE"))
-}
 } # end of brms part
 
 } # loop end
