@@ -125,7 +125,7 @@ for(i in 1:I){
 }
 
 hist(table_region$rh98,breaks=50,xlim=c(0,30))
-hist(table_region$pred_rh98_mean,breaks=50,xlim=c(0,30))
+hist(simulations[1,],breaks=50,xlim=c(0,30))
 {plot(table_region$rh98,table_region$pred_rh98_mean,xlim=c(0,30),ylim=c(0,30))
 abline(0,1,col="red")}
 
