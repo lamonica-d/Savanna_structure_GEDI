@@ -48,12 +48,22 @@ head(mcmc_values)
 
 mcmc_values[1,c("b_Intercept","b_fire_freq_std","b_mean_precip_std")]
 
-table_region <- readRDS(
+{
+  table_region <- readRDS(
                         file.path(
                           path_to_Savanna_structure_GEDI_folder,
                           "transformed_data",
                           paste0("Guinean_forest-savanna",".RDS"))
                         )
+
+  table_region <- cbind(subset(table_region,select=rh98),
+                        as.data.frame(matrix(nrow=nrow(table_region),ncol=3)),
+                        subset(table_region,select=-rh98)
+                        )
+  colnames(table_region)[2] = c("pred_rh98_quantile_inf")
+  colnames(table_region)[3] = c("pred_rh98_median")
+  colnames(table_region)[4] = c("pred_rh98_quantile_sup")
+}
 
 # make_stancode(formula = rh98 ~ fire_freq_std + mean_precip_std,
 #               data = table_region,
@@ -98,55 +108,173 @@ for(i in 1:I){
 print(paste("pour",J,"j"))
 }
 
-
-# hist(simulations[1,],breaks=30)
+# hist(simulations[1,],breaks = 30)
 # quantile(simulations[1,], probs = c(0.05,0.5,0.95))
 
-table_region <- cbind(table_region,as.data.frame(matrix(nrow=I,ncol=3)))
-colnames(table_region)[ncol(table_region)-2] = c("pred_rh98_quantile_inf")
-colnames(table_region)[ncol(table_region)-1] = c("pred_rh98_mean")
-colnames(table_region)[ncol(table_region)] = c("pred_rh98_quantile_sup")
-
+{
 for(i in 1:I){
   table_region[i,c("pred_rh98_quantile_inf",
-                   "pred_rh98_mean",
+                   "pred_rh98_median",
                    "pred_rh98_quantile_sup")] <- quantile(simulations[i,], probs = c(0.05,0.5,0.95))
-}
+  }
 
-{
+
   plot(1:I,
        table_region$rh98,
        xlab="i",
        ylab="rh98"
   )
-  lines(1:I,table_region[,"pred_rh98_mean"],col="pink",lty=1)
+  lines(1:I,table_region[,"pred_rh98_median"],col="pink",lty=1)
   lines(1:I,table_region[,"pred_rh98_quantile_inf"],col="blue",lty=2)
   lines(1:I,table_region[,"pred_rh98_quantile_sup"],col="darkblue",lty=2)
 }
 
-hist(table_region$rh98,breaks=50,xlim=c(0,30))
-hist(simulations[1,],breaks=50,xlim=c(0,30))
-{plot(table_region$rh98,table_region$pred_rh98_mean,xlim=c(0,30),ylim=c(0,30))
-abline(0,1,col="red")}
+{
 
 indices_of_increasing_rh98 <- sort(table_region$rh98, index.return=TRUE)$ix
 ordered_table_region <- table_region[indices_of_increasing_rh98,]
 
-plot(1:length(ordered_table_region$rh98),
-     ordered_table_region$rh98,
-     xlab="indices ordonnés",
-     ylab="rh98 croissant")
-
-
-{
   plot(1:I,
        ordered_table_region$rh98,
        xlab="i",
        ylab="rh98"
   )
-  lines(1:I,ordered_table_region[,"pred_rh98_mean"],col="pink",lty=1)
+  lines(1:I,ordered_table_region[,"pred_rh98_median"],col="pink",lty=1)
   lines(1:I,ordered_table_region[,"pred_rh98_quantile_inf"],col="blue",lty=2)
   lines(1:I,ordered_table_region[,"pred_rh98_quantile_sup"],col="darkblue",lty=2)
+}
+
+####### Sur les n premières valeurs
+
+n = 100
+{
+  plot(1:n,
+       table_region$rh98[1:n],
+       xlab="i",
+       ylab="rh98",
+       ylim=c(0,max(table_region$rh98[1:n]))
+  )
+  lines(1:n,table_region[1:n,"pred_rh98_median"],col="pink",lty=1)
+  lines(1:n,table_region[1:n,"pred_rh98_quantile_inf"],col="blue",lty=2)
+  lines(1:n,table_region[1:n,"pred_rh98_quantile_sup"],col="darkblue",lty=2)
+
+  indices_of_increasing_rh98 <- sort(table_region$rh98, index.return=TRUE)$ix
+  ordered_table_region <- table_region[indices_of_increasing_rh98,]
+  
+  plot(1:n,
+       ordered_table_region$rh98[1:n],
+       xlab="i",
+       ylab="rh98",
+       ylim=c(0,max(table_region$rh98[1:n]))
+  )
+  lines(1:n,ordered_table_region[1:n,"pred_rh98_median"],col="pink",lty=1)
+  lines(1:n,ordered_table_region[1:n,"pred_rh98_quantile_inf"],col="blue",lty=2)
+  lines(1:n,ordered_table_region[1:n,"pred_rh98_quantile_sup"],col="darkblue",lty=2)
+}
+#### fin du truc sur les n premières valeurs
+
+indices_of_increasing_rh98[1:5]
+table_region[indices_of_increasing_rh98[1:5],"pred_rh98_median"]
+head(ordered_table_region[,"pred_rh98_median"],5)
+
+# Vraies valeurs
+mean(table_region$rh98)
+sd(table_region$rh98)
+
+# Comparaison avec la simulation 1
+j = 1
+simu <- simulations[,j]
+
+mean(simu)
+mean(table_region$rh98)
+
+sd(simu)
+sd(table_region$rh98)
+
+hist(table_region$rh98,
+     freq=FALSE,
+     breaks=50,
+     xlim=c(0,30)
+     )
+
+hist(simulations[1,],
+     freq=FALSE,
+     breaks=50,
+     xlim=c(0,30)
+     )
+
+mean(table_region$rh98)
+sd(table_region$rh98)
+
+####################
+for(j in sample(1:J,10,replace=FALSE)){
+  
+  simu <- simulations[,j]
+  
+  hist(table_region$rh98,
+       freq=FALSE,
+       breaks=50,
+       xlim=c(0,30),
+       main="true rh98"
+  )
+  
+  hist(simulations[,j],
+       freq=FALSE,
+       breaks=50,
+       xlim=c(0,30),
+       main = paste("betas n°",j)
+  )
+  
+  print(mean(simu))
+  print(sd(simu))
+  print("-_-")
+  
+  {plot(table_region$rh98,
+        simulations[,j],
+        xlim=c(0,30),
+        ylim=c(0,30),
+        main = paste("betas n°",j)
+  )
+    abline(0,1,col="red")
+  }
+}
+
+##################################
+
+{
+moyennes <- vector(length = J)
+ecarts_types <- vector(length = J)
+
+for(j in 1:J){
+  moyennes[j] <- mean(simulations[,j])
+  ecarts_types[j] <- sd(simulations[,j])
+}
+
+# Histogramme des moyennes
+{hist(moyennes,
+      freq=FALSE,
+      breaks=50,
+      xlim=c(min(moyennes)-1,max(moyennes)+1),
+      main=paste(round(mean(table_region$rh98),3),"; simus=",round(mean(moyennes),3))
+)
+  abline(v=mean(moyennes),
+         col="steelblue")
+  
+  abline(v=mean(table_region$rh98),
+         col="blue")}
+
+# Histogramme des écarts-types
+{hist(ecarts_types,
+      freq=FALSE,
+      breaks=50,
+      xlim=c(min(ecarts_types)-1,max(ecarts_types)+1),
+      main=paste(round(sd(table_region$rh98),3),"; simus=",round(mean(ecarts_types),3))
+)
+  abline(v=mean(ecarts_types),
+         col="orange")
+  abline(v=sd(table_region$rh98),
+         col="green")}
+
 }
 
 #####################################################################################################################
@@ -159,20 +287,38 @@ names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_fo
 
 print(names_of_outputs[1])
 mcmc_output <- readRDS(list_of_ouputs[1])
+print(summary(mcmc_output)$spec_pars[1])
+
 mcmc_values <- as.data.frame(mcmc_output)
 J = nrow(mcmc_values)
 head(mcmc_values)
 
 mcmc_values[1,c("b_Intercept","b_fire_freq_std","b_mean_precip_std")]
 
-table_region <- readRDS(
-  file.path(
-    path_to_Savanna_structure_GEDI_folder,
-    "transformed_data",
-    paste0("Guinean_forest-savanna",".RDS"))
-)
+{
+  table_region <- readRDS(
+    file.path(
+      path_to_Savanna_structure_GEDI_folder,
+      "transformed_data",
+      paste0("Guinean_forest-savanna",".RDS"))
+  )
+  
+  table_region <- cbind(subset(table_region,select=canopy_cover),
+                        as.data.frame(matrix(nrow=nrow(table_region),ncol=3)),
+                        subset(table_region,select=-canopy_cover)
+  )
+  colnames(table_region)[2] = c("pred_canopy_cover_quantile_inf")
+  colnames(table_region)[3] = c("pred_canopy_cover_median")
+  colnames(table_region)[4] = c("pred_canopy_cover_quantile_sup")
+}
 
 stancode(mcmc_output)
+
+table_region_rows = as.matrix(
+  cbind(rep(1,nrow(table_region)),
+        subset(table_region, select = c(fire_freq_std,mean_precip_std))
+  )
+)
 
 dim(table_region_rows)
 I = nrow(table_region_rows)
@@ -219,50 +365,157 @@ for(i in 1:I){
   }
 }
 
-
-table_region <- cbind(table_region,as.data.frame(matrix(nrow=I,ncol=3)))
-colnames(table_region)[ncol(table_region)-2] = c("pred_canopy_cover_quantile_inf")
-colnames(table_region)[ncol(table_region)-1] = c("pred_canopy_cover_mean")
-colnames(table_region)[ncol(table_region)] = c("pred_canopy_cover_quantile_sup")
-
-for(i in 1:I){
-  table_region[i,c("pred_canopy_cover_quantile_inf",
-                   "pred_canopy_cover_mean",
-                   "pred_canopy_cover_quantile_sup")] <- quantile(simulations[i,], probs = c(0.05,0.5,0.95))
-}
-
 {
+  
+  for(i in 1:I){
+  table_region[i,c("pred_canopy_cover_quantile_inf",
+                   "pred_canopy_cover_median",
+                   "pred_canopy_cover_quantile_sup")] <- quantile(simulations[i,], probs = c(0.05,0.5,0.95))
+  }
+
+
   plot(1:I,
        table_region$canopy_cover,
        xlab="i",
        ylab="canopy_cover"
   )
-  lines(1:I,table_region[,"pred_canopy_cover_mean"],col="pink",lty=1)
+  lines(1:I,table_region[,"pred_canopy_cover_median"],col="pink",lty=1)
   lines(1:I,table_region[,"pred_canopy_cover_quantile_inf"],col="blue",lty=2)
   lines(1:I,table_region[,"pred_canopy_cover_quantile_sup"],col="darkblue",lty=2)
 }
 
-hist(table_region$canopy_cover,breaks=50,xlim=c(0,1))
-hist(table_region$pred_canopy_cover_mean,breaks=50,xlim=c(0,1))
-{plot(table_region$canopy_cover,table_region$pred_canopy_cover_mean,xlim=c(0,1),ylim=c(0,1))
-  abline(0,1,col="red")}
-
-indices_of_increasing_canopy_cover <- sort(table_region$canopy_cover, index.return=TRUE)$ix
-ordered_table_region <- table_region[indices_of_increasing_canopy_cover,]
-
-plot(1:length(ordered_table_region$canopy_cover),
-     ordered_table_region$canopy_cover,
-     xlab="indices ordonnés",
-     ylab="canopy_cover croissant")
-
-
 {
+  
+  indices_of_increasing_canopy_cover <- sort(table_region$canopy_cover, index.return=TRUE)$ix
+  ordered_table_region <- table_region[indices_of_increasing_canopy_cover,]
+  
   plot(1:I,
-       ordered_table_region$rh98,
+       ordered_table_region$canopy_cover,
        xlab="i",
        ylab="canopy_cover"
   )
-  lines(1:I,table_region[,"pred_canopy_cover_mean"],col="pink",lty=1)
-  lines(1:I,table_region[,"pred_canopy_cover_quantile_inf"],col="blue",lty=2)
-  lines(1:I,table_region[,"pred_canopy_cover_quantile_sup"],col="darkblue",lty=2)
+  lines(1:I,ordered_table_region[,"pred_canopy_cover_median"],col="pink",lty=1)
+  lines(1:I,ordered_table_region[,"pred_canopy_cover_quantile_inf"],col="blue",lty=2)
+  lines(1:I,ordered_table_region[,"pred_canopy_cover_quantile_sup"],col="darkblue",lty=2)
 }
+
+####### Sur les n premières valeurs
+
+n = 100
+{
+  plot(1:n,
+       table_region$canopy_cover[1:n],
+       xlab="i",
+       ylab="canopy_cover",
+       ylim=c(0,max(table_region$canopy_cover[1:n]))
+  )
+  lines(1:n,table_region[1:n,"pred_canopy_cover_median"],col="pink",lty=1)
+  lines(1:n,table_region[1:n,"pred_canopy_cover_quantile_inf"],col="blue",lty=2)
+  lines(1:n,table_region[1:n,"pred_canopy_cover_quantile_sup"],col="darkblue",lty=2)
+  
+  indices_of_increasing_canopy_cover <- sort(table_region$canopy_cover, index.return=TRUE)$ix
+  ordered_table_region <- table_region[indices_of_increasing_canopy_cover,]
+  
+  plot(1:n,
+       ordered_table_region$canopy_cover[1:n],
+       xlab="i",
+       ylab="canopy_cover",
+       ylim=c(0,max(table_region$canopy_cover[1:n]))
+  )
+  lines(1:n,ordered_table_region[1:n,"pred_canopy_cover_median"],col="pink",lty=1)
+  lines(1:n,ordered_table_region[1:n,"pred_canopy_cover_quantile_inf"],col="blue",lty=2)
+  lines(1:n,ordered_table_region[1:n,"pred_canopy_cover_quantile_sup"],col="darkblue",lty=2)
+}
+#### fin du truc sur les n premières valeurs
+
+indices_of_increasing_canopy_cover[1:5]
+table_region[indices_of_increasing_canopy_cover[1:5],"pred_canopy_cover_median"]
+head(ordered_table_region[,"pred_canopy_cover_median"],5)
+
+# Vraies valeurs
+mean(table_region$canopy_cover)
+sd(table_region$canopy_cover)
+
+# Comparaison avec la simulation 1
+j = 1
+simu <- simulations[,j]
+
+mean(simu)
+mean(table_region$canopy_cover)
+
+sd(simu)
+sd(table_region$canopy_cover)
+
+for(j in sample(1:J,10,replace=FALSE)){
+  
+  hist(table_region$canopy_cover,
+       freq=FALSE,
+       breaks=50,
+       xlim=c(0,1),
+       main="true canopy_cover"
+  )
+  
+  hist(simulations[,j],
+       freq=FALSE,
+       breaks=50,
+       xlim=c(0,1),
+       main = paste("betas n°",j)
+  )
+  
+  print(mean(simu))
+  print(sd(simu))
+  print("-_-")
+
+  {plot(table_region$canopy_cover,
+        simulations[,j],
+        xlim=c(0,1),
+        ylim=c(0,1),
+        main = paste("betas n°",j)
+  )
+    abline(0,1,col="red")
+  }
+}
+
+##################################
+
+{
+  moyennes <- vector(length = J)
+  ecarts_types <- vector(length = J)
+  
+  for(j in 1:J){
+    moyennes[j] <- mean(simulations[,j])
+    ecarts_types[j] <- sd(simulations[,j])
+  }
+  
+  {hist(moyennes,
+        freq=FALSE,
+        breaks=50,
+        xlim=c(min(moyennes)-0.05,max(moyennes)+0.05),
+        main=paste(round(mean(table_region$canopy_cover),3),"; simus=",round(mean(moyennes),3))
+  )
+    abline(v=mean(moyennes),
+           col="black"
+           )
+    abline(v=mean(table_region$canopy_cover),
+           col="blue"
+    )
+  }
+  
+  {hist(ecarts_types,
+        freq=FALSE,
+        breaks=50,
+        xlim=c(min(ecarts_types)-0.05,max(ecarts_types)+0.05),
+        main=paste(round(sd(table_region$canopy_cover),3),"; simus=",round(mean(ecarts_types),3))
+  )
+    abline(v=mean(ecarts_types),
+           col="black",
+           lty=2
+    )
+    abline(v=sd(table_region$canopy_cover),
+           col="green",
+           lty = 6
+    )
+  }
+  
+}
+
