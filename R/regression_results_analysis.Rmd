@@ -40,14 +40,18 @@ require(shinystan)
 print("..･ヾ(。￣□￣)ﾂ")
 ```
 
+```{r time, include=TRUE}
+print(Sys.time())
+```
+
 ```{r Summaries and chains, include=TRUE}
 lancer_shinystan = FALSE
 print_one_stancode_example = TRUE
 ## Choose the chosen outputs by uncommenting one of those lines :
 
-# variable_names = c("rh98","canopy_cover")
+variable_names = c("rh98","canopy_cover")
 # variable_names = c("rh98")
-variable_names = c("canopy_cover")
+# variable_names = c("canopy_cover")
 
 for (variable_name in variable_names){
 print(paste("explicated variable of regression :",variable_name))
@@ -248,14 +252,14 @@ for(i in 1:length(list_of_ouputs)){
   
                               hist(table_region$rh98,
                                    freq=FALSE,
-                                   breaks=0:40,
+                                   breaks=40,
                                    xlim=c(0,30),
                                    main="true rh98"
                               )
                               
                               hist(simulations[,j],
                                    freq=FALSE,
-                                   breaks=0:40,
+                                   breaks=40,
                                    xlim=c(0,30),
                                    main = paste("betas n°",j)
                               )
@@ -428,15 +432,14 @@ for(i in 1:length(list_of_ouputs)){
                   R_shape1 = brms_theta*brms_phi
                   R_shape2 = (1-brms_theta)*brms_phi
                   
-                  value <- rbeta(n=1, shape1 = R_shape1, shape2 = R_shape2)
-                  prob_zero = brms_zi+(1-brms_zi)*value
+                  draw_zero = rbinom(n=1,size=1,prob=brms_zi)
                   
-                  if(rbinom(n=1,size=1,prob=prob_zero)==TRUE){
-                    # print(paste("prob_zero == TRUE",prob_zero))
-                    simulations[i,j] <- prob_zero
+                  if(draw_zero==TRUE){
+                    # print(paste("draw_zero == TRUE"))
+                    simulations[i,j] <- 0
                   }else{
-                    # print(paste("prob_zero == FALSE",prob_zero))
-                    simulations[i,j] <- (1-brms_zi)*value
+                    # print(paste("draw_zero == FALSE"))
+                    simulations[i,j] <- rbeta(n=1, shape1 = R_shape1, shape2 = R_shape2)
                   }
     }
     if(print_i_j_stuff == TRUE){print(paste("pour",J,"j"))}
@@ -470,7 +473,7 @@ for(i in 1:length(list_of_ouputs)){
     plot(1:I,
          ordered_table_region$canopy_cover,
          xlab="i",
-         ylab="rh98"
+         ylab="canopy_cover"
     )
     lines(1:I,ordered_table_region[,"pred_canopy_cover_median"],col="pink",lty=1)
     lines(1:I,ordered_table_region[,"pred_canopy_cover_quantile_inf"],col="blue",lty=2)
@@ -502,9 +505,9 @@ for(i in 1:length(list_of_ouputs)){
          ylim=c(0,1)
          # for some dataset, there are less than 100 points...
     )
-    lines(1:n,ordered_table_region[1:n,"pred_rh98_median"],col="pink",lty=1)
-    lines(1:n,ordered_table_region[1:n,"pred_rh98_quantile_inf"],col="blue",lty=2)
-    lines(1:n,ordered_table_region[1:n,"pred_rh98_quantile_sup"],col="darkblue",lty=2)
+    lines(1:n,ordered_table_region[1:n,"pred_canopy_cover_median"],col="pink",lty=1)
+    lines(1:n,ordered_table_region[1:n,"pred_canopy_cover_quantile_inf"],col="blue",lty=2)
+    lines(1:n,ordered_table_region[1:n,"pred_canopy_cover_quantile_sup"],col="darkblue",lty=2)
   }
 
   # 5 plots of reality vs predicted
