@@ -40,7 +40,7 @@ require(shinystan)
 print("..･ヾ(。￣□￣)ﾂ")
 ```
 
-```{r, include = TRUE}
+```{r rh98, include = TRUE}
 
 list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=TRUE)
 names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=FALSE)
@@ -51,7 +51,6 @@ complete_table_region = readRDS(
                                   "6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS")
                                  )
 
-breaks = 60
 for(i in 1:length(list_of_ouputs)){
   
   print(names_of_outputs[i])
@@ -67,23 +66,69 @@ for(i in 1:length(list_of_ouputs)){
 
   hist(sub_table_region$rh98,
        freq=FALSE,
-       breaks=breaks,
+       breaks=1:30,
        xlim=c(0,30),
-       main=paste("rh98",name)
+       main=paste("rh98",name),
+       col="green"
   )
   
    table_region <- complete_table_region[complete_table_region[,"ecoregion"] == name,]
    
   hist(table_region$rh98,
        freq=FALSE,
-       breaks=breaks,
+       breaks=1:30,
        xlim=c(0,30),
-       main=paste("full rh98",name)
+       main=paste("full rh98",name),
+       col="green"
   )
   
 
 } # END OF THE BIG LOOP
 ```
 
+```{r canopy_cover, include = TRUE}
 
+list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","canopy_cover"),full.names=TRUE)
+names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","canopy_cover"),full.names=FALSE)
+
+complete_table_region = readRDS(
+                                  file.path(path_to_Savanna_structure_GEDI_folder,
+                                  "rawdata_post_preprocessing",
+                                  "6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS")
+                                 )
+
+for(i in 1:length(list_of_ouputs)){
+  
+  print(names_of_outputs[i])
+  name = str_sub(names_of_outputs[i],end=-str_length("_regression_canopy_cover.RDS")-1)
+  
+  sub_table_region <- readRDS(
+                          file.path(
+                                    path_to_Savanna_structure_GEDI_folder,
+                                    "transformed_data",
+                                    paste0(name,".RDS")
+                                    )
+                            )
+
+  hist(sub_table_region$canopy_cover,
+       freq=FALSE,
+       breaks=seq(0,1,by=0.02),
+       xlim=c(0,1),
+       main=paste("canopy_cover",name),
+       col = "darkgreen"
+  )
+  
+   table_region <- complete_table_region[complete_table_region[,"ecoregion"] == name,]
+   
+  hist(table_region$canopy_cover,
+       freq=FALSE,
+       breaks=seq(0,1,by=0.02),
+       xlim=c(0,1),
+       main=paste("full canopy_cover",name),
+       col = "darkgreen"
+  )
+  
+
+} # END OF THE BIG LOOP
+```
 
