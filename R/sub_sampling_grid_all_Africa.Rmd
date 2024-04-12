@@ -1,0 +1,271 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r}
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R")
+# Setting the current path
+path_to_R_folder = file.path(
+                             path_to_Savanna_structure_GEDI_folder,
+                             "R"
+                             )
+setwd(path_to_R_folder)
+getwd()
+
+# Libraries
+library(terra)
+# Encoding :
+print("é è û")
+```
+
+```{r}
+# Data loading
+# HERE I take only the standardized data over :
+# names = c("Guinean_forest-savanna","West_Sudanian_savanna","Sahelian_Acacia_savanna",
+#           "Northern_Congolian_Forest-Savanna","Western_Congolian_forest-savanna","Southern_Congolian_forest-savanna")
+
+complete_table = readRDS(
+                         file = file.path(
+                         path_to_Savanna_structure_GEDI_folder,
+                         "rawdata_post_preprocessing",
+                         "complete_corresponding_table_without_duplicate_standardized.RDS"
+                                          )
+                         )
+
+# To verify the standardisation and NAs :
+summary(complete_table) # you can see among other things if there are 1 for canopy_cover 
+colnames(complete_table)
+colSums(is.na(complete_table))
+```
+
+```{r}
+grid_of_distant_cells <- function(target_nrow,target_ncol,plot_grid=FALSE){
+  
+  # first sub-grid
+  conserved1 <- rep(rep(c(TRUE,FALSE),each=target_ncol),times=target_nrow%/%2)
+  if (target_nrow%%2==1){ conserved1 <- c(conserved1,rep(TRUE,times=target_ncol)) }
+  
+  # second sub-grid
+  if (target_ncol%%2==0){ 
+    conserved2 <- rep(rep(c(TRUE,FALSE),times=target_ncol%/%2),times=target_nrow)
+  }
+  if (target_ncol%%2==1){ 
+    conserved2 <- rep(c(rep(c(TRUE,FALSE),times=target_ncol%/%2),TRUE),times=target_nrow)
+  }
+  
+  # final sub-grid
+  conserved = rep(TRUE,length(conserved1))
+  for (s in 1:length(conserved)){
+    if(conserved1[s] == FALSE | conserved2[s] == FALSE){conserved[s] = FALSE}
+  }
+  
+  if (plot_grid==TRUE){
+    test_conserved <- matrix(conserved,ncol=target_ncol,byrow=TRUE)
+    print(paste(target_nrow,"x",target_ncol,"matrix"))
+    print(paste("length(conserved) =",length(conserved)))
+    print(test_conserved)
+  }
+  
+  return(conserved)
+}
+
+# # Tests of odd/even cases :
+# conserved <- grid_of_distant_cells(3,5,TRUE)
+# conserved <- grid_of_distant_cells(4,5,TRUE)
+# conserved <- grid_of_distant_cells(3,6,TRUE)
+# conserved <- grid_of_distant_cells(4,6,TRUE)
+```
+
+```{r}
+require(sf)
+
+# Saving all ecoregions sub (grid)-sampled in .RDS tables in transform data
+
+cell <- 10**4
+
+name = "all_Africa"
+
+save_things = TRUE
+
+save_rds_files = save_things
+save_center_cells_geojson = save_things
+save_coords_TRUE_geojson = save_things
+
+
+{
+  
+  specific_table <- complete_table
+  
+  #
+  rownames(specific_table) = 1:nrow(specific_table)
+  specific_table <- cbind(
+                          1:nrow(specific_table),
+                          specific_table$x,
+                          specific_table$y,
+                          specific_table
+                          )
+  colnames(specific_table)[1] = "index"
+  colnames(specific_table)[2] = "x_TRUE"
+  colnames(specific_table)[3] = "y_TRUE"
+  # then "x" and "y" columns can be modified as x_TRUE and y_TRUE are saved
+  
+  table_new <- data.frame(
+                          index_point = specific_table$index,
+                          coordxTRUE = specific_table$x_TRUE,
+                          coordyTRUE = specific_table$y_TRUE,
+                          keep = rep(NA,nrow(specific_table))
+                          )
+  
+  # we just keep index x_TRUE and y_TRUE in table_new
+  
+  # print("ncol(x)")
+  # print(ncol(x))
+  # print("colnames(x)")
+  # print(colnames(x))
+  
+  #1) setting resolution
+  # from data.frame to spatvector
+  new_spatvector <- terra::vect(table_new, geom = c("coordxTRUE", "coordyTRUE"), crs = "+proj=longlat +datum=WGS84") 
+  # get new_spatvector "window" : xmin, xmax, ymin, ymax
+  window <- terra::ext(new_spatvector)
+  dx <- geodist::geodist(x = c(window[1],window[3]), y = c(window[2],window[3]), measure = "haversine")
+  dy <- geodist::geodist(x = c(window[1],window[3]), y = c(window[1],window[4]), measure = "haversine")
+  (target_ncol <- round(dx/cell))
+  # Guinean 10**4 cells : 133
+  (target_nrow <- round(dy/cell))
+  # Guinean 10**4 cells : 108
+  
+  # 133*108 = 14364
+  # dimensions of y an z : 108, 333, 1  (nrow, ncol, nlyr)
+  
+  #2) resampling
+  y <- terra::rast(new_spatvector, ncol = target_ncol, nrow = target_nrow, nlyr = 1)
+  values(y) <- grid_of_distant_cells(target_nrow,target_ncol)
+
+  z <- terra::rasterize(new_spatvector, y, fun=sample, size = 1, field = "index_point")
+  # fun = sample , size = 1 to get one random sample in the cell
+  
+  intermediate_table = data.frame(cbind(values(y),crds(y), values(z)))
+  colnames(intermediate_table)[1] = "keep"
+  colnames(intermediate_table)[2] = "x_center_cell"
+  colnames(intermediate_table)[3] = "y_center_cell"
+  
+  # nrow(crds(y)) 35964
+  # length(values(z)) 35964 ok
+  
+  colnames(specific_table)[1] = "index_point"
+  # we add x_center_cell and y_center_cell to the specific_table thanks to index_point
+  trsf_data <- merge(intermediate_table,
+                     subset(specific_table, select = -c(x,y)),
+                     by = "index_point")
+  
+  conserved_sub_table <- trsf_data[trsf_data$keep==1,]
+  conserved_sub_table <- subset(conserved_sub_table, select = -c(index_point,keep) )
+  
+  ### removing the "ejected" points in the sea and so on :
+  print(paste("nrow(conserved_sub_table) =",nrow(conserved_sub_table)))
+  print("goodbye points in the sea")
+  dist_cc_TRUE <- as.numeric()
+  for (i in 1:nrow(conserved_sub_table)){
+    dist_cc_TRUE[i] = (1/1000) * geodist::geodist(x = conserved_sub_table[i,1:2], y = conserved_sub_table[i, 3:4])
+  }
+  conserved_sub_table <- conserved_sub_table[which(dist_cc_TRUE < sqrt(2)*10),]
+  print(paste("nrow(conserved_sub_table) =",nrow(conserved_sub_table)))
+  ### 
+  
+  rm(specific_table)
+  rm(new_spatvector)
+  rm(y)
+  rm(z)
+  rm(intermediate_table)
+  rm(table_new)
+  rm(trsf_data)
+ 
+  # conserved_sub_table <- conserved_sub_table[
+  #                       complete.cases(conserved_sub_table[,c("index_point",
+  #                                                             "x_center_cell",
+  #                                                             "y_center_cell",
+  #                                                             "x_TRUE",
+  #                                                             "y_TRUE",
+  #                                                             "rh98",
+  #                                                             "canopy_cover",
+  #                                                             "fire_freq",
+  #                                                             "mean_precip",
+  #                                                             "mean_temp",
+  #                                                             "ecoregion",
+  #                                                             "fire_freq_NA",
+  #                                                             "fire_freq_std",
+  #                                                             "mean_precip_std",
+  #                                                             "mean_temp_std"
+  #                                                             )
+  #                                                          ]
+  #                                       ),]
+
+  # Data saving in the transformed_data folder
+  
+  if (save_rds_files ==TRUE){
+    
+  saveRDS(
+          object = conserved_sub_table,
+          file = file.path(
+                           path_to_Savanna_structure_GEDI_folder,
+                           "transformed_data",
+                           paste0(name,".RDS")
+                           )
+          )    
+  
+  print(paste(paste0(name,".RDS"),"DONE"))
+  
+  }
+  
+  
+  if (save_center_cells_geojson == TRUE){
+  
+  sf_obj <- st_as_sf(conserved_sub_table,coords = c("x_center_cell", "y_center_cell"),crs = 4326)
+
+  st_write(
+           sf_obj,
+           file.path(path_to_Savanna_structure_GEDI_folder,
+                     "transformed_data",
+                     paste0(name,"_center_cells.geojson")
+                     ), delete_dsn = T
+           )
+  
+  print(paste(paste0(name,"_center_cells.geojson"),"DONE"))
+
+  }
+  
+  if (save_coords_TRUE_geojson == TRUE){
+    
+  sf_obj2 <- st_as_sf(conserved_sub_table,coords = c("x_TRUE", "y_TRUE"),crs = 4326)
+
+  st_write(
+           sf_obj2,
+           file.path(path_to_Savanna_structure_GEDI_folder,
+                     "transformed_data",
+                      paste0(name,"_TRUE_positions.geojson")
+           ), delete_dsn = T
+  )
+  
+  print(paste(paste0(name,"_TRUE_positions.geojson"),"DONE"))
+  
+  }
+  
+}
+
+print(list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"transformed_data"),full.names=FALSE))
+```
+
+```{r}
+
+```
+
+
+```{r}
+
+```
