@@ -116,9 +116,14 @@ for (name in names){
                            "6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS"
                                             )
                            )
-
   
-  specific_table <- complete_table[complete_table[,"ecoregion"] == name, ]
+  if(name=="all_Africa"){specific_table <- readRDS(
+      file.path(path_to_Savanna_structure_GEDI_folder,
+      "rawdata_post_preprocessing",
+      "complete_corresponding_table_without_duplicate_standardized.RDS")
+  )}else{
+      specific_table <- complete_table[complete_table[,"ecoregion"] == name, ]
+  }
   
   rm(complete_table)
   

@@ -42,8 +42,8 @@ print("..･ヾ(。￣□￣)ﾂ")
 
 ```{r rh98, include = TRUE}
 
-list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=TRUE)
-names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=FALSE)
+list_of_ouputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=TRUE)[-1] # less all_Africa
+names_of_outputs = list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","rh98"),full.names=FALSE)[-1] # less all_Africa
 
 complete_table_region = readRDS(
                                   file.path(path_to_Savanna_structure_GEDI_folder,
@@ -72,7 +72,7 @@ for(i in 1:length(list_of_ouputs)){
        col="green"
   )
   
-   table_region <- complete_table_region[complete_table_region[,"ecoregion"] == name,]
+  table_region <- complete_table_region[complete_table_region[,"ecoregion"] == name,]
    
   hist(table_region$rh98,
        freq=FALSE,
@@ -81,7 +81,6 @@ for(i in 1:length(list_of_ouputs)){
        main=paste("full rh98",name),
        col="green"
   )
-  
 
 } # END OF THE BIG LOOP
 ```
