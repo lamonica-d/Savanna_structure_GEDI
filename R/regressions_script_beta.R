@@ -30,17 +30,28 @@ rstan_options(auto_write = TRUE)
 
 #################################################################
 
+vect_names = c("Guinean_forest-savanna","West_Sudanian_savanna","Sahelian_Acacia_savanna",
+          "Northern_Congolian_Forest-Savanna","Western_Congolian_forest-savanna","Southern_Congolian_forest-savanna")
+
+# Vérifier si on a normalisé sur toutes les données ou juste sur l'ensemble de certaines régions.
+
+# vect_names = unique(complete_table$ecoregion) # for all ecoregions
+vect_names
+# if 6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS was loaded,
+# there are just the 6 ecoregions anyway
+
+# vect_names = c("Guinean_forest-savanna") # for testing the loop
+
+# (vect_names <- str_sub(list.files(path = path_to_GEDI_raw_data),end = -5))
 
 save_rds_files = TRUE
-plotland = TRUE
-print_correlations = TRUE
+plotland = FALSE
+print_correlations = FALSE
 launch_brms = TRUE
 
 ############ LOOP
 
-name = "all_Africa"
-
-{
+for (name in vect_names){
 print("###########################################################################")
 print(name)
 
@@ -95,79 +106,6 @@ plot(table_region[,c("mean_temp_std","canopy_cover")],
 
 }
 
-############################################# rh98
-
-###### Priors
-
-# default_prior = get_prior(
-#   formula = rh98 ~ fire_freq_std + mean_precip_std,
-#   data = table_region,
-#   family = brmsfamily(family = "Gamma")
-#   # no info about the links in (*)
-#   # unlike the beta inflated
-# )
-
-# prior_1 = c(
-#   prior(
-#     normal(1400,100),
-#     class="b",
-#     coef = mean_precip
-#   ),
-#   
-#   prior(
-#     normal(26,4),
-#     class="b",
-#     coef = mean_temp
-#   ),
-#   
-#   prior(
-#     normal(0.25,0.5),
-#     class="b",
-#     coef = fire_freq
-#   )
-# )
-
-if(launch_brms == TRUE){
-  
-start <- Sys.time()
-print(start)
-print("rh98 ~ fire_freq_std + mean_precip_std")
-
-mod_rh98 <- brm(
-                formula = rh98 ~ fire_freq_std + mean_precip_std,
-                data = table_region,
-                family = brmsfamily(family = "Gamma",link="log"),
-                
-                prior = NULL,
-                
-                warmup = 2*10**3,
-                iter = 10**4,
-                thin = 10,
-                
-                chains = 4,
-                cores = 4,          
-                
-                # control = list(adapt_delta = 0.95), 
-                
-                silent = 1 # full comments
-)
-
-print(Sys.time() - start)
-
-if(save_rds_files==TRUE){
-
-  saveRDS(mod_rh98,
-          file.path(
-            path_to_Savanna_structure_GEDI_folder,
-            "outputs",
-            "rh98",
-            paste0(name,"_regression_rh98.RDS"))
-          )
-
-  print(paste(paste0(name,"_regression_rh98.RDS"),"DONE"))
-}
-
-
 ############################################# canopy_cover
 
 # default_prior = get_prior(
@@ -205,6 +143,7 @@ if(save_rds_files==TRUE){
 # )
 
 
+if (launch_brms==TRUE){
 start <- Sys.time()
 print(start)
 print("canopy_cover ~ fire_freq_std + mean_precip_std")
