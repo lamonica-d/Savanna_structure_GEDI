@@ -90,6 +90,7 @@ cell <- 10**4
 # set a cell length, in meter
 
 names = c("Guinean_forest-savanna")
+name = c("Guinean_forest-savanna")
 
 save_things = TRUE
 
@@ -165,7 +166,12 @@ for (name in names){
   y <- terra::rast(new_spatvector, ncol = target_ncol, nrow = target_nrow, nlyr = 1)
   values(y) <- grid_of_distant_cells(target_nrow,target_ncol)
   
-  z <- terra::rasterize(new_spatvector, y, fun=sample, size = 1, field = "index_point")
+  custom_sample <- function(x){
+    return(sample(x=x,size=length(x),replace=FALSE))
+  }
+
+  #z <- terra::rasterize(new_spatvector, y, fun=sample, size = 1, field = "index_point")
+  z <- terra::rasterize(new_spatvector, y, fun=custom_sample, field = "index_point")
   # fun = sample , size = 1 to get one random sample in the cell
   
   intermediate_table = data.frame(cbind(values(y),crds(y), values(z)))
@@ -202,7 +208,7 @@ for (name in names){
   #       quiet = TRUE)<sqrt(2)*10**4)
   #       {final = rbind(final,specific_table[i,])}
   #     }
-  # } bien trop looooong
+  # } bien trop looooong,b ; 10**6 secondes :D
   
   conserved_sub_table <- subset(conserved_sub_table, select = -c(keep) )
   
