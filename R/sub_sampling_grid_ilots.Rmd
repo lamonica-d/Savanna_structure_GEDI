@@ -191,18 +191,18 @@ for (name in names){
   colnames(final) = colnames(specific_table)
   
   # 10**3 * 10**6 calcul de distances :
-  N = nrow(specific_table)
-  
-   for(i in 1:N){
-    print(paste("i = ",i,"over",N))
-    for(u in 1:nrow(conserved_sub_table)){
-      if(geodist::geodist(
-        x = specific_table[i,c("x_TRUE","y_TRUE")],
-        y = conserved_sub_table[u,c("x_center_cell","y_center_cell")],
-        quiet = TRUE)<sqrt(2)*10**4)
-        {final = rbind(final,specific_table[i,])}
-      }
-  }
+  # N = nrow(specific_table)
+  # 
+  #  for(i in 1:N){
+  #   print(paste("i = ",i,"over",N))
+  #   for(u in 1:nrow(conserved_sub_table)){
+  #     if(geodist::geodist(
+  #       x = specific_table[i,c("x_TRUE","y_TRUE")],
+  #       y = conserved_sub_table[u,c("x_center_cell","y_center_cell")],
+  #       quiet = TRUE)<sqrt(2)*10**4)
+  #       {final = rbind(final,specific_table[i,])}
+  #     }
+  # } bien trop looooong
   
   conserved_sub_table <- subset(conserved_sub_table, select = -c(keep) )
   
