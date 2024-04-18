@@ -32,161 +32,598 @@ plot(l,Holling_3(l,point_inflexion=2),main="Holling 3")
 
 
 ```{r, include = FALSE}
+# sigmo_pluie <- function(W,lambda,decalage){
+#   return(
+#     1/(1+exp(-lambda*(W-decalage)))
+#     )
+# }
+# max_W = 3000
+# W_values = seq(-max_W,max_W,by=10)
+# decalage = 0
+# # decalage = 500
+# 
+# K_G_pluie_max = 16 # t.ha-1
+# 
+# lambdas = seq(4,2,length=15)
+# lambdas  = 10**-lambdas
+# 
+# palette <- rainbow(length(lambdas))
+# plot.new()
+# legend("center", legend = paste(round(lambdas,4)), col = palette, lty = 1,xpd = TRUE)
+# 
+# {
+# 
+# plot(
+#      x=c(0),
+#      y=c(0),
+#      xlim=c(-max_W,max_W),
+#      ylim = c(0,1),
+#      xlab = "W", ylab = ""
+#      )
+# 
+# for(i in 1:length(lambdas)){
+#    grass = sigmo_pluie(W_values,lambdas[i],decalage = decalage)
+#    lines(W_values, grass, col = palette[i])
+#    abline(v=0,lty=2)
+#    abline(h=K_G_pluie_max,lty=2)
+#    # legend("topleft",paste0("K_G=",K_G_pluie_max))
+# }
+#   
+# }
+```
+
+```{r, include = FALSE}
+# sigmo_coeff_competition <- function(W,delta,decalage){
+#   return(
+#     1/(1+exp(-delta*(-W+decalage)))
+#     )
+# }
+# max_W = 3000
+# W_values = seq(-max_W,max_W,by=10)
+# decalage = 0
+# # decalage = 500
+# 
+# K_G_pluie_max = 16 # t.ha-1
+# 
+# deltas = seq(4,2,length=15)
+# deltas  = 10**-deltas
+# 
+# palette <- rainbow(length(lambdas))
+# plot.new()
+# legend("center", legend = paste(round(lambdas,4)), col = palette, lty = 1,xpd = TRUE)
+# 
+# {
+# 
+# plot(
+#      x=c(0),
+#      y=c(0),
+#      xlim=c(-max_W,max_W),
+#      ylim = c(0,1),
+#      xlab = "W", ylab = ""
+#      )
+# 
+# for(i in 1:length(deltas)){
+#    grass = sigmo_coeff_competition(W_values,deltas[i],decalage = decalage)
+#    lines(W_values, grass, col = palette[i])
+#    abline(v=0,lty=2)
+#    abline(h=1,lty=2)
+# }
+#   
+# }
+```
+
+```{r, include = FALSE}
+# # Both lambda and delta move
+# 
+# max_W = 3000
+# W_values = seq(-max_W,max_W,by=10)
+# decalage = 1000
+# 
+# lambdas = seq(4,2,length=20)
+# lambdas  = 10**-lambdas
+# 
+# deltas = seq(4,2,length=20)
+# deltas  = 10**-deltas
+# palette <- rainbow(length(deltas))
+# 
+# plotted_value_of_i = 17
+# 
+# for (j in 1:length(lambdas)){
+#   
+#       par(mfrow = c(1, 2))
+#   
+#       grass = sigmo_pluie(W_values,lambdas[j], decalage = decalage)
+#       plot(
+#            W_values,grass,
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,1),
+#            main=paste("j=",j,"lambda=",round(lambdas[j],5))
+#            )
+#       abline(v=0,lty=2)
+#       
+#       grass = sigmo_coeff_competition(W_values,deltas[plotted_value_of_i], decalage = decalage)
+#       plot(
+#            W_values,grass,
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,1),
+#            main=paste("i=",plotted_value_of_i,round(deltas[10],5)),
+#            col=palette[plotted_value_of_i]
+#            )
+#       abline(v=0,lty=2)
+#       
+#       ##############################################################################################
+#       
+#       par(mfrow = c(1, 2))
+#       plot.new()
+#       legend("center", legend = paste("i=",1:length(deltas),"delta=",round(lambdas,4)), 
+#              col = palette, lty = 1,xpd = TRUE)
+#       
+#       plot(
+#            x=c(0),
+#            y=c(0),
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,0.5),
+#            xlab = "W", ylab = "",
+#            main=paste("j=",j,"lambda=",round(lambdas[j],5))
+#            )
+#       
+#       for(i in 1:length(deltas)){
+#          grass = sigmo_pluie(W_values,lambdas[j],decalage = decalage)*sigmo_coeff_competition(W_values,deltas[i],decalage = decalage)
+#          lines(W_values, grass, col = palette[i])
+#          abline(v=0,lty=2)
+#          abline(h=1,lty=2)
+#          abline(h=0.25,lty=2)
+#       }
+# }
+```
+
+```{r, include = FALSE}
+# # Both lambda and delta move
+# 
+# max_W = 3000
+# W_values = seq(-max_W,max_W,by=10)
+# decalage = 1000
+# 
+# lambdas = seq(4,2,length=20)
+# lambdas  = 10**-lambdas
+# 
+# deltas = seq(4,2,length=20)
+# deltas  = 10**-deltas
+# palette <- rainbow(length(deltas))
+# 
+# plotted_value_of_i = 17
+# 
+# for (j in 1:length(lambdas)){
+#   
+#       par(mfrow = c(1, 2))
+#   
+#       grass = sigmo_pluie(W_values,lambdas[j], decalage = decalage)
+#       plot(
+#            W_values,grass,
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,1),
+#            main=paste("j=",j,"lambda=",round(lambdas[j],5))
+#            )
+#       abline(v=0,lty=2)
+#       
+#       plot.new()
+#       legend("center", legend = paste("i=",1:length(deltas),"delta=",round(deltas,4)), 
+#              col = palette, lty = 1,xpd = TRUE)
+#       
+#       ##############################################################################################
+#       
+#       par(mfrow = c(1, 2))
+#       
+#       plot(
+#            x=c(0),
+#            y=c(0),
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,1),
+#            xlab = "W", ylab = "",
+#            main=paste("j=",j,"lambda=",round(lambdas[j],5))
+#            )
+#       
+#       for(i in 1:length(deltas)){
+#          grass = sigmo_coeff_competition(W_values,deltas[i],decalage = decalage)
+#          lines(W_values, grass, col = palette[i])
+#          abline(v=0,lty=1)
+#          abline(v=decalage,lty=2)
+#          abline(h=1,lty=2)
+#          abline(h=0.5,lty=2)
+#       }      
+#       
+#       plot(
+#            x=c(0),
+#            y=c(0),
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,0.5),
+#            xlab = "W", ylab = "",
+#            main=paste("j=",j,"lambda=",round(lambdas[j],5))
+#            )
+#       
+#       for(i in 1:length(deltas)){
+#          grass = sigmo_pluie(W_values,lambdas[j],decalage = decalage)*sigmo_coeff_competition(W_values,deltas[i],decalage = decalage)
+#          lines(W_values, grass, col = palette[i])
+#          abline(v=0,lty=1)
+#          abline(v=decalage,lty=2)
+#          abline(h=1,lty=2)
+#          abline(h=0.25,lty=2)
+#       }
+# }
+```
+
+```{r, include = FALSE}
+# max_W = 3000
+# W_values = seq(-max_W,max_W,by=10)
+# decalage = 1000
+# 
+# pentes = -seq(10**-3,10**-4,length=10)
+# palette <- rainbow(length(pentes))
+# 
+# calcul_droite <- function(x,pente,b){return(pente*x+b)}
+# 
+# plot(
+#      x=c(0),
+#      y=c(0),
+#      xlim=c(-max_W,max_W),
+#      ylim = c(0,1),
+#      xlab = "W", ylab = "",
+#      main="tests"
+#      )
+# 
+# abline(v=0,lty=1)
+#  
+# for(i in 1:length(pentes)){
+#   droite = calcul_droite(W_values,pente=pentes[i],b=-pentes[i]*decalage+0.5)
+#   lines(W_values,droite,col=palette[i])
+# }
+```
+
+```{r, include = FALSE}
+# Test avec des droites plutôt que des sigmoïdes pour la compétition
+
+# max_W = 3000
+# W_values = seq(-max_W,max_W,by=10)
+# decalage = 1000
+# 
+# lambdas = seq(4,2,length=20)
+# lambdas  = 10**-lambdas
+# 
+# pentes = -seq(10**-3,10**-4,length=10)
+# palette <- rainbow(length(pentes))
+# calcul_droite <- function(x,pente,b){return(pente*x+b)}
+# 
+# plotted_value_of_i = 17
+# 
+# for (j in 1:length(lambdas)){
+#   
+#       par(mfrow = c(1, 2))
+#   
+#       grass = sigmo_pluie(W_values,lambdas[j], decalage = decalage)
+#       plot(
+#            W_values,grass,
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,1),
+#            main=paste("j=",j,"lambda=",round(lambdas[j],5))
+#            )
+#       abline(v=0,lty=2)
+#       
+#       plot.new()
+#       legend("center", legend = paste("i=",1:length(pentes),"pentes=",round(pentes,4)), 
+#              col = palette, lty = 1,xpd = TRUE)
+#       
+#       ##############################################################################################
+#       
+#       par(mfrow = c(1, 2))
+#       
+#       plot(
+#            x=c(0),
+#            y=c(0),
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,1),
+#            xlab = "W", ylab = "",
+#            main=paste("j=",j,"lambda=",round(lambdas[j],5))
+#            )
+#       
+#       for(i in 1:length(pentes)){
+#          grass = calcul_droite(W_values,pente=pentes[i],b=-pentes[i]*decalage+0.5)
+#          lines(W_values, grass, col = palette[i])
+#          abline(v=0,lty=1)
+#          abline(v=decalage,lty=2)
+#          abline(h=1,lty=2)
+#          abline(h=0.5,lty=2)
+#       }      
+#       
+#       plot(
+#            x=c(0),
+#            y=c(0),
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,0.5),
+#            xlab = "W", ylab = "",
+#            main=paste("j=",j,"lambda=",round(lambdas[j],5))
+#            )
+#       
+#       for(i in 1:length(deltas)){
+#          grass = sigmo_pluie(W_values,lambdas[j],decalage = decalage)*sigmo_coeff_competition(W_values,deltas[i],decalage = decalage)
+#          lines(W_values, grass, col = palette[i])
+#          abline(v=0,lty=1)
+#          abline(v=decalage,lty=2)
+#          abline(h=1,lty=2)
+#          abline(h=0.25,lty=2)
+#       }
+# }
+```
+
+```{r, include = FALSE}
+# # Comparaison droite vers sigmoïde
+# 
+# max_W = 3000
+# W_values = seq(-max_W,max_W,by=10)
+# decalage = 1000
+# 
+# lambdas = seq(4,2,length=20)
+# lambdas  = 10**-lambdas
+# lambdas = lambdas[17]
+# 
+# pentes = -seq(10**-3,10**-4,length=20)
+# palette <- rainbow(length(pentes))
+# calcul_droite <- function(x,pente,b){return(pente*x+b)}
+# 
+# plotted_value_of_i = 17
+# 
+# for (j in 1:length(lambdas)){
+#   
+#       par(mfrow = c(1, 2))
+#   
+#       grass = sigmo_pluie(W_values,lambdas[j], decalage = decalage)
+#       plot(
+#            W_values,grass,
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,1),
+#            main=paste("j=",j,"lambda=",round(lambdas[j],5))
+#            )
+#       abline(v=0,lty=2)
+#       
+#       plot.new()
+# 
+#       #######################################################################
+#       
+#       par(mfrow = c(1, 2))
+#       
+#       plot(
+#            x=c(0),
+#            y=c(0),
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,1),
+#            xlab = "W", ylab = "",
+#            main=paste("j=",j,"lambda=",round(lambdas[j],5))
+#            )
+#       
+#       for(i in 1:length(pentes)){
+#          grass = calcul_droite(W_values,pente=pentes[i],b=-pentes[i]*decalage+0.5)
+#          lines(W_values, grass, col = palette[i])
+#          abline(v=0,lty=1)
+#          abline(v=decalage,lty=2)
+#          abline(h=1,lty=2)
+#          abline(h=0.5,lty=2)
+#       }      
+#       
+#       plot(
+#            x=c(0),
+#            y=c(0),
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,0.5),
+#            xlab = "W", ylab = "",
+#            main=paste("j=",j,"lambda=",round(lambdas[j],5))
+#            )
+#       
+#       for(i in 1:length(pentes)){
+#          grass = sigmo_pluie(W_values,lambdas[j],decalage = decalage)*sigmo_coeff_competition(W_values,deltas[i],decalage = decalage)
+#          lines(W_values, grass, col = palette[i])
+#          abline(v=0,lty=1)
+#          abline(v=decalage,lty=2)
+#          abline(h=1,lty=2)
+#          abline(h=0.25,lty=2)
+#       }
+#       
+#       ##############################################################################################
+#         
+#       par(mfrow = c(1, 2))
+# 
+#       plot.new()
+#       legend("center", legend = paste("i=",1:length(pentes),"pentes=",round(pentes,4)), 
+#              col = palette, lty = 1,xpd = TRUE)
+#       
+#       plot.new()
+#       legend("center", legend = paste("i=",1:length(deltas),"delta=",round(deltas,4)),
+#              col = palette, lty = 1,xpd = TRUE)
+# 
+#       ##############################################################################################
+#       
+#       par(mfrow = c(1, 2))
+# 
+#       plot(
+#            x=c(0),
+#            y=c(0),
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,1),
+#            xlab = "W", ylab = "",
+#            main=paste("j=",j,"lambda=",round(lambdas[j],5))
+#            )
+#       
+#       for(i in 1:length(deltas)){
+#          grass = sigmo_coeff_competition(W_values,deltas[i],decalage = decalage)
+#          lines(W_values, grass, col = palette[i])
+#          abline(v=0,lty=1)
+#          abline(v=decalage,lty=2)
+#          abline(h=1,lty=2)
+#          abline(h=0.5,lty=2)
+#       }      
+#       
+#       plot(
+#            x=c(0),
+#            y=c(0),
+#            xlim=c(-max_W,max_W),
+#            ylim = c(0,0.5),
+#            xlab = "W", ylab = "",
+#            main=paste("j=",j,"lambda=",round(lambdas[j],5))
+#            )
+#       
+#       for(i in 1:length(deltas)){
+#          grass = sigmo_pluie(W_values,lambdas[j],decalage = decalage)*sigmo_coeff_competition(W_values,deltas[i],decalage = decalage)
+#          lines(W_values, grass, col = palette[i])
+#          abline(v=0,lty=1)
+#          abline(v=decalage,lty=2)
+#          abline(h=1,lty=2)
+#          abline(h=0.25,lty=2)
+#       }
+# 
+# }
+```
+
+```{r, include = TRUE}
+# Comparaison droite vers sigmoïde
+
 sigmo_pluie <- function(W,lambda,decalage){
   return(
     1/(1+exp(-lambda*(W-decalage)))
     )
 }
-max_W = 3000
-W_values = seq(-max_W,max_W,by=10)
-decalage = 0
-# decalage = 500
 
-K_G_pluie_max = 16 # t.ha-1
-
-lambdas = seq(4,2,length=15)
-lambdas  = 10**-lambdas
-
-palette <- rainbow(length(lambdas))
-plot.new()
-legend("center", legend = paste(round(lambdas,4)), col = palette, lty = 1,xpd = TRUE)
-
-{
-
-plot(
-     x=c(0),
-     y=c(0),
-     xlim=c(-max_W,max_W),
-     ylim = c(0,1),
-     xlab = "W", ylab = ""
-     )
-
-for(i in 1:length(lambdas)){
-   grass = sigmo_pluie(W_values,lambdas[i],decalage = decalage)
-   lines(W_values, grass, col = palette[i])
-   abline(v=0,lty=2)
-   abline(h=K_G_pluie_max,lty=2)
-   # legend("topleft",paste0("K_G=",K_G_pluie_max))
-}
-  
-}
-```
-
-```{r, include = FALSE}
 sigmo_coeff_competition <- function(W,delta,decalage){
   return(
     1/(1+exp(-delta*(-W+decalage)))
     )
 }
-max_W = 3000
-W_values = seq(-max_W,max_W,by=10)
-decalage = 0
-# decalage = 500
 
-K_G_pluie_max = 16 # t.ha-1
-
-deltas = seq(4,2,length=15)
-deltas  = 10**-deltas
-
-palette <- rainbow(length(lambdas))
-plot.new()
-legend("center", legend = paste(round(lambdas,4)), col = palette, lty = 1,xpd = TRUE)
-
-{
-
-plot(
-     x=c(0),
-     y=c(0),
-     xlim=c(-max_W,max_W),
-     ylim = c(0,1),
-     xlab = "W", ylab = ""
-     )
-
-for(i in 1:length(deltas)){
-   grass = sigmo_coeff_competition(W_values,deltas[i],decalage = decalage)
-   lines(W_values, grass, col = palette[i])
-   abline(v=0,lty=2)
-   abline(h=1,lty=2)
-}
-  
-}
-```
-
-```{r}
-# Both lambda and delta move
+calcul_droite <- function(x,pente,b){return(pente*x+b)}
 
 max_W = 3000
 W_values = seq(-max_W,max_W,by=10)
-decalage = 0
+decalage = 1000
 
 lambdas = seq(4,2,length=20)
 lambdas  = 10**-lambdas
+lambdas = lambdas[17]
+
+pentes = -seq(10**-3,10**-4,length=20)
+palette_pentes <- rainbow(length(pentes))
+calcul_droite <- function(x,pente,b){return(pente*x+b)}
 
 deltas = seq(4,2,length=20)
 deltas  = 10**-deltas
+palette_deltas <- rainbow(length(deltas))
+
+plotted_value_of_i = 17
 
 for (j in 1:length(lambdas)){
+  
+      par(mfrow = c(1, 2))
   
       grass = sigmo_pluie(W_values,lambdas[j], decalage = decalage)
       plot(
            W_values,grass,
            xlim=c(-max_W,max_W),
-            ylim = c(0,1),
+           ylim = c(0,1),
            main=paste("j=",j,"lambda=",round(lambdas[j],5))
            )
       abline(v=0,lty=2)
       
-      grass = sigmo_coeff_competition(W_values,deltas[10], decalage = decalage)
-      plot(
-           W_values,grass,
-           xlim=c(-max_W,max_W),
-           ylim = c(0,1),
-           main=paste("i=10",round(deltas[10],5))
-           )
-      abline(v=0,lty=2)
-      
-      ##############################################################################################
-      
-      palette <- rainbow(length(deltas))
-
-      par(mfrow = c(1, 2))
       plot.new()
-      legend("center", legend = paste("i=",1:length(deltas),"delta=",round(lambdas,4)), 
-             col = palette, lty = 1,xpd = TRUE)
+
+      #######################################################################
+      
+      par(mfrow = c(1, 2))
       
       plot(
            x=c(0),
            y=c(0),
            xlim=c(-max_W,max_W),
-           ylim = c(0,0.5),
-           xlab = "W", ylab = "",
+           ylim = c(0,2),
+           xlab = "W", ylab = "canopy_cover influence part",
+           main=paste("j=",j,"lambda=",round(lambdas[j],5))
+           )
+      
+      for(i in 1:length(pentes)){
+         grass = 2*calcul_droite(W_values,pente=pentes[i],b=-pentes[i]*decalage+0.5)
+         lines(W_values, grass, col = palette_pentes[i])
+         abline(v=0,lty=1)
+         abline(v=decalage,lty=2)
+         abline(h=1,lty=2)
+         abline(h=2,lty=2)
+      }      
+      
+      plot(
+           x=c(0),
+           y=c(0),
+           xlim=c(-max_W,max_W),
+           ylim = c(0,1),
+           xlab = "W", ylab = "final grass estimate",
+           main=paste("j=",j,"lambda=",round(lambdas[j],5))
+           )
+      
+      for(i in 1:length(pentes)){
+         grass = sigmo_pluie(W_values,lambdas[j],decalage = decalage)*2*calcul_droite(W_values,pente=pentes[i],b=-pentes[i]*decalage+0.5)
+         lines(W_values, grass, col = palette_pentes[i])
+         abline(v=0,lty=1)
+         abline(v=decalage,lty=2)
+         abline(h=1,lty=2)
+         abline(h=0.5,lty=2)
+      }
+      
+      ##############################################################################################
+        
+      par(mfrow = c(1, 2))
+
+      plot.new()
+      legend("center", legend = paste("i=",1:length(pentes),"pentes=",round(pentes,4)), 
+             col = palette_pentes, lty = 1,xpd = TRUE)
+      
+      plot.new()
+      legend("center", legend = paste("i=",1:length(deltas),"delta=",round(deltas,4)),
+             col = palette_deltas, lty = 1,xpd = TRUE)
+
+      ##############################################################################################
+      
+      par(mfrow = c(1, 2))
+
+      plot(
+           x=c(0),
+           y=c(0),
+           xlim=c(-max_W,max_W),
+           ylim = c(0,2),
+           xlab = "W", ylab = "canopy_cover influence part",
            main=paste("j=",j,"lambda=",round(lambdas[j],5))
            )
       
       for(i in 1:length(deltas)){
-         grass = sigmo_pluie(W_values,lambdas[j],decalage = decalage)*sigmo_coeff_competition(W_values,deltas[i],decalage = decalage)
-         lines(W_values, grass, col = palette[i])
-         abline(v=0,lty=2)
+         grass = 2*sigmo_coeff_competition(W_values,deltas[i],decalage = decalage)
+         lines(W_values, grass, col = palette_deltas[i])
+         abline(v=0,lty=1)
+         abline(v=decalage,lty=2)
          abline(h=1,lty=2)
-         abline(h=0.25,lty=2)
+         abline(h=2,lty=2)
+      }      
+      
+      plot(
+           x=c(0),
+           y=c(0),
+           xlim=c(-max_W,max_W),
+           ylim = c(0,1),
+           xlab = "W", ylab="final grass estimate",
+           main=paste("j=",j,"lambda=",round(lambdas[j],5))
+           )
+      
+      for(i in 1:length(deltas)){
+         grass = sigmo_pluie(W_values,lambdas[j],decalage = decalage)*2*sigmo_coeff_competition(W_values,deltas[i],decalage = decalage)
+         lines(W_values, grass, col = palette_deltas[i])
+         abline(v=0,lty=1)
+         abline(v=decalage,lty=2)
+         abline(h=1,lty=2)
+         abline(h=0.5,lty=2)
       }
+
 }
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
 ```
 
 ```{r}
