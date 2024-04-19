@@ -1,0 +1,153 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, include = FALSE}
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R")
+getwd()
+# Libraries
+library(terra)
+# Encoding :
+print("é è û")
+```
+
+
+```{r, include = TRUE}
+sigmo_pluie <- function(W,lambda,decalage){
+  return(
+    1/(1+exp(-lambda*(W-decalage)))
+    )
+}
+
+max_W = 3000
+W_values = seq(-max_W,max_W,by=10)
+decalage = 0
+# decalage = 500
+
+K_G_pluie_max = 16 # t.ha-1
+
+lambdas = seq(4,1.5,length=20)
+lambdas  = 10**-lambdas
+
+{
+  
+palette <- rainbow(length(lambdas))
+par(mfrow = c(1, 2))
+plot.new()
+legend("center", legend = paste(round(lambdas,4)), col = palette, lty = 1,xpd = TRUE)
+
+
+plot(
+     x=c(0),
+     y=c(0),
+     xlim=c(-1500,1500),
+     ylim = c(0,1),
+     xlab = "W", ylab = ""
+     )
+
+for(i in 1:length(lambdas)){
+   grass = sigmo_pluie(W_values,lambdas[i],decalage = decalage)
+   lines(W_values, grass, col = palette[i])
+   abline(a=0.5,b=lambdas[i]/4,lty=2,col = palette[i])
+
+}
+
+  abline(v=0,lty=2)
+  abline(h=K_G_pluie_max,lty=2)
+}
+```
+
+```{r}
+# On veut qu'il y ait transition en l'espace de [0,3000] mm de pluie, donc on va restreindre nos lambdas à :
+lambdas = lambdas[lambdas>0.0038]
+lambdas
+# donc en gros on va les faire aller de 0.005 à 0.03
+# sachant que les régressions sur la figure de Braun 1972 nous ont donné des pentes :
+pente1 = 0.01146043
+pente2 = 0.0275
+# ce qui correspond à :
+lambda1 = 4*pente1
+lambda2 = 4*pente2
+paste("[",lambda1,lambda2,"]")
+# "[ 0.04584172 0.11 ]"
+# ok donc on va faire aller nos lambdas de 0.005 à 0.3 disons (quasi droite)
+lambdas = seq(2.3,1.5,length=20)
+lambdas  = 10**-lambdas
+print(lambdas)
+
+{
+  
+palette <- rainbow(length(lambdas))
+par(mfrow = c(1, 2))
+plot.new()
+legend("center", legend = paste("lambda=",round(lambdas,4),"pente=",round(lambdas/4,4)), col = palette, lty = 1,xpd = TRUE)
+
+
+plot(
+     x=c(0),
+     y=c(0),
+     xlim=c(-1500,1500),
+     ylim = c(0,1),
+     xlab = "W", ylab = ""
+     )
+
+for(i in 1:length(lambdas)){
+   grass = sigmo_pluie(W_values,lambdas[i],decalage = decalage)
+   lines(W_values, grass, col = palette[i])
+   abline(a=0.5,b=lambdas[i]/4,lty=2,col = palette[i])
+
+}
+
+  abline(v=0,lty=2)
+  abline(h=K_G_pluie_max,lty=2)
+}
+```
+
+```{r}
+# Avec des décalages :
+decalages = seq(0,1600,by=200)
+
+for(decalage in decalages){
+  
+lambdas = seq(2.3,1.5,length=20)
+lambdas  = 10**-lambdas
+print(lambdas)
+
+{
+  
+palette <- rainbow(length(lambdas))
+par(mfrow = c(1, 2))
+plot.new()
+legend("center", legend = paste("lambda=",round(lambdas,4),"pente=",round(lambdas/4,4)), col = palette, lty = 1,xpd = TRUE)
+
+
+plot(
+     x=c(0),
+     y=c(0),
+     xlim=c(0,3000),
+     ylim = c(0,1),
+     xlab = "W", ylab = "",
+     main = paste("decalage=",decalage)
+     )
+
+for(i in 1:length(lambdas)){
+   grass = sigmo_pluie(W_values,lambdas[i],decalage = decalage)
+   lines(W_values, grass, col = palette[i])
+   abline(a=0.5,b=lambdas[i]/4,lty=2,col = palette[i])
+
+}
+
+  abline(v=0,lty=2)
+  abline(h=K_G_pluie_max,lty=2)
+}
+}
+```
+
+
