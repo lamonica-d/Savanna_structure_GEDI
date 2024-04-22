@@ -1,4 +1,4 @@
-# first analyse global model
+# analysis global model
 
 # Cleaning the environment
 rm(list=ls())
