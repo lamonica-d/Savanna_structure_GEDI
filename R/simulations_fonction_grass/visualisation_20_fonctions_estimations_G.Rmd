@@ -1,0 +1,131 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, echo=FALSE, include = FALSE}
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R")
+getwd()
+```
+
+
+
+```{r functions, echo=FALSE, include = FALSE}
+
+sigmo_pluie <- function(W,lambda,decalage){
+  return( 1/(1+exp(-lambda*(W-decalage))) )
+}
+
+sigmo_coeff_competition <- function(W,delta,decalage){
+  return( 2/(1+exp(-delta*(-W+decalage))) )
+}
+
+omega <- function(G,point_inflexion){return((G**2)/((G**2)+(point_inflexion**2)))}
+
+df_graphique = as.data.frame(matrix(nrow=4,ncol=2))
+colnames(df_graphique) = c("pluie (mm yr-1)","biomasse (t.ha-1)")
+df_graphique2 = df_graphique
+```
+
+
+```{r S_function, echo=TRUE, include = TRUE}
+lambdas = seq(0.0017,0.0088,length=20)
+deltas = seq(-5,-2,length=20)
+deltas = 10**deltas
+# W = 1000 ; *delta=10**-5 = 10**-2 ; exp(-100*-2) = 0.99 presque plat
+
+palette_deltas <- colorRampPalette(c("blue", "green"))(length(deltas))
+
+W_values = seq(0,3500,by=10)
+
+for(i in 1:length(lambdas)){
+  
+  pdf(
+      file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures",
+                "forme_fonctions",
+                paste0("G(W,lambda_",sprintf("%02d", as.integer(i)),",delta,W_inflexion=800).pdf")
+                )
+    )
+  
+  S = sigmo_pluie(W_values,lambdas[i],decalage=800)
+  
+  par(mfrow = c(2, 2))
+
+  plot(
+       W_values,
+       S,
+       main = paste0("S(W,lambda_",i,"=",round(lambdas[i],5),",800)"),
+       ylab = paste0("S(W,lambda_",i,"=",round(lambdas[i],5),",800)"),
+       ylim = c(0,1)
+       )
+  
+  abline(v=800,lty=2)
+  abline(h=0.5,lty=2)
+  
+  plot.new()
+  
+  legend("center",
+         # legend = paste0("j=",1:length(deltas)," delta=",round(deltas,6)),
+         legend = paste0("delta=",round(deltas,6)), 
+         col = palette_deltas, 
+         lty = 1,
+         xpd = TRUE)
+  
+  plot(
+       x=c(0),
+       y=c(0),
+       xlim=c(0,3500),
+       ylim = c(0,1),
+       xlab = "W",
+       main = paste0("G_hat(W,lambda=",round(lambdas[i],5),",delta,800)"),
+       ylab = paste0("G_hat(W,lambda=",round(lambdas[i],5),",delta,800)"),
+       )
+  
+  abline(v=800,lty=2)
+  abline(h=0.5,lty=2)
+ 
+  for(j in 1:length(deltas)){
+     S = sigmo_pluie(W_values,lambdas[i],decalage=800)
+     G_hat = S*sigmo_coeff_competition(W_values,deltas[j],800)
+     lines(W_values, G_hat, col = palette_deltas[j])
+     lines(W_values,S,col="black")
+  }
+  
+  plot(
+       x=c(0),
+       y=c(0),
+       xlim=c(0,3500),
+       ylim = c(0,2),
+       xlab = "W",
+       main = paste0("eta(W,delta,800)"),
+       ylab = paste0("eta(W,delta,800)"),
+       )
+  
+  abline(v=800,lty=2)
+ 
+  for(j in 1:length(deltas)){
+     eta = sigmo_coeff_competition(W_values,deltas[j],800)
+     lines(W_values, eta, col = palette_deltas[j])
+  }
+  
+  dev.off()
+}
+```
+
+
+
+
+
+
+
+
+
+

@@ -156,8 +156,6 @@ summary(mcmc)$statistics
 autocorr.plot(mcmc[[1]], ask = "TRUE")
 plot(mcmc, trace = T)
 
-
-
 # # Verification
 
 # list_files <- list.files(path = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","JAGS_outputs"))

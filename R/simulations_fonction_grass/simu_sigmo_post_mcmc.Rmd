@@ -36,18 +36,18 @@ df_graphique2[4,] = c(700,6.5)
 df_graphique2[5,] = c(800,9)
 df_graphique2[6,] = c(900,12)
 
-par(mfrow = c(1, 2))
-plot(df_graphique,
-     xlim=c(0,1500),
-     ylim=c(0,15)
-     )
-lines(df_graphique2,col="deeppink")
-
-plot(df_graphique2,
-     xlim=c(0,1500),
-     ylim=c(0,15),
-     col="deeppink"
-     )
+# par(mfrow = c(1, 2))
+# plot(df_graphique,
+#      xlim=c(0,1500),
+#      ylim=c(0,15)
+#      )
+# lines(df_graphique2,col="deeppink")
+# 
+# plot(df_graphique2,
+#      xlim=c(0,1500),
+#      ylim=c(0,15),
+#      col="deeppink"
+#      )
 ```
 
 ```{r, echo=FALSE, include = TRUE}
