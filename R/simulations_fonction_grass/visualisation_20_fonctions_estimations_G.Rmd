@@ -43,7 +43,13 @@ deltas = 10**deltas
 palette_deltas <- colorRampPalette(c("blue", "green"))(length(deltas))
 
 W_values = seq(0,3500,by=10)
+point_inflexions = seq(500,2500,by=500)
+K_Gs = seq(5,20,by=3)
+length(K_Gs)*length(point_inflexions)*length(lambdas)
 
+for(K_G in K_Gs){
+  print(K_G)
+for(pt_inflx in point_inflexions){
 for(i in 1:length(lambdas)){
   
   pdf(
@@ -51,24 +57,27 @@ for(i in 1:length(lambdas)){
                 path_to_Savanna_structure_GEDI_folder,
                 "figures",
                 "forme_fonctions",
-                paste0("G(W,lambda_",sprintf("%02d", as.integer(i)),",delta,W_inflexion=800).pdf")
+                paste0(
+                "K_G=",sprintf("%02d",round(K_G,1)),",",
+                "pt_inflx=",sprintf("%04d",pt_inflx),
+                ",G(W,lambda_",sprintf("%02d", as.integer(i)),",delta).pdf")
                 )
     )
   
-  S = sigmo_pluie(W_values,lambdas[i],decalage=800)
+  S = sigmo_pluie(W_values,lambdas[i],decalage=pt_inflx)
   
   par(mfrow = c(2, 2))
 
   plot(
        W_values,
-       S,
-       main = paste0("S(W,lambda_",i,"=",round(lambdas[i],5),",800)"),
-       ylab = paste0("S(W,lambda_",i,"=",round(lambdas[i],5),",800)"),
-       ylim = c(0,1)
+       K_G*S,
+       main = paste0(round(K_G,2),"*S(W,lambda_",i,"=",round(lambdas[i],5),",",pt_inflx,")"),
+       ylab = paste0(round(K_G,2),"*S(W,lambda_",i,"=",round(lambdas[i],5),",",pt_inflx,")"),
+       ylim = c(0,K_G)
        )
   
-  abline(v=800,lty=2)
-  abline(h=0.5,lty=2)
+  abline(v=pt_inflx,lty=2)
+  abline(h=K_G*0.5,lty=2)
   
   plot.new()
   
@@ -83,20 +92,20 @@ for(i in 1:length(lambdas)){
        x=c(0),
        y=c(0),
        xlim=c(0,3500),
-       ylim = c(0,1),
+       ylim = c(0,K_G),
        xlab = "W",
-       main = paste0("G_hat(W,lambda=",round(lambdas[i],5),",delta,800)"),
-       ylab = paste0("G_hat(W,lambda=",round(lambdas[i],5),",delta,800)"),
+       main = paste0("G_hat(W,lambda=",round(lambdas[i],5),",delta",",",pt_inflx,")"),
+       ylab = paste0("G_hat(W,lambda=",round(lambdas[i],5),",delta",",",pt_inflx,")"),
        )
   
-  abline(v=800,lty=2)
-  abline(h=0.5,lty=2)
+  abline(v=pt_inflx,lty=2)
+  abline(h=K_G*0.5,lty=2)
  
   for(j in 1:length(deltas)){
-     S = sigmo_pluie(W_values,lambdas[i],decalage=800)
-     G_hat = S*sigmo_coeff_competition(W_values,deltas[j],800)
+     S = sigmo_pluie(W_values,lambdas[i],decalage=pt_inflx)
+     G_hat = K_G*S*sigmo_coeff_competition(W_values,deltas[j],pt_inflx)
      lines(W_values, G_hat, col = palette_deltas[j])
-     lines(W_values,S,col="black")
+     lines(W_values,K_G*S,col="black")
   }
   
   plot(
@@ -105,19 +114,19 @@ for(i in 1:length(lambdas)){
        xlim=c(0,3500),
        ylim = c(0,2),
        xlab = "W",
-       main = paste0("eta(W,delta,800)"),
-       ylab = paste0("eta(W,delta,800)"),
+       main = paste0("eta(W,delta",",",pt_inflx,")"),
+       ylab = paste0("eta(W,delta",",",pt_inflx,")"),
        )
   
-  abline(v=800,lty=2)
+  abline(v=pt_inflx,lty=2)
  
   for(j in 1:length(deltas)){
-     eta = sigmo_coeff_competition(W_values,deltas[j],800)
+     eta = sigmo_coeff_competition(W_values,deltas[j],pt_inflx)
      lines(W_values, eta, col = palette_deltas[j])
   }
   
   dev.off()
-}
+}}}
 ```
 
 
