@@ -1,13 +1,16 @@
 #!/bin/bash
 
 # Create an array of all PDF files in the current directory
-pdf_files=(*.pdf)
+pdf_files=($(ls -1 *.pdf))
+
+# Sort PDF files based on numerical order
+sorted_pdf_files=($(printf "%s\n" "${pdf_files[@]}" | sort -n -t '.' -k1,1))
 
 # Set the batch size
-batch_size=10
+batch_size=500
 
 # Calculate the number of batches needed
-num_batches=$(((${#pdf_files[@]} + $batch_size - 1) / $batch_size))
+num_batches=$(((${#sorted_pdf_files[@]} + $batch_size - 1) / $batch_size))
 
 # Loop through each batch
 for ((i=0; i<$num_batches; i++)); do
@@ -16,12 +19,12 @@ for ((i=0; i<$num_batches; i++)); do
     end_index=$((start_index + batch_size - 1))
 
     # Ensure end index doesn't exceed the total number of files
-    if ((end_index >= ${#pdf_files[@]})); then
-        end_index=$((${#pdf_files[@]} - 1))
+    if ((end_index >= ${#sorted_pdf_files[@]})); then
+        end_index=$((${#sorted_pdf_files[@]} - 1))
     fi
 
     # Extract the PDF files for the current batch
-    batch=("${pdf_files[@]:start_index:end_index-start_index+1}")
+    batch=("${sorted_pdf_files[@]:start_index:end_index-start_index+1}")
 
     # Merge the PDF files in the current batch
     pdfunite "${batch[@]}" "batch_$i.pdf"

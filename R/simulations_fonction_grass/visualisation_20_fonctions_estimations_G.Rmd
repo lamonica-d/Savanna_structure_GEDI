@@ -31,6 +31,20 @@ omega <- function(G,point_inflexion){return((G**2)/((G**2)+(point_inflexion**2))
 df_graphique = as.data.frame(matrix(nrow=4,ncol=2))
 colnames(df_graphique) = c("pluie (mm yr-1)","biomasse (t.ha-1)")
 df_graphique2 = df_graphique
+
+df_graphique[1,] = c(400,2.3)
+df_graphique[2,] = c(500,3)
+df_graphique[3,] = c(600,4.2)
+df_graphique[4,] = c(700,5.2)
+df_graphique[5,] = c(750,6)
+df_graphique[6,] = c(1000,8.75)
+
+df_graphique2[1,] = c(400,2.3)
+df_graphique2[2,] = c(500,3)
+df_graphique2[3,] = c(600,4.3)
+df_graphique2[4,] = c(700,6.5)
+df_graphique2[5,] = c(800,9)
+df_graphique2[6,] = c(900,12)
 ```
 
 
@@ -43,24 +57,27 @@ deltas = 10**deltas
 palette_deltas <- colorRampPalette(c("blue", "green"))(length(deltas))
 
 W_values = seq(0,3500,by=10)
-point_inflexions = seq(500,2500,by=500)
+point_inflexions = seq(500,1100,by=200)
 K_Gs = seq(5,20,by=3)
 length(K_Gs)*length(point_inflexions)*length(lambdas)
 
+u = 0
 for(K_G in K_Gs){
   print(K_G)
 for(pt_inflx in point_inflexions){
 for(i in 1:length(lambdas)){
-  
+  u = u + 1
   pdf(
       file.path(
                 path_to_Savanna_structure_GEDI_folder,
                 "figures",
                 "forme_fonctions",
                 paste0(
-                "K_G=",sprintf("%02d",round(K_G,1)),",",
-                "pt_inflx=",sprintf("%04d",pt_inflx),
-                ",G(W,lambda_",sprintf("%02d", as.integer(i)),",delta).pdf")
+                sprintf("%03d",u),
+                # ",K_G=",sprintf("%02d",round(K_G,1)),",",
+                # "pt_inflx=",sprintf("%04d",pt_inflx),
+                # ",G(W,lambda_",sprintf("%02d", as.integer(i)),",delta)",
+                ".pdf")
                 )
     )
   
@@ -71,6 +88,7 @@ for(i in 1:length(lambdas)){
   plot(
        W_values,
        K_G*S,
+       # main = paste0(sprintf("%03d",u),";",round(K_G,2),"*S(W,lambda_",i,"=",round(lambdas[i],5),",",pt_inflx,")"),
        main = paste0(round(K_G,2),"*S(W,lambda_",i,"=",round(lambdas[i],5),",",pt_inflx,")"),
        ylab = paste0(round(K_G,2),"*S(W,lambda_",i,"=",round(lambdas[i],5),",",pt_inflx,")"),
        ylim = c(0,K_G)
@@ -78,6 +96,8 @@ for(i in 1:length(lambdas)){
   
   abline(v=pt_inflx,lty=2)
   abline(h=K_G*0.5,lty=2)
+  lines(df_graphique,col="deeppink")
+  lines(df_graphique2,col="deeppink")
   
   plot.new()
   
@@ -94,10 +114,12 @@ for(i in 1:length(lambdas)){
        xlim=c(0,3500),
        ylim = c(0,K_G),
        xlab = "W",
-       main = paste0("G_hat(W,lambda=",round(lambdas[i],5),",delta",",",pt_inflx,")"),
-       ylab = paste0("G_hat(W,lambda=",round(lambdas[i],5),",delta",",",pt_inflx,")"),
+       main = paste0(round(K_G,2),"*G_hat(W,lambda=",round(lambdas[i],5),",delta",",",pt_inflx,")"),
+       ylab = paste0(round(K_G,2),"*G_hat(W,lambda=",round(lambdas[i],5),",delta",",",pt_inflx,")"),
        )
-  
+  lines(df_graphique,col="deeppink")
+  lines(df_graphique2,col="deeppink")
+
   abline(v=pt_inflx,lty=2)
   abline(h=K_G*0.5,lty=2)
  
@@ -119,6 +141,8 @@ for(i in 1:length(lambdas)){
        )
   
   abline(v=pt_inflx,lty=2)
+  lines(df_graphique,col="deeppink")
+  lines(df_graphique2,col="deeppink")
  
   for(j in 1:length(deltas)){
      eta = sigmo_coeff_competition(W_values,deltas[j],pt_inflx)
