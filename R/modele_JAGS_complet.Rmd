@@ -75,16 +75,16 @@ data <- list(
     
   for (i in 1:N){
       
-      fire_data[i] ~ dnorm( min ( max(0.001, (grassB[i]**2)/(grassB[i]**2 + pt_inflexion_feu**2) ) , 0.999) , 1/0.01)
+      fire_data[i] ~ dnorm(grassB[i], 1/0.01)T(0,1) #dnorm(grassB[i]**2/(grassB[i]**2 + pt_inflexion_feu**2) , 1/0.01)T(0,1)
       
       }
   
   # priors
   
-  pt_inflexion_grass ~ dnorm(410,1/50)
-  pt_inflexion_feu ~ dnorm(1.5,1/1)
-  K_G_t_f_pluie_max ~ dnorm(16,1/5)
-  lambda ~ dunif(0.0017,0.0088)
+  pt_inflexion_grass ~ dnorm(800,1/4000) #dnorm(800,1/40000)
+  #pt_inflexion_feu ~ dnorm(1,1/4)T(0,)
+  K_G_t_f_pluie_max <- 1 #~ dnorm(15,1/8)
+  lambda ~ dunif(0.00010,0.0088) #dunif(0.0017,0.0088)
   
   }
 "
@@ -94,27 +94,27 @@ data <- list(
 ```{r inits, echo=FALSE, include = FALSE}
 inits <- list(
                list(
-                    K_G_t_f_pluie_max = 16,
-                    pt_inflexion_grass = 410,
-                    pt_inflexion_feu = 1.5,
+                   # K_G_t_f_pluie_max = 8,
+                    pt_inflexion_grass = 600,
+                   # pt_inflexion_feu = 7,
                       
-                    lambda = runif(1,0.0017,0.0088)
+                    lambda = 0.0025 # runif(1,0.0017,0.0088)
                     ),
                
                list(
-                 K_G_t_f_pluie_max = 14,
-                 pt_inflexion_grass = 460,
-                 pt_inflexion_feu = 0.5,
+               #  K_G_t_f_pluie_max = 14,
+                 pt_inflexion_grass = 800,
+               #  pt_inflexion_feu = 2,
                  
-                 lambda = runif(1,0.0017,0.0088)
+                 lambda = 0.0065 # runif(1,0.0017,0.0088)
                ),
                
                list(
-                 K_G_t_f_pluie_max = 15,
-                 pt_inflexion_grass = 420,
-                 pt_inflexion_feu = 1.2,
+             #    K_G_t_f_pluie_max = 18,
+                 pt_inflexion_grass = 1000,
+              #   pt_inflexion_feu = 5,
                  
-                 lambda = runif(1,0.0017,0.0088)
+                 lambda = 0.0040 # runif(1,0.0017,0.0088)
                )   
                
               )
@@ -122,42 +122,42 @@ inits <- list(
 
 
 ```{r mcmc, echo=FALSE, include = FALSE}
-  
+#   
 m <- rjags::jags.model(
                         textConnection(model),
                         inits = inits,
                         data = data,
                         n.chains = length(inits),
-                        n.adapt = 10**4 # est-ce suffisant ?
+                        n.adapt = 10**2 # est-ce suffisant ?
                         )
 # burnin
-update(m, 10**4)
+update(m, 10**3)
 mcmc <- rjags::coda.samples(
                              m,
-                             variable.names = c("K_G_t_f_pluie_max",
+                             variable.names = c(#"K_G_t_f_pluie_max",
                                                 "lambda",
-                                                "pt_inflexion_feu",
+                                                #"pt_inflexion_feu",
                                                 "pt_inflexion_grass"
                                                 ),
-                             n.iter = 10**5,
+                             n.iter = 10**4,
                              thin = 10
                              )
 ```
 
 
 ```{r save_file, echo=FALSE, include = FALSE}
-save_rds_files = TRUE
-
-if(save_rds_files==TRUE){
-
-        saveRDS(mcmc,
-                file.path(
-                  path_to_Savanna_structure_GEDI_folder,
-                  "outputs",
-                  "JAGS_outputs",
-                  paste0(name,"_complete_model3.RDS"))
-                )
-}
+# save_rds_files = TRUE
+# 
+# if(save_rds_files==TRUE){
+# 
+#         saveRDS(mcmc,
+#                 file.path(
+#                   path_to_Savanna_structure_GEDI_folder,
+#                   "outputs",
+#                   "JAGS_outputs",
+#                   paste0(name,"_complete_model3.RDS"))
+#                 )
+# }
 
 mcmc <- readRDS(
                 file.path(
@@ -210,19 +210,6 @@ df_graphique2[3,] = c(600,4.3)
 df_graphique2[4,] = c(700,6.5)
 df_graphique2[5,] = c(800,9)
 df_graphique2[6,] = c(900,12)
-
-# par(mfrow = c(1, 2))
-# plot(df_graphique,
-#      xlim=c(0,1500),
-#      ylim=c(0,15)
-#      )
-# lines(df_graphique2,col="deeppink")
-# 
-# plot(df_graphique2,
-#      xlim=c(0,1500),
-#      ylim=c(0,15),
-#      col="deeppink"
-#      )
 ```
 
 ```{r, echo=FALSE, include = FALSE}
@@ -257,8 +244,8 @@ display_mcmc_output_sigmoides = function(K_G_t_f_pluie_max_mcmc,lambda_mcmc,pt_i
   lambda1 = 0.00172
   lambda2 = 0.0088
   
-  max_W = 3000
-  W_values = seq(-max_W,max_W,by=10)
+  max_W = 3500
+  W_values = seq(0,max_W,by=10)
 
   # Premier graphique
     
@@ -273,7 +260,7 @@ display_mcmc_output_sigmoides = function(K_G_t_f_pluie_max_mcmc,lambda_mcmc,pt_i
   plot(
        x=c(0),
        y=c(0),
-       xlim=c(-1500,1500),
+       xlim=c(0,3500),
        xaxt = "n",
        ylim = c(0,1),
        xlab = "W", ylab = "grass (à constante multiplicative près)",
@@ -295,7 +282,6 @@ display_mcmc_output_sigmoides = function(K_G_t_f_pluie_max_mcmc,lambda_mcmc,pt_i
   
     print("donnees post mcmc")
 
-    W_values = seq(-1500,2000,by=10)
     K_G_pluie_max = K_G_t_f_pluie_max_mcmc
       
     palette <- rainbow(length(lambdas))
@@ -318,13 +304,13 @@ display_mcmc_output_sigmoides = function(K_G_t_f_pluie_max_mcmc,lambda_mcmc,pt_i
          xlim=c(0,3500),
          ylim = c(0,K_G_pluie_max),
          xlab = "W", ylab = "mcmc_simulated_grass",
-         main = paste0("pt_inflexion=",pt_inflexion_grass_mcmc,"mm.yr-1")
+         main = paste0("pt_inflexion=",round(pt_inflexion_grass_mcmc,2),"mm.yr-1")
          )
   
     grass_simulated_by_mcmc = K_G_pluie_max*sigmo_pluie(W_values,lambda=lambda_mcmc,decalage = pt_inflexion_grass_mcmc)
-    lines(W_values+pt_inflexion_grass_mcmc, grass_simulated_by_mcmc, col = "black", lwd = 3)
+    lines(W_values, grass_simulated_by_mcmc, col = "black", lwd = 3)
     
-    abline(v=0,lty=2)
+    abline(v=pt_inflexion_grass_mcmc,lty=2)
     abline(h=K_G_pluie_max,lty=2)
     lines(df_graphique[,"pluie (mm yr-1)"],df_graphique[,"biomasse (t.ha-1)"],pch=1,
           col="deeppink",lwd=3)
@@ -338,7 +324,6 @@ display_mcmc_output_sigmoides = function(K_G_t_f_pluie_max_mcmc,lambda_mcmc,pt_i
   
     print("donnees post mcmc")
     
-    W_values = seq(-1500,2000,by=10)
     K_G_pluie_max = K_G_t_f_pluie_max_mcmc
       
     palette <- rainbow(length(lambdas))
@@ -353,19 +338,19 @@ display_mcmc_output_sigmoides = function(K_G_t_f_pluie_max_mcmc,lambda_mcmc,pt_i
          xlim=c(0,3500),
          ylim = c(0,K_G_pluie_max),
          xlab = "W", ylab = "",
-         main = paste0("pt_inflexion=",pt_inflexion_grass_mcmc,"mm.yr-1")
+         main = paste0("pt_inflexion=",round(pt_inflexion_grass_mcmc,2),"mm.yr-1")
          )
   
   for(i in 1:length(lambdas)){
        grass = K_G_pluie_max*sigmo_pluie(W_values,lambda=lambdas[i],decalage = pt_inflexion_grass_mcmc)
-       lines(W_values+pt_inflexion_grass_mcmc, grass, col = palette[i])
+       lines(W_values, grass, col = palette[i])
        # abline(a=0.5,b=lambdas[i]/4,lty=2,col = palette[i])
   }
     
     grass_simulated_by_mcmc = K_G_pluie_max*sigmo_pluie(W_values,lambda=lambda_mcmc,decalage = pt_inflexion_grass_mcmc)
-    lines(W_values+pt_inflexion_grass_mcmc, grass_simulated_by_mcmc, col = "black", lwd = 3)
+    lines(W_values, grass_simulated_by_mcmc, col = "black", lwd = 3)
     
-    abline(v=0,lty=2)
+    abline(v=pt_inflexion_grass_mcmc,lty=2)
     abline(h=K_G_pluie_max,lty=2)
     lines(df_graphique[,"pluie (mm yr-1)"],df_graphique[,"biomasse (t.ha-1)"],pch=1,
           col="deeppink",lwd=3)
@@ -381,7 +366,7 @@ display_mcmc_output_sigmoides = function(K_G_t_f_pluie_max_mcmc,lambda_mcmc,pt_i
     plot.new()
 
     G = seq(0.00001,16,length=10**3)
-    p_feu = omega(G,5)
+    p_feu = omega(G,pt_inflexion_feu_mcmc)
     
     legend(
           "center", 
@@ -400,13 +385,9 @@ display_mcmc_output_sigmoides = function(K_G_t_f_pluie_max_mcmc,lambda_mcmc,pt_i
          xlab = "t.ha-1",
          ylab = "p_feu"
          )
+    abline(v=pt_inflexion_feu_mcmc)
     
 } # end of display_mcmc_output_sigmoides function definition
-
-K_G_t_f_pluie_max_mcmc = 7.851461e+00
-lambda_mcmc            = 4.889121e-03
-pt_inflexion_feu_mcmc  = 4.527974e+00 
-pt_inflexion_grass_mcmc = 4.080104e+02
 ```
 
 ```{r display_mcmc_outputs, echo =TRUE, include = TRUE}

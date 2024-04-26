@@ -27,7 +27,7 @@ for ((i=0; i<$num_batches; i++)); do
     batch=("${sorted_pdf_files[@]:start_index:end_index-start_index+1}")
 
     # Merge the PDF files in the current batch
-    pdfunite "${batch[@]}" "batch_$i.pdf"
+    pdfunite "${batch[@]}" "batch_%05d$i.pdf"
 done
 
 # Merge all batch files into one big PDF
