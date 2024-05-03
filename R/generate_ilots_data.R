@@ -32,7 +32,7 @@ grid_of_distant_cells <- function(target_nrow,target_ncol,plot_grid=FALSE){
 }
 
 #cell size (in meters)
-cell <- 50000
+cell <- 10000
 
 #load all data table
 table <- readRDS(file = "rawdata/complete_corresponding_table_without_duplicate.RDS")
@@ -104,6 +104,7 @@ nc <- st_as_sf(new_spatvector, coords = c("x.meter", "y.meter"), crs = 3857)
 
 index_points_list <- list()
 for (i in 1:nrow(table_kept_cells)){
+  print(i)
   extent_list[[i]] -> extent_i
   
   #intersect proprement dit
@@ -123,4 +124,5 @@ for (i in 1:nrow(table_kept_cells)){
   #on range dans la list
   index_points_list[[i]] <- temp2
 }
-  
+
+save(index_points_list, file = "index_points_list.Rda") 

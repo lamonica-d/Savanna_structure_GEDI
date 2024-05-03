@@ -49,7 +49,6 @@ x_sf <- st_transform(nc, 3857)
 ####on reprend là
 x_ext <- st_bbox(x_sf)
 #set a cell length, in meter
-cell <- 100000
 set.seed(5)
 x.random <- runif(n = 1, min = x_ext[1], max = x_ext[3])
 y.random <- runif(n = 1, min = x_ext[2], max = x_ext[4])
@@ -79,3 +78,6 @@ truc2 <- merge(df_pts_inside,
 
 var_rh98 <- geoR::variog(coords = data.frame(truc2$x.meter, truc2$y.meter), data = truc2$rh98)
 plot(var_rh98)
+
+var_cc <- geoR::variog(coords = data.frame(truc2$x.meter, truc2$y.meter), data = truc2$canopy_cover)
+plot(var_cc)
