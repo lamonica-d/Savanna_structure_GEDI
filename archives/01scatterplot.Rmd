@@ -22,8 +22,6 @@ getwd()
 # Libraries
 library(fst)
 library(ggplot2)
-library(corrplot)
-library(reshape2)
 
 # Chargement du tableau missing_data_percentages.csv
 
@@ -59,7 +57,7 @@ for (i in 1:length(dir())){
   corresponding_table["fire_freq_NA"] <- TRUE_FALSE_is_fire_freq_NA
   
   # If we want to replace the NA by zero at some point
-  # corresponding_table[which(TRUE_FALSE_is_fire_freq_NA),"fire_freq"] <- 0
+  corresponding_table[which(TRUE_FALSE_is_fire_freq_NA),"fire_freq"] <- 0
   
   corresponding_table <- corresponding_table[
     complete.cases(
@@ -162,7 +160,7 @@ for (i in 1:length(matrices_list)){
                   path_to_Savanna_structure_GEDI_folder,
                   "figures",
                   "correlation_matrices",
-                  "without_fire_NA"
+                  "with_NA_replaced"
                   )
   )
   
@@ -222,7 +220,7 @@ for (i in 1:length(dir())){
   corresponding_table["fire_freq_NA"] <- TRUE_FALSE_is_fire_freq_NA
   
   # If we want to replace the NA by zero at some point
-  # corresponding_table[which(TRUE_FALSE_is_fire_freq_NA),"fire_freq"] <- 0
+  corresponding_table[which(TRUE_FALSE_is_fire_freq_NA),"fire_freq"] <- 0
   
   corresponding_table <- corresponding_table[
     complete.cases(
@@ -255,6 +253,9 @@ setwd(path_to_R_folder)
 ```
 
 ```{r}
+# print(nrow(corresponding_table))
+# 45 189 435 : D
+
 # Matrice de corrélation de toutes les données concaténées
 
 correlation_matrix <- cor(x = corresponding_table[,c("x",
@@ -281,13 +282,13 @@ plot <- display_matrix(
 
 print(plot)
 
-  setwd(file.path(
-                  path_to_Savanna_structure_GEDI_folder,
-                  "figures",
-                  "correlation_matrices",
-                  "without_fire_NA"
-                  )
-  )
+setwd(file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures",
+                "correlation_matrices",
+                "with_NA_replaced"
+                )
+)
   
 # ggsave(
 #        paste("all_data.png"),

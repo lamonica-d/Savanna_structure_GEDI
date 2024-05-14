@@ -105,7 +105,7 @@ save_rds_files = save_things
 save_center_cells_geojson = save_things
 save_coords_TRUE_geojson = save_things
 
-for (name in names){
+for(name in names){
   
   print(name)
   
