@@ -32,7 +32,7 @@ grid_of_distant_cells <- function(target_nrow,target_ncol,plot_grid=FALSE){
 }
 
 #cell size (in meters)
-cell <- 10000
+cell <- 20000
 
 #load all data table
 table <- readRDS(file = "rawdata/complete_corresponding_table_without_duplicate.RDS")
@@ -125,4 +125,4 @@ for (i in 1:nrow(table_kept_cells)){
   index_points_list[[i]] <- temp2
 }
 
-save(index_points_list, file = "index_points_list.Rda") 
+save(index_points_list, file = "index_points_list_guinee.Rda") 
