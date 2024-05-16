@@ -273,3 +273,116 @@ for(ecoregion in ecoregions){
   
 }
 
+####
+
+
+require("ggplot2")
+require("gridExtra")
+require("grid")
+
+corresponding_table <- readRDS(
+  file.path(
+    path_to_Savanna_structure_GEDI_folder,
+    "subsampling30avril",
+    "final_table_10km_associated_to_300km_cell.RDS")
+)
+
+head(corresponding_table)
+dim(corresponding_table)
+
+{
+  if(
+    length(corresponding_table[,"canopy_cover"])>0 # s'il y a des donn?es
+  ){
+    
+    plot_cc <- ggplot(
+      corresponding_table,
+      aes(x=canopy_cover)
+    ) +
+      geom_histogram(
+        position="identity",
+        bins = 30,
+        colour = "white",
+        fill = "forestgreen",
+        alpha = 0.6
+      ) +
+      labs(x = paste0("canopy_cover"
+      )
+      )
+  }else{
+    print("NO DATA")
+  }
+  
+  if(
+    length(corresponding_table[,"fire_freq"])>0 # s'il y a des donn?es
+  ){
+    plot_fire <- ggplot(
+      corresponding_table,
+      aes(x=fire_freq)
+    ) +
+      geom_histogram(
+        position="identity",
+        bins = 30,
+        colour = "white",
+        fill = "red",
+        alpha = 0.6
+      ) +
+      labs(x = paste0("fire_freq"
+      )
+      )
+  }else{
+    print("NO DATA")
+  }
+  
+  if(
+    length(corresponding_table[,"mean_precip"])>0 # s'il y a des données
+  ){
+    plot_rain <- ggplot(
+      corresponding_table,
+      aes(x=mean_precip)
+    ) +
+      geom_histogram(
+        position="identity",
+        bins = 30,
+        colour = "white",
+        fill = "skyblue",
+        alpha = 0.6
+      ) +
+      labs(x = paste0("mean_precip"
+      )
+      )
+  }else{ print("NO DATA") }
+  
+  if(
+    length(corresponding_table[,"rh98"])>0 # s'il y a des donn?es
+  ){
+    plot_rh98 <- ggplot(
+      corresponding_table,
+      aes(x=rh98)
+    ) +
+      geom_histogram(
+        position="identity",
+        bins = 30,
+        colour = "white",
+        fill = "limegreen",
+        alpha = 0.6
+      ) +
+      labs(x = paste0("rh98"
+      )
+      )
+  }else{ print("NO DATA") }
+  
+  plot <- grid.arrange(
+    plot_cc, plot_rh98, plot_fire, plot_rain,
+    nrow = 2, ncol=2,
+    bottom = textGrob("6 ecoregions",gp=gpar(fontsize=20,font=1))
+  )
+  
+  ggsave(
+    file.path(path_to_Savanna_structure_GEDI_folder,"figures","global_histograms.png"),
+    plot = plot,
+    scale = 2,
+    bg='#ffffff'# pour ne pas avoir un fond gris moche
+  )
+  
+}
