@@ -2,7 +2,7 @@ library(sf)
 library(terra)
 library(doParallel)
 library(foreach)
-library(Rmpi)
+#library(Rmpi)
 
 grid_of_distant_cells <- function(target_nrow,target_ncol,plot_grid=FALSE){
   
@@ -60,7 +60,7 @@ intersect_custom <- function(extent_i, nc, specific_table){
 cell <- 50000
 
 #load all data table
-specific_table <- readRDS(file = "data_6_ecoregion.RDS")
+specific_table <- readRDS(file = "rawdata_post_preprocessing/6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS")
 
 rownames(specific_table) = 1:nrow(specific_table)
 specific_table <- cbind(
@@ -122,12 +122,12 @@ for (i in 1:nrow(table_kept_cells)){
 #on passe le spatvector en sf
 nc <- st_as_sf(new_spatvector, coords = c("x.meter", "y.meter"), crs = 3857)
 
-numWorkers <- 45
+numWorkers <- 12
 extent_list <- extent_list[3001:3500]
 extent_list_split <- lapply(.splitIndices(length(extent_list),numWorkers), function(i) extent_list[i])
 save(extent_list_split, file = "extent_list_split_test.Rda") 
 
-cl <- makeCluster(numWorkers, type = "MPI")
+cl <- makeCluster(numWorkers, type = "FORK")
 registerDoParallel(cl)
 clusterCall(cl, function () Sys.info () [c ( "nodename", "machine" ) ] )
 clusterExport(cl,"nc")
