@@ -299,14 +299,14 @@ saveRDS(simulations_grass,
         file.path(
                   path_to_Savanna_structure_GEDI_folder,
                   "JAGS_outputs",
-                  paste0("simulations_grass",Sys.time()))
+                  paste0("simulations_grass",Sys.time(),".RDS"))
         )
 
 saveRDS(simulations_feu,
         file.path(
                   path_to_Savanna_structure_GEDI_folder,
                   "JAGS_outputs",
-                  paste0("simulations_feu",Sys.time()))
+                  paste0("simulations_feu",Sys.time(),".RDS"))
         )
 ```
 
