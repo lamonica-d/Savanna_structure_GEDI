@@ -42,11 +42,13 @@ colnames(complete_corresponding_table) <-  c("x",
                                              "ecoregion",
                                              "fire_freq_NA")
 
-for (i in 1:length(dir(path_to_GEDI_raw_data))){
+for (i in c(10,18,19,23,26,27)){
 #for (i in 1:1){
 
   name = dir(path_to_GEDI_raw_data)[i]
 
+  print(name)
+  
   corresponding_table = fst::read.fst(file.path(path_to_GEDI_raw_data,name))
   
   # Let's only keep the following columns :
@@ -142,14 +144,14 @@ nrow(without_duplicate)
 ```
 
 ```{r}
-# saveRDS(
-#         object = without_duplicate,
-#         file = file.path(
-#                          path_to_Savanna_structure_GEDI_folder,
-#                          "rawdata_post_preprocessing",
-#                          "complete_corresponding_table_without_duplicate.RDS"
-#                          )
-#         )
+saveRDS(
+        object = without_duplicate,
+        file = file.path(
+                         path_to_Savanna_structure_GEDI_folder,
+                         "rawdata_post_preprocessing",
+                         "complete_corresponding_table_without_duplicate.RDS"
+                         )
+        )
 # 
 # without_duplicate <- readRDS(
 #                               file.path(
@@ -181,29 +183,29 @@ duplicates <- janitor::get_dupes(without_duplicate, "x", "y") # prend quelques m
 ```{r}
 # Standardisation des données sur toutes les données :
 
-sub_table <- readRDS(file = file.path(
-                                       path_to_Savanna_structure_GEDI_folder,
-                                       "rawdata_post_preprocessing",
-                                       "complete_corresponding_table_without_duplicate.RDS"
-                                       )
-                     )
-
-sub_table = cbind(sub_table,as.vector(scale(sub_table$fire_freq, center = TRUE, scale = TRUE)))
-sub_table = cbind(sub_table,as.vector(scale(sub_table$mean_precip, center = TRUE, scale = TRUE)))
-sub_table = cbind(sub_table,as.vector(scale(sub_table$mean_temp, center = TRUE, scale = TRUE)))
-
-colnames(sub_table)
-head(sub_table)
-ncol(sub_table)
-
-colnames(sub_table)[10] = "fire_freq_std"
-colnames(sub_table)[11] = "mean_precip_std"
-colnames(sub_table)[12] = "mean_temp_std"
-
-colnames(sub_table)
-
-summary(sub_table)
-colnames(sub_table)
+# sub_table <- readRDS(file = file.path(
+#                                        path_to_Savanna_structure_GEDI_folder,
+#                                        "rawdata_post_preprocessing",
+#                                        "complete_corresponding_table_without_duplicate.RDS"
+#                                        )
+#                      )
+# 
+# sub_table = cbind(sub_table,as.vector(scale(sub_table$fire_freq, center = TRUE, scale = TRUE)))
+# sub_table = cbind(sub_table,as.vector(scale(sub_table$mean_precip, center = TRUE, scale = TRUE)))
+# sub_table = cbind(sub_table,as.vector(scale(sub_table$mean_temp, center = TRUE, scale = TRUE)))
+# 
+# colnames(sub_table)
+# head(sub_table)
+# ncol(sub_table)
+# 
+# colnames(sub_table)[10] = "fire_freq_std"
+# colnames(sub_table)[11] = "mean_precip_std"
+# colnames(sub_table)[12] = "mean_temp_std"
+# 
+# colnames(sub_table)
+# 
+# summary(sub_table)
+# colnames(sub_table)
 
 # saveRDS(
 #         object = sub_table,
@@ -252,14 +254,14 @@ colnames(sub_table)
 summary(sub_table)
 colnames(sub_table)
 
-# saveRDS(
-#         object = sub_table,
-#         file = file.path(
-#                          path_to_Savanna_structure_GEDI_folder,
-#                          "rawdata_post_preprocessing",
-#                          "6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS"
-#                          )
-#         )
+saveRDS(
+        object = sub_table,
+        file = file.path(
+                         path_to_Savanna_structure_GEDI_folder,
+                         "rawdata_post_preprocessing",
+                         "6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS"
+                         )
+        )
 ```
 
 ```{r}
