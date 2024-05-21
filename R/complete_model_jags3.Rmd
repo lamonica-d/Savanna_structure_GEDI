@@ -74,7 +74,7 @@ inits <- list(
        pt_inflexion_feu = vals["pt_inflexion_feu",2],
        # delta_min = vals["delta_min",2],
        # log10delta_max = vals["log10delta_max",2],
-       log10delta_max = vals["delta_max",2],
+       log10delta_max = vals["log10delta_max",2],
        pt_inflexion_grass = vals["pt_inflexion_grass",2],
        lambda = vals["lambda",2]
        #log10a = vals["log10a",2]
@@ -85,7 +85,7 @@ inits <- list(
        pt_inflexion_feu = vals["pt_inflexion_feu",3],
        # delta_min = vals["delta_min",3],
        # log10delta_max = vals["log10delta_max",3],
-       log10delta_max = vals["delta_max",3],
+       log10delta_max = vals["log10delta_max",3],
        pt_inflexion_grass = vals["pt_inflexion_grass",3],
        lambda = vals["lambda",3]
        # log10a = vals["log10a",3]
@@ -95,7 +95,7 @@ inits <- list(
        pt_inflexion_feu = vals["pt_inflexion_feu",4],
        # delta_min = vals["delta_min",4],
        # log10delta_max = vals["log10delta_max",2],
-       log10delta_max = vals["delta_max",4],
+       log10delta_max = vals["log10delta_max",4],
        pt_inflexion_grass = vals["pt_inflexion_grass",4],
        lambda = vals["lambda",4]
        # log10a = vals["log10a",4]

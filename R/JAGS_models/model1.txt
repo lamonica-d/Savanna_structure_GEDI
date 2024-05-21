@@ -30,7 +30,7 @@ model {
   pt_inflexion_grass ~ dnorm(600,1/600**2)T(0,2000)
   lambda ~ dunif(0.0017,0.0088)
 
-  delta_max = 10**log10delta_max
+  delta_max = 10^log10delta_max
     
   # ~ dunif(13,25)
   # 13 vraiment un minimum, 30 ça fait 30/10**4 = 0.003 t = 3kg par m-2
