@@ -73,6 +73,10 @@ if(Sys.info()[['effective_user']] == "lamonica"){
       "gedi_data_lebien",
       "pix_extract"
     )
+    
+    path_to_ilots_dataRDA = file.path("à compléter")
+    
+    
 }
 
 
@@ -108,6 +112,11 @@ if(Sys.info()[['effective_user']] == "thiriet"){
   path_to_GEDI_raw_data = file.path(
     path_to_Documents,
     "raw_GEDI_data"
+  )
+  
+  path_to_ilots_dataRDA = file.path(
+    path_to_Documents,
+    "ilots"
   )
   
 }
