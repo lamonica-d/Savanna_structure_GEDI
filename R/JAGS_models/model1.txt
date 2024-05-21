@@ -22,26 +22,28 @@ model {
   # priors
   
   K_G_t_f_pluie_max = 20
+  a = 1
+  delta_min = 10**-5
+    
+  pt_inflexion_feu ~ dunif(2,4.5) 
+  log10delta_max ~ dunif(-5,-2)
+  pt_inflexion_grass ~ dnorm(600,1/600**2)T(0,2000)
+  lambda ~ dunif(0.0017,0.0088)
+
+  delta_max = 10**log10delta_max
+    
   # ~ dunif(13,25)
   # 13 vraiment un minimum, 30 ça fait 30/10**4 = 0.003 t = 3kg par m-2
-  
-  pt_inflexion_feu ~ dunif(2,4.5)
   # a priori compris dans cette zone...
-  
-  delta_min ~ dnorm(0.0017,1/0.001**2)T(0,)
+  # delta_min ~ dnorm(0.0017,1/0.001**2)T(0,)
   # curve(dnorm(x,0.0017,sd=0.001),xlim=c(0.001,0.01))
-
-  delta_max ~ dnorm(0.0088,1/0.001**2)T(0,)
+  # delta_max ~ dnorm(0.0088,1/0.001**2)T(0,)
   # curve(dnorm(x,0.0088,sd=0.001),xlim=c(0.001,0.01))
-
-  pt_inflexion_grass ~ dnorm(600,1/600**2)T(0,)
   # curve(dnorm(x,600,sd=600),xlim=c(0,3000))
-  
-  lambda ~ dnorm((0.0088-0.0017)/2,1/0.003**2)T(0,)
+  # ~ dnorm((0.0088-0.0017)/2,1/0.003**2)T(0,)
   # curve(dnorm(x,(0.0088-0.0017)/2,sd=0.003),xlim=c(0,0.02))
-  
-  log10a ~ dunif(-8,15)
-  a <- 10^log10a
+  #log10a ~ dunif(-8,15)
+  # a <- 10^log10a
   # curve(1/(1+50*exp(-0.0035*(x-600))),xlim=c(-3000,3000),ylim=c(0,1))
   # curve(dnorm(x,5,sd=10**8),xlim=c(0,3000)) 
   

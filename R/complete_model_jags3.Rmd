@@ -41,72 +41,82 @@ data <- list(
 
 ```{r model, echo=FALSE, include = FALSE}
 # model and jags inference
-vals <- data.frame(matrix(nrow=6,ncol=4))
+vals <- data.frame(matrix(nrow=4,ncol=4))
 rownames(vals) = c("pt_inflexion_feu",
-                   "delta_min","delta_max",
-                   "pt_inflexion_grass","lambda","log10a")
+                   # "delta_min",
+                   # "delta_max",
+                   "log10delta_max",
+                   "pt_inflexion_grass",
+                   "lambda")
+#"log10a")
 
 # vals["K_G_t_f_pluie_max",] = c(15,20,25,29)
-vals["pt_inflexion_feu",] = c(2.6,3,4.1,2.1)
-vals["delta_min",] = c(0.0020,0.0027,0.0037,0.0057)
-vals["delta_max",] = c(0.0027,0.0037,0.0067,0.0077)
-vals["pt_inflexion_grass",] = c(972,46, 527, 446)
-vals["lambda",] = c(0.0047,0.0057,0.0037,0.0027)
-vals["log10a",] = c(-7,-2,3,4)
+vals["pt_inflexion_feu",] = c(2.6,3,4.1,3)
+# vals["delta_min",] = c(0.0020,0.0027,0.0037,0.0027)
+vals["log10delta_max",] = c(-4.9,-3,-3.2,-2.2)
+vals["pt_inflexion_grass",] = c(900,600, 527, 446)
+vals["lambda",] = c(0.0047,0.0067,0.0077,0.0027)
+# vals["log10a",] = c(-7,-2,3,4)
 
 inits <- list(
  list(
        # K_G_t_f_pluie_max = vals["K_G_t_f_pluie_max",1],
        pt_inflexion_feu = vals["pt_inflexion_feu",1],
-       delta_min = vals["delta_min",1],
-       delta_max = vals["delta_max",1],
+       # delta_min = vals["delta_min",1],
+       # delta_max = vals["delta_max",1],
+       log10delta_max = vals["log10delta_max",1],
        pt_inflexion_grass = vals["pt_inflexion_grass",1],
-       lambda = vals["lambda",1],
-       log10a = vals["log10a",1]
+       lambda = vals["lambda",1]
+       #log10a = vals["log10a",1]
       ),
  list(
        # K_G_t_f_pluie_max = vals["K_G_t_f_pluie_max",2],
        pt_inflexion_feu = vals["pt_inflexion_feu",2],
-       delta_min = vals["delta_min",2],
-       delta_max = vals["delta_max",2],
+       # delta_min = vals["delta_min",2],
+       # log10delta_max = vals["log10delta_max",2],
+       log10delta_max = vals["delta_max",2],
        pt_inflexion_grass = vals["pt_inflexion_grass",2],
-       lambda = vals["lambda",2],
-       log10a = vals["log10a",2]
+       lambda = vals["lambda",2]
+       #log10a = vals["log10a",2]
       ),
  
  list(
        # K_G_t_f_pluie_max = vals["K_G_t_f_pluie_max",3],
        pt_inflexion_feu = vals["pt_inflexion_feu",3],
-       delta_min = vals["delta_min",3],
-       delta_max = vals["delta_max",3],
+       # delta_min = vals["delta_min",3],
+       # log10delta_max = vals["log10delta_max",3],
+       log10delta_max = vals["delta_max",3],
        pt_inflexion_grass = vals["pt_inflexion_grass",3],
-       lambda = vals["lambda",3],
-       log10a = vals["log10a",3]
+       lambda = vals["lambda",3]
+       # log10a = vals["log10a",3]
       ),
  list(
        # K_G_t_f_pluie_max = vals["K_G_t_f_pluie_max",4],
        pt_inflexion_feu = vals["pt_inflexion_feu",4],
-       delta_min = vals["delta_min",4],
-       delta_max = vals["delta_max",4],
+       # delta_min = vals["delta_min",4],
+       # log10delta_max = vals["log10delta_max",2],
+       log10delta_max = vals["delta_max",4],
        pt_inflexion_grass = vals["pt_inflexion_grass",4],
-       lambda = vals["lambda",4],
-       log10a = vals["log10a",4]
+       lambda = vals["lambda",4]
+       # log10a = vals["log10a",4]
       )
 )
 
 variables <- c(
                 #"K_G_t_f_pluie_max",
                  "pt_inflexion_grass",
-                 "log10a",
+                 # "log10a",
                  "pt_inflexion_feu",
-                 "delta_min",
-                 "delta_max",
+                 # "delta_min",
+                 # "delta_max",
+                 "log10delta_max",
                  "lambda"
                 )
 ```
 
 
 ```{r mcmc, echo=FALSE, include = FALSE}
+print(Sys.time())
 
 cl <- makeCluster((4))
 
@@ -126,11 +136,11 @@ clusterEvalQ(cl,library(iterators))
 
 jags_res=foreach(i =1:4,.combine='mcmc.list',.multicombine=TRUE)%dopar%{
   as.mcmc(run.jags(file.path(path_to_Savanna_structure_GEDI_folder,"R","JAGS_models","model1.txt"),monitor=variables,data=data,n.chains=1,inits=dump.format(inits[[i]]),
-              burnin=1000,sample=2000,thin=10,tempdir=FALSE,
-                   summarise=FALSE,adapt = 1000,keep.jags.files=FALSE))
+              burnin=500,sample=1000,thin=10,tempdir=FALSE,
+                   summarise=FALSE,adapt = 500,keep.jags.files=FALSE))
 
 }
-
+ 
 # parJagsModel(cl =cl,
 #              name = "res",
 #             file= textConnection(model),
@@ -161,6 +171,7 @@ saveRDS(jags_res,
         )
 )
 mcmc <- jags_res
+print(Sys.time())
 ```
 
 
@@ -169,7 +180,7 @@ mcmc <- readRDS(
                 file.path(
                   path_to_Savanna_structure_GEDI_folder,
                   "JAGS_outputs",
-                  "2024-05-15 20:24:59.033691 .RDS")
+                  " ")
                 )
 ```
 
@@ -180,9 +191,10 @@ colMeans(as.data.frame(mcmc[[3]]))
 colMeans(as.data.frame(mcmc[[4]]))
 
 K_G_t_f_pluie_max  = 20 # summary(mcmc)$statistics["K_G_t_f_pluie_max",1]
-log10a             = summary(mcmc)$statistics["log10a",1]
+log10a             = 0 #summary(mcmc)$statistics["log10a",1]
+
 delta_max          = summary(mcmc)$statistics["delta_max",1]
-delta_min          = summary(mcmc)$statistics["delta_min",1]
+# delta_min          = summary(mcmc)$statistics["delta_min",1]
 lambda             = summary(mcmc)$statistics["lambda",1]
 pt_inflexion_feu   = summary(mcmc)$statistics["pt_inflexion_feu",1]
 pt_inflexion_grass = summary(mcmc)$statistics["pt_inflexion_grass",1]
@@ -195,15 +207,14 @@ curve(K_G_t_f_pluie_max/(1+a*exp(-(lambda)*(x-pt_inflexion_grass))),xlim=c(0,300
 ```
 
 ```{r mcmc_diagnosis, echo=TRUE, include = TRUE}
-par(mar = c(0,0,0,0))
+par(mar = c(2,0,1,0))
 autocorr.plot(mcmc[[1]], ask = "TRUE",lag.max=10**3)
 # c(bottom, left, top, right)
 # default is c(5, 4, 4, 2)
 plot(mcmc, trace = T)
 gelman.diag(mcmc)
 
-as.data.frame(mcmc[[1]])$a
-as.data.frame(mcmc[[1]])$K_G_t_f_pluie_max
+print(summary(mcmc))
 
 cor(as.data.frame(mcmc[[1]]))
 cor(as.data.frame(mcmc[[2]]))
@@ -295,29 +306,48 @@ for (j in 1:J){
   }
 }
 
-saveRDS(simulations_grass,
-        file.path(
-                  path_to_Savanna_structure_GEDI_folder,
-                  "JAGS_outputs",
-                  paste0("simulations_grass",Sys.time(),".RDS"))
-        )
-
-saveRDS(simulations_feu,
-        file.path(
-                  path_to_Savanna_structure_GEDI_folder,
-                  "JAGS_outputs",
-                  paste0("simulations_feu",Sys.time(),".RDS"))
-        )
+# saveRDS(simulations_grass,
+#         file.path(
+#                   path_to_Savanna_structure_GEDI_folder,
+#                   "JAGS_outputs",
+#                   paste0(Sys.time(),"simulations_grass.RDS"))
+#         )
+# 
+# saveRDS(simulations_feu,
+#         file.path(
+#                   path_to_Savanna_structure_GEDI_folder,
+#                   "JAGS_outputs",
+#                   paste0(Sys.time(),"simulations_feu.RDS"))
+#         )
 ```
 
 
 ```{r}
+simulations_grass <- readRDS(
+        file.path(
+                  path_to_Savanna_structure_GEDI_folder,
+                  "JAGS_outputs",
+                  paste0(" "))
+        )
+
+simulations_feu <- readRDS(
+        file.path(
+                  path_to_Savanna_structure_GEDI_folder,
+                  "JAGS_outputs",
+                  paste0(" "))
+        )
+
 mean_simu_grass = rowMeans(simulations_grass)
 mean_simu_feu = rowMeans(simulations_feu)
 
 plot(mean_simu_feu,table_region$fire_freq,xlim=c(0,1),ylim=c(0,1))
 
+hist(mean_simu_feu,breaks=30)
+
 hist(mean_simu_grass,breaks=30)
+
+plot(table_region[,"mean_precip"],mean_simu_grass)
+
 summary(mean_simu_grass)
 pt_inflexion_feu = 3.83
 curve(x**2/(x**2+pt_inflexion_feu**2),xlim=c(0,20))
