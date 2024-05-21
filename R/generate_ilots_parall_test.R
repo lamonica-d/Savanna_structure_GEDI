@@ -61,7 +61,14 @@ cell <- 50000
 
 #load all data table
 specific_table <- readRDS(file = "rawdata_post_preprocessing/6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS")
-
+# specific_table <- subset(specific_table,ecoregion
+#                          == "Northern_Congolian_Forest-Savanna"|ecoregion 
+#          == "Southern_Congolian_forest-savanna"|ecoregion
+#          == "Western_Congolian_forest-savanna")
+specific_table <- subset(specific_table,ecoregion
+                         == "Northern_Congolian_Forest-Savanna")# "West_Sudanian_savanna") #Sahelian_Acacia_savanna
+#specific_table <- specific_table[1:(nrow(specific_table)/3),]
+#7140903
 rownames(specific_table) = 1:nrow(specific_table)
 specific_table <- cbind(
   1:nrow(specific_table),
@@ -122,29 +129,49 @@ for (i in 1:nrow(table_kept_cells)){
 #on passe le spatvector en sf
 nc <- st_as_sf(new_spatvector, coords = c("x.meter", "y.meter"), crs = 3857)
 
-numWorkers <- 12
-extent_list <- extent_list[3001:3500]
-extent_list_split <- lapply(.splitIndices(length(extent_list),numWorkers), function(i) extent_list[i])
-save(extent_list_split, file = "extent_list_split_test.Rda") 
+index_points_list <- list()
+for (i in 1:20){
+  print(i)
+  
+  extent_i <- extent_list[[i]]
+temp <- st_intersects(nc, extent_i)
 
-cl <- makeCluster(numWorkers, type = "FORK")
-registerDoParallel(cl)
-clusterCall(cl, function () Sys.info () [c ( "nodename", "machine" ) ] )
-clusterExport(cl,"nc")
-clusterExport(cl,"extent_list_split")
-clusterExport(cl,"specific_table")
-clusterEvalQ(cl, library(sf))
+#points inside
+pts_inside <- nc[which(lengths(temp)>0),]
+coord_pts_inside <- st_coordinates(pts_inside)
+df_pts_inside <- data.frame(index_point = pts_inside$index_point, x.meter = coord_pts_inside[,1],
+                            y.meter = coord_pts_inside[,2])
 
-Sys.time()
+#merge pour recup les observations
+index_points <- merge(df_pts_inside,
+                      subset(specific_table, select = -c(x,y)),
+                      by = "index_point")
 
-index_points_list <- foreach(i=1:numWorkers)%dopar%{
- lapply(FUN = intersect_custom, X = extent_list_split[i], nc = nc, specific_table = specific_table)
- }
- 
- Sys.time()
+index_points_list[[i]] <- index_points
+}
+# numWorkers <- 12
+# extent_list <- extent_list[3001:3500]
+# extent_list_split <- lapply(.splitIndices(length(extent_list),numWorkers), function(i) extent_list[i])
+# save(extent_list_split, file = "extent_list_split_test.Rda") 
+# 
+# cl <- makeCluster(numWorkers, type = "FORK")
+# registerDoParallel(cl)
+# clusterCall(cl, function () Sys.info () [c ( "nodename", "machine" ) ] )
+# clusterExport(cl,"nc")
+# clusterExport(cl,"extent_list_split")
+# clusterExport(cl,"specific_table")
+# clusterEvalQ(cl, library(sf))
+# 
+# Sys.time()
+# 
+# index_points_list <- foreach(i=1:numWorkers)%dopar%{
+#  lapply(FUN = intersect_custom, X = extent_list_split[i], nc = nc, specific_table = specific_table)
+#  }
+#  
+#  Sys.time()
+# 
+# stopCluster(cl)
+# mpi.exit()
 
-stopCluster(cl)
-mpi.exit()
-
-save(index_points_list, file = "index_points_list_test.Rda") 
+save(index_points_list, file = "outputs/index_points_list_sahel1.Rda") 
 
