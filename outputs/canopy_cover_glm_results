@@ -1,0 +1,201 @@
+Guinean inflated
+
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept          -1.94      0.06    -2.05    -1.83 1.00     2210     2328
+fire_freq_std      -0.03      0.02    -0.07     0.02 1.00     2572     2327
+mean_precip_std     0.12      0.02     0.07     0.17 1.00     2309     2328
+
+Family Specific Parameters: 
+    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi     5.29      0.19     4.93     5.66 1.00     2375     2408
+zi      0.11      0.01     0.10     0.13 1.00     2251     2370
+
+Guinean not inflated
+
+Population-Level Effects: 
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept          -2.15      0.06    -2.26    -2.03 1.00     2241     2544
+fire_freq_std       0.03      0.02    -0.01     0.08 1.00     2330     2291
+mean_precip_std     0.13      0.03     0.08     0.18 1.00     2256     2300
+
+Family Specific Parameters: 
+    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi     4.34      0.16     4.02     4.67 1.00     2520     2436
+
+###################################################################################
+
+West_Sudanian_savanna inflated
+
+Population-Level Effects: 
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept          -3.52      0.05    -3.61    -3.42 1.00     2228     2211
+fire_freq_std       0.08      0.01     0.05     0.11 1.00     2158     1953
+mean_precip_std     0.90      0.04     0.82     0.98 1.00     2280     2287
+
+Family Specific Parameters: 
+    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi     9.96      0.32     9.32    10.59 1.00     2334     2364
+zi      0.23      0.01     0.21     0.24 1.00     2265     2339
+
+West_Sudanian_savanna not inflated
+
+Population-Level Effects: 
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept          -3.59      0.04    -3.66    -3.51 1.00     2414     2327
+fire_freq_std       0.10      0.01     0.07     0.13 1.00     2232     2161
+mean_precip_std     0.78      0.04     0.71     0.85 1.00     2463     2089
+
+Family Specific Parameters: 
+    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi     9.59      0.28     9.07    10.15 1.00     2491     2219
+
+###################################################################################
+
+Sahelian inflated
+
+Population-Level Effects: 
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept          -3.89      0.04    -3.96    -3.81 1.00     2391     2207
+fire_freq_std       0.18      0.03     0.12     0.23 1.00     2411     2232
+mean_precip_std     0.85      0.06     0.73     0.98 1.00     2474     2328
+
+Family Specific Parameters: 
+    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi    27.56      1.28    25.19    30.12 1.00     2201     2247
+zi      0.68      0.01     0.67     0.69 1.00     2195     2291
+
+Sahelian not inflated
+
+Population-Level Effects: 
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept          -4.70      0.02    -4.74    -4.65 1.00     2533     2372
+fire_freq_std       0.29      0.02     0.25     0.33 1.00     2475     2389
+mean_precip_std     0.57      0.04     0.49     0.65 1.00     2529     2369
+
+Family Specific Parameters: 
+    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi    89.32      2.15    84.99    93.62 1.00     2459     2283
+
+###################################################################################
+
+Northern_Congo inflated
+
+Population-Level Effects: 
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept          -1.78      0.36    -2.47    -1.06 1.00     2303     2403
+fire_freq_std      -0.00      0.06    -0.12     0.12 1.00     2543     2445
+mean_precip_std     0.10      0.16    -0.23     0.41 1.00     2319     2249
+
+Family Specific Parameters: 
+    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi     6.71      0.62     5.56     7.97 1.00     2218     2251
+zi      0.06      0.01     0.03     0.09 1.00     2497     2406
+
+Northern_Congo not inflated
+
+Population-Level Effects: 
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept          -1.08      0.37    -1.78    -0.36 1.00     2375     2330
+fire_freq_std      -0.05      0.07    -0.18     0.08 1.00     2575     2365
+mean_precip_std    -0.25      0.16    -0.58     0.07 1.00     2382     2255
+
+Family Specific Parameters: 
+    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi     5.47      0.51     4.54     6.51 1.00     2510     2407
+
+###################################################################################
+
+Western_Congolian inflated
+
+Population-Level Effects: 
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept          -1.91      0.32    -2.55    -1.27 1.00     2207     2350
+fire_freq_std      -0.13      0.05    -0.23    -0.03 1.00     2417     2382
+mean_precip_std     0.20      0.20    -0.21     0.59 1.00     2160     2504
+
+Family Specific Parameters: 
+    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi     3.52      0.38     2.82     4.31 1.00     2253     2157
+zi      0.22      0.03     0.17     0.28 1.00     2395     2451
+
+Western_Congolian not inflated
+
+Population-Level Effects: 
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept          -2.06      0.24    -2.56    -1.59 1.00     2284     2411
+fire_freq_std      -0.08      0.04    -0.16     0.01 1.00     2385     2408
+mean_precip_std     0.07      0.15    -0.22     0.36 1.00     2280     2269
+
+Family Specific Parameters: 
+    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi     3.26      0.34     2.63     3.95 1.00     2641     2413
+
+###################################################################################
+
+Southern_Congolian inflated
+
+Population-Level Effects: 
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept          -1.54      2.51    -6.39     3.28 1.00     2492     2266
+fire_freq_std      -0.05      0.16    -0.36     0.25 1.00     2295     2145
+mean_precip_std    -0.26      1.22    -2.63     2.12 1.00     2499     2054
+
+Family Specific Parameters: 
+    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi     4.48      1.51     2.02     8.04 1.00     2299     2289
+zi      0.51      0.07     0.37     0.65 1.00     2538     2496
+
+Southern_Congolian not inflated
+
+Population-Level Effects: 
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept          -1.15      1.47    -4.23     1.68 1.00     2245     2177
+fire_freq_std      -0.04      0.10    -0.24     0.16 1.00     2097     2044
+mean_precip_std    -0.82      0.70    -2.17     0.63 1.00     2207     2286
+
+Family Specific Parameters: 
+    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi     5.60      1.61     2.91     9.20 1.00     2177     2141
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

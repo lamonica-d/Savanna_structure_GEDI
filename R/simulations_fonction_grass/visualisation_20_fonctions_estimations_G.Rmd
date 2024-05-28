@@ -58,7 +58,7 @@ palette_deltas <- colorRampPalette(c("blue", "green"))(length(deltas))
 
 W_values = seq(0,3500,by=10)
 point_inflexions = seq(500,1100,by=200)
-K_Gs = seq(5,20,by=3)
+K_Gs = seq(10,26,by=3)
 length(K_Gs)*length(point_inflexions)*length(lambdas)
 
 u = 0

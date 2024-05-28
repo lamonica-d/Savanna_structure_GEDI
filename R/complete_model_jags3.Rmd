@@ -180,8 +180,11 @@ mcmc <- readRDS(
                 file.path(
                   path_to_Savanna_structure_GEDI_folder,
                   "JAGS_outputs",
-                  " ")
+                  "version_overleaf.RDS")
                 )
+par(mar = c(0,0,0,0))
+plot(mcmc)
+summary(mcmc)
 ```
 
 ```{r summaries, echo=TRUE, include = TRUE}
@@ -193,8 +196,9 @@ colMeans(as.data.frame(mcmc[[4]]))
 K_G_t_f_pluie_max  = 20 # summary(mcmc)$statistics["K_G_t_f_pluie_max",1]
 log10a             = 0 #summary(mcmc)$statistics["log10a",1]
 
+# log10delta_max          = summary(mcmc)$statistics["log10delta_max",1]
 delta_max          = summary(mcmc)$statistics["delta_max",1]
-# delta_min          = summary(mcmc)$statistics["delta_min",1]
+delta_min          = summary(mcmc)$statistics["delta_min",1]
 lambda             = summary(mcmc)$statistics["lambda",1]
 pt_inflexion_feu   = summary(mcmc)$statistics["pt_inflexion_feu",1]
 pt_inflexion_grass = summary(mcmc)$statistics["pt_inflexion_grass",1]
@@ -202,29 +206,34 @@ pt_inflexion_grass = summary(mcmc)$statistics["pt_inflexion_grass",1]
 print(summary(mcmc))
 summary(mcmc)$statistics
 
+# delta_max = 10**log10delta_max
 a = 10**log10a
-curve(K_G_t_f_pluie_max/(1+a*exp(-(lambda)*(x-pt_inflexion_grass))),xlim=c(0,3000))
+curve(K_G_t_f_pluie_max/(1+a*exp(-(lambda)*(x-pt_inflexion_grass))),xlim=c(0,2500),xlab="W",ylab="20*S_hat")
 ```
 
 ```{r mcmc_diagnosis, echo=TRUE, include = TRUE}
 par(mar = c(2,0,1,0))
-autocorr.plot(mcmc[[1]], ask = "TRUE",lag.max=10**3)
+
+pdf(file.path(path_to_Savanna_structure_GEDI_folder,"figures","overleaf","mcmc_chains","chains.pdf"))
+print(summary(mcmc))
+autocorr.plot(mcmc[[2]], ask = "TRUE",lag.max=50)
 # c(bottom, left, top, right)
 # default is c(5, 4, 4, 2)
 plot(mcmc, trace = T)
 gelman.diag(mcmc)
 
-print(summary(mcmc))
+dev.off()
+# print(summary(mcmc))
 
-cor(as.data.frame(mcmc[[1]]))
-cor(as.data.frame(mcmc[[2]]))
-cor(as.data.frame(mcmc[[3]]))
-cor(as.data.frame(mcmc[[4]]))
+# cor(as.data.frame(mcmc[[1]]))
+# cor(as.data.frame(mcmc[[2]]))
+# cor(as.data.frame(mcmc[[3]]))
+# cor(as.data.frame(mcmc[[4]]))
 ```
 
 ```{r}
-plot(mcmc[c(4,1)], trace = T)
-mcmc2 = rbind(mcmc[[1]],mcmc[[4]])
+# plot(mcmc[c(4,1)], trace = T)
+mcmc2 = rbind(mcmc[[1]],mcmc[[2]],mcmc[[3]],mcmc[[4]])
 # mcmc2
 
 print(summary(mcmc))
@@ -232,9 +241,9 @@ summary(mcmc2)
 dim(mcmc2)
 colnames(mcmc2)
 
-pt_inflexion_feu = 3.83
-curve(x**2/(x**2+pt_inflexion_feu**2),xlim=c(0,20))
-abline(h=0.3)
+# pt_inflexion_feu = 3.83
+# curve(x**2/(x**2+pt_inflexion_feu**2),xlim=c(0,20))
+# abline(h=0.3)
 ```
 
 
@@ -255,10 +264,12 @@ for(i in 1:I){
   canopy_cover_i =  table_region[i,"canopy_cover"]
   pluie_i = table_region[i,"mean_precip"]
 
+    a = 1
+
 for (j in 1:J){
 #  for (j in 1:10){ 
     
-    a = 10**(mcmc2[j,"log10a"])
+    # a = 10**(mcmc2[j,"log10a"])
     pt_inflexion_grass = mcmc2[j,"pt_inflexion_grass"]
     canopy_influence_i_j = mcmc2[j,"delta_min"] + canopy_cover_i*(mcmc2[j,"delta_max"]-mcmc2[j,"delta_min"])
     
@@ -323,26 +334,41 @@ for (j in 1:J){
 
 
 ```{r}
-simulations_grass <- readRDS(
-        file.path(
-                  path_to_Savanna_structure_GEDI_folder,
-                  "JAGS_outputs",
-                  paste0(" "))
-        )
-
-simulations_feu <- readRDS(
-        file.path(
-                  path_to_Savanna_structure_GEDI_folder,
-                  "JAGS_outputs",
-                  paste0(" "))
-        )
+# simulations_grass <- readRDS(
+#         file.path(
+#                   path_to_Savanna_structure_GEDI_folder,
+#                   "JAGS_outputs",
+#                   paste0(" "))
+#         )
+# 
+# simulations_feu <- readRDS(
+#         file.path(
+#                   path_to_Savanna_structure_GEDI_folder,
+#                   "JAGS_outputs",
+#                   paste0(" "))
+#         )
 
 mean_simu_grass = rowMeans(simulations_grass)
 mean_simu_feu = rowMeans(simulations_feu)
 
 plot(mean_simu_feu,table_region$fire_freq,xlim=c(0,1),ylim=c(0,1))
+summary(mean_simu_feu)
+summary(table_region$fire_freq)
+
 
 hist(mean_simu_feu,breaks=30)
+
+cor(table_region$fire_freq,mean_simu_feu)
+
+indices <- sort(table_region$fire_freq,index.return=TRUE)$ix
+fire_freq_sorted <- sort(table_region$fire_freq,index.return=TRUE)$x
+simu_feu_sorted <- mean_simu_feu[indices]
+  
+plot(fire_freq_sorted,simu_feu_sorted)
+
+table(fire_freq_sorted)
+fire_freq_sorted[7000:1094]
+cor(fire_freq_sorted[7000:1094],simu_feu_sorted[7000:1094])
 
 hist(mean_simu_grass,breaks=30)
 
