@@ -1,0 +1,329 @@
+---
+title: "First test complete model"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, echo=FALSE, include = FALSE}
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R")
+getwd()
+# Libraries
+library(rjags)
+library(dclone)
+library(snow)
+library(parallel)
+library(doParallel)
+```
+
+```{r data_loading, echo=FALSE, include = FALSE}
+
+table_region <- readRDS(
+                file.path(
+                  path_to_Savanna_structure_GEDI_folder,
+                  "subsampling30avril",
+                  "final_table_10km_associated_to_300km_cell.RDS")
+                )
+
+head(table_region,2)
+# table(table_region$near_the_big_cell)
+table_region <- cbind(rep(NA,nrow(table_region)),table_region)
+colnames(table_region)[1] <- "local_cell"
+unique_values <- unique(table_region$near_the_big_cell)
+mapping <- setNames(seq_along(unique_values), unique_values)
+table_region$local_cell <- mapping[as.character(table_region$near_the_big_cell)]
+Nb_big_cells = max(table_region$local_cell)
+
+data <- list(
+             N = nrow(table_region), 
+             Nb_big_cells = Nb_big_cells,
+             num_big_cell = table_region$local_cell,
+             prec_data = table_region$mean_precip,
+             fire_data = table_region$fire_freq, 
+             cc_data = table_region$canopy_cover
+             )
+```
+
+
+```{r model, echo=FALSE, include = FALSE}
+# model and jags inference
+
+vals_pt_inflexion_feu = c(2.6,3,4.1,3)
+vals_log10delta_max = c(-4.9,-3,-3.2,-2.2)
+vals_pt_inflexion_grass = c(900,600, 527, 446)
+vals_lambda = c(0.0047,0.0067,0.0077,0.0027)
+
+inits <- list(
+  list(
+       pt_inflexion_feu = sample(vals_pt_inflexion_feu,1),
+       log10delta_max = sample(vals_log10delta_max,Nb_big_cells,replace=TRUE),
+       pt_inflexion_grass = sample(vals_pt_inflexion_grass,Nb_big_cells,replace=TRUE),
+       lambda = sample(vals_lambda,Nb_big_cells,replace=TRUE)
+  ),
+  list(
+       pt_inflexion_feu = sample(vals_pt_inflexion_feu,1),
+       log10delta_max = sample(vals_log10delta_max,Nb_big_cells,replace=TRUE),
+       pt_inflexion_grass = sample(vals_pt_inflexion_grass,Nb_big_cells,replace=TRUE),
+       lambda = sample(vals_lambda,Nb_big_cells,replace=TRUE)
+  ),
+  list(
+       pt_inflexion_feu = sample(vals_pt_inflexion_feu,1),
+       log10delta_max = sample(vals_log10delta_max,Nb_big_cells,replace=TRUE),
+       pt_inflexion_grass = sample(vals_pt_inflexion_grass,Nb_big_cells,replace=TRUE),
+       lambda = sample(vals_lambda,Nb_big_cells,replace=TRUE)
+  ),
+  list(
+       pt_inflexion_feu = sample(vals_pt_inflexion_feu,1),
+       log10delta_max = sample(vals_log10delta_max,Nb_big_cells,replace=TRUE),
+       pt_inflexion_grass = sample(vals_pt_inflexion_grass,Nb_big_cells,replace=TRUE),
+       lambda = sample(vals_lambda,Nb_big_cells,replace=TRUE)
+  ))
+
+variables <- c(
+               "pt_inflexion_feu",
+               "log10delta_max",
+               "pt_inflexion_grass",
+               "lambda"
+               )
+```
+
+
+```{r mcmc, echo=FALSE, include = FALSE}
+print(Sys.time())
+
+cl <- makeCluster((4))
+
+registerDoParallel(cl)
+
+# clusterExport(cl,"table_region")
+clusterExport(cl,"data")
+clusterExport(cl,"inits")
+clusterExport(cl,"variables")
+
+clusterEvalQ(cl,library(rjags))
+clusterEvalQ(cl,library(coda))
+clusterEvalQ(cl,library(runjags))
+clusterEvalQ(cl,library(doParallel))
+clusterEvalQ(cl,library(foreach))
+clusterEvalQ(cl,library(iterators))
+
+jags_res=foreach(i =1:4,.combine='mcmc.list',.multicombine=TRUE)%dopar%{
+  as.mcmc(run.jags(file.path(path_to_Savanna_structure_GEDI_folder,"R","JAGS_models","modele_hierarchique.txt"),
+                   monitor=variables,data=data,n.chains=1,inits=dump.format(inits[[i]]),
+              burnin=500,sample=1000,thin=10,tempdir=FALSE,
+                   summarise=FALSE,adapt = 500,keep.jags.files=FALSE))
+
+}
+ 
+stopCluster(cl)
+
+name = paste0("hierarchique_",Sys.time(),".RDS")
+
+saveRDS(jags_res,
+        file.path(
+          path_to_Savanna_structure_GEDI_folder,
+          "JAGS_outputs",
+          name
+        )
+)
+mcmc <- jags_res
+print(Sys.time())
+```
+
+
+```{r read_file, echo=FALSE, include = FALSE}
+mcmc <- readRDS( file.path(path_to_Savanna_structure_GEDI_folder,"JAGS_outputs",
+                           "hierarchique_2024-05-28 15:11:24.046396.RDS") )
+# par(mar = c(0,0,0,0))
+# plot(mcmc)
+
+gelman.diag(mcmc)
+# vérifier surtout le rhat du pt_inflexion_feu qui est commun à tous
+df_gelman <- as.data.frame(gelman.diag(mcmc)[[1]])
+
+output_mcmc <- as.data.frame(summary(mcmc)$statistics)
+
+pt_inflexion_feu <- output_mcmc["pt_inflexion_feu",1]
+
+indices <- split(2:nrow(output_mcmc), cut(2:nrow(output_mcmc), breaks = 3, labels = FALSE))
+values_log10delta_max <- output_mcmc[indices[[1]],1]
+values_pt_inflexion_grass <- output_mcmc[indices[[2]],1]
+values_lambda <- output_mcmc[indices[[3]],1]
+
+gelman_pt_inflexion_feu <- output_mcmc["pt_inflexion_feu",1]
+
+indices <- split(2:nrow(df_gelman), cut(2:nrow(df_gelman), breaks = 3, labels = FALSE))
+gelman_log10delta_max <- df_gelman[indices[[1]],2]
+gelman_pt_inflexion_grass <- df_gelman[indices[[2]],2]
+gelman_lambda <- df_gelman[indices[[3]],2]
+```
+
+```{r}
+# Let's produce the pngs of the two curves delta min and delta max in a folder, than we load them and print them on the big red cells on QGIS to see the sigmoids differences through space
+
+df_graphique = as.data.frame(matrix(nrow=4,ncol=2))
+colnames(df_graphique) = c("pluie (mm yr-1)","biomasse (t.ha-1)")
+df_graphique2 = df_graphique
+
+df_graphique[1,] = c(400,2.3)
+df_graphique[2,] = c(500,3)
+df_graphique[3,] = c(600,4.2)
+df_graphique[4,] = c(700,5.2)
+df_graphique[5,] = c(750,6)
+df_graphique[6,] = c(1000,8.75)
+
+df_graphique2[1,] = c(400,2.3)
+df_graphique2[2,] = c(500,3)
+df_graphique2[3,] = c(600,4.3)
+df_graphique2[4,] = c(700,6.5)
+df_graphique2[5,] = c(800,9)
+df_graphique2[6,] = c(900,12)
+
+delta_min = 10**-5
+K_G = 20
+xlim_graph = 2500
+W_values = seq(0,xlim_graph,by=10)
+# mettre les mêmes valeurs que dans le fichier .txt du model
+
+sigmo_pluie <- function(W,lambda,decalage){
+  return( 1/(1+exp(-lambda*(W-decalage))) )
+}
+
+sigmo_coeff_competition <- function(W,delta,decalage){
+  return( 2/(1+exp(-delta*(-W+decalage))) )
+}
+
+for(j in 1:Nb_big_cells){
+#for(j in 1:1){
+  log10delta_max = values_log10delta_max[j]
+  pt_inflexion_grass = values_pt_inflexion_grass[j]
+  lambda = values_lambda[j]
+  
+  g_log10delta_max = round(gelman_log10delta_max[j],3)
+  g_pt_inflexion_grass = round(gelman_pt_inflexion_grass[j],3)
+  g_lambda = round(gelman_lambda[j],3)
+
+  if(g_log10delta_max < 1.5 & g_pt_inflexion_grass < 1.5 & g_lambda <1.5){
+    
+png(file.path(path_to_Savanna_structure_GEDI_folder,"outputs","sigmoids_for_qgis",paste0(sprintf("%03d",j),".png")),
+    width = 1000, height = 1000
+    )
+# SAVE FILES
+
+plot(
+       x=c(0),
+       y=c(0),
+       xlim=c(0,xlim_graph),
+       ylim = c(0,K_G),
+       xlab = "W",
+       main = paste0("Cell ",j,
+                     " rhats=",g_log10delta_max,"/",g_pt_inflexion_grass,"/",g_lambda
+                     ),
+       ylab = " "
+       )
+
+  lines(df_graphique,col="deeppink",lwd=3)
+  lines(df_graphique2,col="deeppink",lwd=3)
+
+  abline(v=pt_inflexion_grass,lty=2)
+  abline(h=K_G*0.5,lty=2)
+ 
+  delta_max = 10**log10delta_max ### !
+  S = sigmo_pluie(W_values,lambda,decalage=pt_inflexion_grass) ### !
+  G_hat_delta_min = K_G*S*sigmo_coeff_competition(W_values,delta_min,pt_inflexion_grass) ### !
+  G_hat_delta_max = K_G*S*sigmo_coeff_competition(W_values,delta_max,pt_inflexion_grass) ### !
+    
+  lines(W_values, G_hat_delta_min, col = "blue",lwd=3) # courbe delta_min
+  lines(W_values, G_hat_delta_max, col="green",lwd=3) # courbe delta_max
+
+dev.off()
+}
+}
+```
+
+```{r}
+#### pas commencé cette partie
+library(dplyr)
+
+cells <- unique(table_region$local_cell)
+coords_big_cell <- table_region[,c("local_cell","near_the_big_cell","x_center_big_cell","y_center_big_cell")]
+coords_big_cell <- coords_big_cell %>% distinct(local_cell, .keep_all = TRUE)
+# nrow(coords_big_cell)
+
+# Example coordinates (assuming the CSV columns are named 'x', 'y')
+x_coords <- coords_big_cell$x_center_big_cell
+y_coords <- coords_big_cell$y_center_big_cell
+
+coords_big_cell <- cbind(coords_big_cell,rep(NA,nrow(coords_big_cell)))
+colnames(coords_big_cell)[5] = "image"
+
+images = list.files(file.path(path_to_Savanna_structure_GEDI_folder,"outputs","sigmoids_for_qgis"),full.names = TRUE)
+
+for (j in 1:length(images)){
+  image = images[j]
+  ns = nchar(image)
+  # print( substr(image,start=ns-6,stop=ns-3))
+  image_nb = as.numeric(substr(image,start=ns-6,stop=ns-3))
+  coords_big_cell[image_nb,"image"] <- image
+}
+
+# Here VERIFY if the image and numbers fit and VERIFY on QGIS if it also fits the (x,) and cell number,
+# otherwise it's broken
+
+# Finally we delete the points without images
+coords_big_cell <- coords_big_cell[complete.cases(coords_big_cell[,"image"]),]
+# coords_big_cell <- coords_big_cell[,c("near_the_big_cell","x_center_big_cell","y_center_big_cell","image")]
+```
+
+```{r}
+library(png)
+# Set your working directory to where your images are stored
+
+# List all image files in the directory
+image_files <- list.files(file.path(path_to_Savanna_structure_GEDI_folder,"outputs","sigmoids_for_qgis"),
+                          full.names = TRUE,
+                          pattern = ".png")
+
+# Load images
+images <- lapply(image_files, readPNG)
+
+# Define the number of rows and columns for your mosaic
+num_rows <- 11
+num_cols <- 20
+
+# Create an empty canvas for the mosaic
+mosaic <- matrix(1:(num_rows*num_cols), nrow = num_rows, ncol = num_cols, byrow=TRUE)
+mosaic_NA <- matrix(NA, nrow = num_rows, ncol = num_cols)
+  
+# # Loop through images and populate the mosaic
+# for(i in 1:num_rows){
+#   for(j in 1:num_cols){
+#       mosaic_i_j = mosaic[i,j]
+#       print(paste(i,j))
+#       for(u in 1:nrow(coords_big_cell)){
+#         
+#         number_of_the_big_cell <- coords_big_cell[u,"near_the_big_cell"]
+#         
+#         if( number_of_the_big_cell == mosaic_i_j){
+#           # print(number_of_the_big_cell) 
+#           local_cell_number = coords_big_cell[u,"local_cell"]
+#           
+#           corresponding_image = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","sigmoids_for_qgis",
+#                    paste0( sprintf("%03d",local_cell_number),".png" ) )
+#                    
+#           mosaic_NA[i,j] <- matrix(c(1,1,1,1),ncol=2)# readPNG(corresponding_image)
+#           }
+#       }
+#     
+#   }
+# }
+
+# Plot the mosaic
+#png(file.path(path_to_Savanna_structure_GEDI_folder,"outputs","mosaic.png"))  # Save mosaic as JPEG
+image(mosaic, axes = FALSE)
+# dev.off()  # Close the JPEG file
+```
+
+
