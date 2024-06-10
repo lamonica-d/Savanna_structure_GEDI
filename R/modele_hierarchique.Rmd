@@ -44,6 +44,10 @@ data <- list(
              fire_data = table_region$fire_freq, 
              cc_data = table_region$canopy_cover
              )
+
+require(dplyr)
+colnames(table_region)
+bijection <-  table_region %>% distinct(local_cell, near_the_big_cell, .keep_all = FALSE)
 ```
 
 
@@ -197,6 +201,9 @@ sigmo_coeff_competition <- function(W,delta,decalage){
 
 for(j in 1:Nb_big_cells){
 #for(j in 1:1){
+  
+  numero_big_cell = bijection[j,"near_the_big_cell"]
+  # print(paste("numero_big_cell",numero_big_cell))
   log10delta_max = values_log10delta_max[j]
   pt_inflexion_grass = values_pt_inflexion_grass[j]
   lambda = values_lambda[j]
@@ -206,8 +213,9 @@ for(j in 1:Nb_big_cells){
   g_lambda = round(gelman_lambda[j],3)
 
   if(g_log10delta_max < 1.5 & g_pt_inflexion_grass < 1.5 & g_lambda <1.5){
+  
     
-png(file.path(path_to_Savanna_structure_GEDI_folder,"outputs","sigmoids_for_qgis",paste0(sprintf("%03d",j),".png")),
+png(file.path(path_to_Savanna_structure_GEDI_folder,"outputs","sigmoids_for_qgis",paste0(sprintf("%03d",numero_big_cell),".png")),
     width = 1000, height = 1000
     )
 # SAVE FILES
@@ -239,91 +247,119 @@ plot(
   lines(W_values, G_hat_delta_max, col="green",lwd=3) # courbe delta_max
 
 dev.off()
+  }else{
+  png(file.path(path_to_Savanna_structure_GEDI_folder,"outputs","sigmoids_for_qgis",paste0(sprintf("%03d",numero_big_cell),".png")),width = 1000, height = 1000)
+# SAVE FILES
+plot(
+     x=c(0),
+     y=c(0),
+     xlim=c(0,xlim_graph),
+     ylim = c(0,K_G),
+     xlab = "W",
+     main = paste0("Cell ",j,
+                   " rhats=",g_log10delta_max,"/",g_pt_inflexion_grass,"/",g_lambda
+                   ),
+     ylab = " "
+     )
+dev.off()
 }
 }
 ```
 
 ```{r}
-#### pas commencé cette partie
-library(dplyr)
+# Test
+library(magick)
+options(magick.timestamp = FALSE, magick.memory = "8GB")
 
-cells <- unique(table_region$local_cell)
-coords_big_cell <- table_region[,c("local_cell","near_the_big_cell","x_center_big_cell","y_center_big_cell")]
-coords_big_cell <- coords_big_cell %>% distinct(local_cell, .keep_all = TRUE)
-# nrow(coords_big_cell)
+# Parameters
+image_folder <- file.path(path_to_Savanna_structure_GEDI_folder,"outputs","sigmoids_for_qgis")
+rows <- 11 # 11  # Number of rows in the mosaic
+cols <- 20 # 20 # Number of columns in the mosaic
+resize_width <- 10  # Width for resized images
+resize_height <- 10  # Height for resized images
 
-# Example coordinates (assuming the CSV columns are named 'x', 'y')
-x_coords <- coords_big_cell$x_center_big_cell
-y_coords <- coords_big_cell$y_center_big_cell
+# Insert NAs for missing numbers
+image_list_with_nas <- insert_nas_for_missing_numbers(table_region$near_the_big_cell)
 
-coords_big_cell <- cbind(coords_big_cell,rep(NA,nrow(coords_big_cell)))
-colnames(coords_big_cell)[5] = "image"
 
-images = list.files(file.path(path_to_Savanna_structure_GEDI_folder,"outputs","sigmoids_for_qgis"),full.names = TRUE)
-
-for (j in 1:length(images)){
-  image = images[j]
-  ns = nchar(image)
-  # print( substr(image,start=ns-6,stop=ns-3))
-  image_nb = as.numeric(substr(image,start=ns-6,stop=ns-3))
-  coords_big_cell[image_nb,"image"] <- image
+# Function to resize an image
+resize_image <- function(file_path, output_path, width, height) {
+  img <- image_read(file_path)
+  resized_img <- image_resize(img, paste0(width, "x", height, "^"))
+  image_write(resized_img, output_path)
 }
 
-# Here VERIFY if the image and numbers fit and VERIFY on QGIS if it also fits the (x,) and cell number,
-# otherwise it's broken
-
-# Finally we delete the points without images
-coords_big_cell <- coords_big_cell[complete.cases(coords_big_cell[,"image"]),]
-# coords_big_cell <- coords_big_cell[,c("near_the_big_cell","x_center_big_cell","y_center_big_cell","image")]
-```
-
-```{r}
-library(png)
-# Set your working directory to where your images are stored
-
-# List all image files in the directory
-image_files <- list.files(file.path(path_to_Savanna_structure_GEDI_folder,"outputs","sigmoids_for_qgis"),
-                          full.names = TRUE,
-                          pattern = ".png")
-
-# Load images
-images <- lapply(image_files, readPNG)
-
-# Define the number of rows and columns for your mosaic
-num_rows <- 11
-num_cols <- 20
-
-# Create an empty canvas for the mosaic
-mosaic <- matrix(1:(num_rows*num_cols), nrow = num_rows, ncol = num_cols, byrow=TRUE)
-mosaic_NA <- matrix(NA, nrow = num_rows, ncol = num_cols)
+# Function to create a mosaic from resized images with some missing
+create_mosaic_with_resized_images <- function(image_folder, output_path, rows, cols, image_list, resize_width, resize_height) {
+  # Function to read image or create a blank placeholder if missing
+  read_image_or_placeholder <- function(file_path, width, height) {
+    if (file.exists(file_path)) {
+      return(image_read(file_path))
+    } else {
+      return(image_blank(width, height, color = "white"))
+    }
+  }
   
-# # Loop through images and populate the mosaic
-# for(i in 1:num_rows){
-#   for(j in 1:num_cols){
-#       mosaic_i_j = mosaic[i,j]
-#       print(paste(i,j))
-#       for(u in 1:nrow(coords_big_cell)){
-#         
-#         number_of_the_big_cell <- coords_big_cell[u,"near_the_big_cell"]
-#         
-#         if( number_of_the_big_cell == mosaic_i_j){
-#           # print(number_of_the_big_cell) 
-#           local_cell_number = coords_big_cell[u,"local_cell"]
-#           
-#           corresponding_image = file.path(path_to_Savanna_structure_GEDI_folder,"outputs","sigmoids_for_qgis",
-#                    paste0( sprintf("%03d",local_cell_number),".png" ) )
-#                    
-#           mosaic_NA[i,j] <- matrix(c(1,1,1,1),ncol=2)# readPNG(corresponding_image)
-#           }
-#       }
-#     
-#   }
-# }
+  # Read the first image to get the size
+  first_image_path <- file.path(image_folder, paste0(sprintf("%03d", image_list[1]), ".png"))
+  img <- image_read(first_image_path)
+  img_width <- image_info(img)$width
+  img_height <- image_info(img)$height
 
-# Plot the mosaic
-#png(file.path(path_to_Savanna_structure_GEDI_folder,"outputs","mosaic.png"))  # Save mosaic as JPEG
-image(mosaic, axes = FALSE)
-# dev.off()  # Close the JPEG file
+  # Create a blank canvas for the mosaic
+  mosaic_width <- cols * resize_width
+  mosaic_height <- rows * resize_height
+
+  mosaic_image <- image_blank(width = mosaic_width, height = mosaic_height, color = "white")
+
+  # Iterate over the rows and columns and paste each resized image or placeholder in the correct position
+  for (i in 1:rows) {
+    for (j in 1:cols) {
+      index <- (i - 1) * cols + j
+      if (index <= length(image_list)) {
+        #print("OK")
+        img_path <- file.path(image_folder, paste0(sprintf("%03d", image_list[index]), ".png"))
+        #print("OK2")
+        img <- read_image_or_placeholder(img_path, resize_width, resize_height)
+        #print("OK3")
+        x_pos <- (j - 1) * resize_width
+        y_pos <- (i - 1) * resize_height
+        mosaic_image <- image_composite(mosaic_image, img, offset = paste0("+", y_pos))# paste0("+", x_pos, "+", y_pos))
+        #print("OK4")
+      }
+    }
+  }
+
+  # Save the resulting mosaic
+  image_write(mosaic_image, output_path)
+  cat(sprintf("Mosaic saved to %s\n", output_path))
+}
+
+# Function to insert NAs for missing numbers in a sequence
+insert_nas_for_missing_numbers <- function(numbers) {
+  full_sequence <- min(numbers):max(numbers)
+  result <- ifelse(full_sequence %in% numbers, full_sequence, NA)
+  return(result)
+}
+
+# Resize images
+for (image_number in image_list_with_nas) {
+  # print(image_number)
+  if (!is.na(image_number)) {
+    image_path <- file.path(image_folder, paste0(sprintf("%03d", image_number), ".png"))
+    resize_image(image_path, image_path, resize_width, resize_height)
+  }
+}
+
+for(colonne in 1:cols){
+# Run the function to create the mosaic with resized images
+create_mosaic_with_resized_images(image_folder,
+                                  output_path = file.path(path_to_Savanna_structure_GEDI_folder,
+                                                          "outputs","mosaic_qgis",paste0("mosaic.png")),
+                                  rows, colonne,
+                                  image_list_with_nas,
+                                  resize_width, resize_height)
+}
 ```
 
 

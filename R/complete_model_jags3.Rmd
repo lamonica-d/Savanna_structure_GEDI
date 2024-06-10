@@ -341,12 +341,12 @@ for (j in 1:J){
 #                   paste0(" "))
 #         )
 # 
-# simulations_feu <- readRDS(
-#         file.path(
-#                   path_to_Savanna_structure_GEDI_folder,
-#                   "JAGS_outputs",
-#                   paste0(" "))
-#         )
+simulations_feu <- readRDS(
+        file.path(
+                  path_to_Savanna_structure_GEDI_folder,
+                  "JAGS_outputs",
+                  paste0("version_overleaf_simulations_feu.RDS"))
+        )
 
 mean_simu_grass = rowMeans(simulations_grass)
 mean_simu_feu = rowMeans(simulations_feu)
@@ -382,8 +382,41 @@ abline(h=0.3)
 
 
 ```{r}
+prediction_feu = as.data.frame(cbind(table_region$x_TRUE,
+                       table_region$y_TRUE,
+                       table_region$fire_freq,
+                       mean_simu_feu))
 
+colnames(prediction_feu) = c("x_TRUE","y_TRUE","fire","fire_simu")
 
+cor(prediction_feu[,3:4])
+
+feu_faible <- prediction_feu[prediction_feu[,"fire"]<0.1,]
+sum(is.na(feu_faible$fire))
+sum(is.na(feu_faible$fire_simu))
+cor(feu_faible[,3:4])
+
+feu_fort <- prediction_feu[prediction_feu[,"fire"]>0.1,]
+cor(feu_fort[,3:4])
+
+summary(prediction_feu$fire)
+sd(prediction_feu$fire)
+
+summary(prediction_feu$fire_simu)
+sd(prediction_feu$fire_simu)
+
+require("sf")
+
+sf_obj <- st_as_sf(prediction_feu,coords = c("x_TRUE", "y_TRUE"),crs = 4326)
+  
+  st_write(
+    sf_obj,
+    file.path(path_to_Savanna_structure_GEDI_folder,
+              "geojson_files",
+              paste0("predictions_overleaf.geojson")
+    ), delete_dsn = T
+  )
+  
 ```
 
 
