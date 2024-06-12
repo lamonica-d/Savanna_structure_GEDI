@@ -404,7 +404,8 @@ sd(prediction_feu$fire)
 
 summary(prediction_feu$fire_simu)
 sd(prediction_feu$fire_simu)
-
+prediction_feu <- cbind(prediction_feu,prediction_feu$fire_simu-prediction_feu$fire)
+colnames(prediction_feu)[5] = "simu"
 require("sf")
 
 sf_obj <- st_as_sf(prediction_feu,coords = c("x_TRUE", "y_TRUE"),crs = 4326)
@@ -416,7 +417,8 @@ sf_obj <- st_as_sf(prediction_feu,coords = c("x_TRUE", "y_TRUE"),crs = 4326)
               paste0("predictions_overleaf.geojson")
     ), delete_dsn = T
   )
-  
+
+cor(table_region$mean_precip,prediction_feu$simu)
 ```
 
 
