@@ -21,7 +21,7 @@ model {
   
   # priors
   
-  K_G_t_f_pluie_max = 20
+  K_G_t_f_pluie_max = 25
   a = 1
   delta_min = 10**-5
     

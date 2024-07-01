@@ -370,24 +370,58 @@ for(pt_inflx in 900:900){
 ```{r omega, include = TRUE}
 Holling_3 <- function(x,alpha){return((x**2)/((alpha**2)+(x**2)))}
 
-pt_inflexion = 5
-G = seq(0.001,16,length=10**3)
-p_feu = Holling_3(G,alpha=3.5)
+G = seq(0.001,10,length=10**3)
 
-
-
+for(alpha in seq(1.5,6.5,by=0.5)){
   
-plot(G,
-     p_feu,
-     # main=paste("pt_inflexion=",pt_inflexion,"t.ha-1"),
-     xlim=c(0,16),
-     ylim=c(0,1),
-     xlab = "G in (t.ha-1)",
-     ylab = "omega(G,alpha=3.5)"
-     )
+  p_feu = Holling_3(G,alpha=3.5)
+  
+  plot(G,
+       p_feu,
+       # main=paste("pt_inflexion=",pt_inflexion,"t.ha-1"),
+       xlim=c(0,10),
+       ylim=c(0,1),
+       xlab = "G in (t.ha-1)",
+       ylab = paste("omega(G,alpha=",alpha,")"),
+       main = paste("alpha=",alpha)
+       )
+  
+    abline(v=3.5,lty=2)
+    abline(h=0.5,lty=2)
+}
 
-  abline(v=3.5,lty=2)
-  abline(h=0.5,lty=2)
+# Nouvelle fonction d'après Wilgen 2000 :
+
+new_omega <- function(G,b,offset){
+  return( 1/ (1+exp(-b*G+offset)) )
+}
+
+G = seq(0.001,10,length=10**3)
+
+# offset = seq(1.5,6.5,by=0.5)
+b_values = c(0.47,0.51)
+offset = c(2.47,3.47)
+
+par(mfrow=c(2,2))
+for(offset in offset){
+for(b in b_values){
+  
+  p_feu = new_omega(G,b,offset)
+  
+  plot(G,
+       p_feu,
+       # main=paste("pt_inflexion=",pt_inflexion,"t.ha-1"),
+       xlim=c(0,10),
+       ylim=c(0,1),
+       xlab = "G in (t.ha-1)",
+       ylab = paste("new_omega(G,b=",b,"offset=",offset,")"),
+       main = paste("b=",b,"offset=",offset)
+       )
+  
+    # abline(v=3.5,lty=2)
+    abline(h=1,lty=2)
+}
+}
 ```
 
 ```{r RESULT, include = TRUE}
