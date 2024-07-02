@@ -390,6 +390,9 @@ for(alpha in seq(1.5,6.5,by=0.5)){
     abline(h=0.5,lty=2)
 }
 
+```
+
+```{r, new_omega}
 ########################################################################
 # Nouvelle fonction d'après Wilgen 2000 :
 
@@ -402,7 +405,7 @@ G = seq(0.001,15,length=10**3)
 # offset = seq(1.5,6.5,by=0.5)
 {
 b_values = c(0.47,0.51)
-offset_values = c(2.47,3.47)
+offset_values = c(2.47,3,3.47)
 
 
 palette <- rainbow( length(b_values)*length(offset_values) )

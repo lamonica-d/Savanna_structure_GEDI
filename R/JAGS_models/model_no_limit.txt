@@ -1,0 +1,37 @@
+"
+model {
+    
+    for (i in 1:N){
+      
+      sigmo_pluie[i] = (1/ ( 1+ exp(-lambda*(prec_data[i]-pt_inflexion_grass)) ) )
+      
+      canopy_influence[i] = delta_min + cc_data[i]*(delta_max-delta_min)
+      
+      sigmo_forest_effect[i] = (2/(1+ exp(canopy_influence[i]*(prec_data[i]-pt_inflexion_grass)) ) )
+      
+      grassB[i] = K_G_t_f_pluie_max*sigmo_pluie[i]*sigmo_forest_effect[i]
+  }
+    
+  for (i in 1:N){
+      
+      fire_data[i] ~ dnorm( 1/( 1 + exp( -grassB[i]*b + offset ) ) , 1/sigma_xi**2)T(0,1)
+      
+  }
+  
+  # priors
+  
+  K_G_t_f_pluie_max ~ dunif(10,30)
+ 
+  b ~ dunif(0.47,0.51)
+  offset ~ dunif(2.47,3.47)
+  sigma_xi ~ dunif(0.02,0.07)
+  
+  log10delta_max ~ dunif(-4.999,-2)
+  pt_inflexion_grass ~ dnorm(600,1/600**2)T(200,2000)
+  lambda ~ dunif(0.0017,0.0088)
+
+  delta_max = 10^log10delta_max
+  delta_min = 10^(-5)
+  
+  }
+"
