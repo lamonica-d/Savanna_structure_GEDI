@@ -1,0 +1,42 @@
+---
+title: "First test complete model"
+output: html_document
+date: "`r Sys.Date()`"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, echo=FALSE, include = FALSE}
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R")
+getwd()
+# Libraries
+library(rjags)
+library(dclone)
+library(snow)
+library(parallel)
+library(doParallel)
+```
+
+```{r data_loading, echo=FALSE, include = FALSE}
+
+table_region <- readRDS(
+                file.path(
+                  path_to_Savanna_structure_GEDI_folder,
+                  "subsampling30avril",
+                  "final_table_10km_associated_to_300km_cell.RDS")
+                )
+
+head(table_region,10)
+# table(table_region$near_the_big_cell)
+
+table <- cbind(table_region,table_region$x_TRUE,table_region$y_TRUE)
+colnames(table)[15] = "x_TRUE2"
+colnames(table)[16] = "y_TRUE2"
+
+# ensuite enregistrer en geojson, faire l'intersection et recharger sur R
+```
+
+

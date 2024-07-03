@@ -207,10 +207,10 @@ mcmc <- readRDS(
                 file.path(
                           path_to_Savanna_structure_GEDI_folder,
                           "JAGS_outputs",
-                          "nouvelle_configuration2024-07-02 17:20:25.551019.RDS"
+                          " "
                           )
                 )
-pdf(file.path(path_to_Savanna_structure_GEDI_folder,"JAGS_outputs","nouvelle_configuration2024-07-02 13:22:16.543931.pdf"))
+pdf(file.path(path_to_Savanna_structure_GEDI_folder,"JAGS_outputs"," "))
 # sink() to save the prints in the pdf
 
 # performances et allures des chaînes :
