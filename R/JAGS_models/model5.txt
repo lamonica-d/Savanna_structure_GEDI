@@ -16,7 +16,7 @@ model {
   
   # priors
   
-  K_G_t_f_pluie_max ~ dunif(15,26)
+  K_G_t_f_pluie_max ~ dunif(19,26)
  
   b ~ dunif(0.47,0.51)
   offset ~ dunif(2.00,4.00)
