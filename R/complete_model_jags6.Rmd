@@ -32,14 +32,35 @@ table_region <- read.csv(
 head(table_region,10)
 # table(table_region$near_the_big_cell)
 
-# si on veut conserver seulement certaines valeurs de précipitations :
+par(mfrow=c(1,1))
+hist(table_region$fire_freq,breaks=50)
+# CONSERVONS SEULEMENT LES VALEURS DE FEU > 0.05 (au moins un feu détecté en 20 ans)
+# ce qui nous enlève les zones désertiques (<300mm.yr-1 précip) et les terres cultivées
 
-# avant <- nrow(table_region)
-# print(avant)
-# table_region <- table_region[table_region[,"mean_precip"]<1200,]
-# print(avant - nrow(table_region))
+avant <- nrow(table_region)
+print(avant) # 6903
+table_region <- table_region[table_region[,"fire_freq"]>=0.05,]
+print(avant - nrow(table_region)) # 4498
 
-nrow(table_region)
+nrow(table_region) # 2405
+
+# new_table = as.data.frame(
+#                          cbind(table_region$x_TRUE,
+#                          table_region$y_TRUE,
+#                          table_region)
+#                          )
+# 
+# colnames(new_table)[1] = c("x_TRUE2")
+# colnames(new_table)[2] = c("y_TRUE2")
+# 
+# require("sf")
+# sf_obj <- st_as_sf(new_table,coords = c("x_TRUE2", "y_TRUE2"),crs = 4326)
+# 
+# st_write(
+#     sf_obj,
+#     file.path(path_to_Savanna_structure_GEDI_folder,"data_pop_inf_10","feu_sup_0point05.geojson"), 
+#     delete_dsn = T
+# )
 
 data <- list(
              N = nrow(table_region), 
@@ -101,6 +122,15 @@ rm(b)
 rm(G)
 rm(offset)
 rm(sigma_xi)
+rm(avant)
+rm(decalage)
+rm(lambdas)
+rm(K_G_pluie_max)
+rm(i)
+rm(grass)
+rm(proba_feu)
+rm(W_values)
+rm(sigmo_pluie)
 ```
 
 
@@ -115,7 +145,7 @@ rownames(vals) = c("K_G_t_f_pluie_max",
                    "pt_inflexion_grass",
                    "lambda")
 
-vals["K_G_t_f_pluie_max",] = c(19.4,20,22,24)
+vals["K_G_t_f_pluie_max",] = c(15,20,25,18)
 
 vals["b",] = c(0.48,0.49,0.50,0.49)
 vals["offset",] = c(2.48,3,3,3.47)
@@ -205,12 +235,12 @@ jags_res=foreach(i =1:4,.combine='mcmc.list',.multicombine=TRUE)%dopar%{
                    data=data,
                    n.chains=1, # on envoie les chaînes séparemment sur chaque coeur
                    inits=dump.format(inits[[i]]),
-                   burnin=500,
-                   sample=1000,
+                   burnin=2*10**3,
+                   sample=5*10**3,
                    thin=10,
                    tempdir=FALSE,
                    summarise=FALSE,
-                   adapt = 500,
+                   adapt = 10**3,
                    keep.jags.files=FALSE))
 
 }
@@ -227,33 +257,38 @@ saveRDS(jags_res,
 
 print(start-Sys.time())
 rm(start)
-```
 
-```{r, visualisation sortie jags}
-mcmc <- readRDS(
-                file.path(
-                          path_to_Savanna_structure_GEDI_folder,
-                          "JAGS_outputs",
-                          "new_pop_102024-07-05 11:25:25.401709.RDS"
-                          )
-                )
+# visualisation sortie JAGS
+
+mcmc <- jags_res
+
+# mcmc <- readRDS(
+#                 file.path(
+#                           path_to_Savanna_structure_GEDI_folder,
+#                           "JAGS_outputs",
+#                           " .RDS"
+#                           )
+#                 )
+
 
 ##### Pour enregistrer un fichier texte qui comprend le modele.txt + les résultats
 
 # Lecture du contenu du fichier model.txt
+{
 model_txt <- file.path(path_to_Savanna_structure_GEDI_folder,"R","JAGS_models","model5.txt")
 
 # Calcul du summary du tableau
 summary_result <- capture.output(summary(mcmc))
+gelman_rhat <- capture.output(gelman.diag(mcmc))
 
 # Écriture du contenu dans un nouveau fichier output.txt
 
 ##################################################################################
 output_file <- file.path(path_to_Savanna_structure_GEDI_folder,"JAGS_outputs",paste(Sys.time(),".txt"))
 
-writeLines(c( readLines(model_txt) , "Résultats :", summary_result ), output_file)
+writeLines(c( readLines(model_txt) , "Résultats :", summary_result , "rhat :", gelman_rhat ), output_file)
 cat("That's all folks")
-
+}
 ##### Pour enregistrer visuellement les sorties du modèle :
 
 pdf(file.path(path_to_Savanna_structure_GEDI_folder,"JAGS_outputs",paste(Sys.time(),".pdf")))
@@ -266,7 +301,6 @@ print( summary(mcmc)$statistics )
 for(j in 1:ncol(mcmc[[1]])){ plot(mcmc[,j],main=colnames(mcmc[[1]])[j]) }
 }
 
-gelman.diag(mcmc)
 autocorr.plot(mcmc[[1]], ask = "TRUE",lag.max=1)
 
 # données du livre Unesco
@@ -289,7 +323,7 @@ df_graphique2[5,] = c(800,9)
 df_graphique2[6,] = c(900,12)
 # fin des données du livre Unesco
 
-W_lim_graph = 2600
+W_lim_graph = 1800
 W = seq(0,W_lim_graph,by=10)
 point_inflexions = seq(500,1100,by=200)
 

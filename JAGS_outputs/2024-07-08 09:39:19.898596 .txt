@@ -1,0 +1,63 @@
+"
+model {
+    
+    for (i in 1:N){
+      
+      sigmo_pluie[i] = (1/ ( 1+ exp(-lambda*(prec_data[i]-pt_inflexion_grass)) ) )
+      
+      canopy_influence[i] = delta_min + cc_data[i]*(delta_max-delta_min)
+      
+      sigmo_forest_effect[i] = (2/(1+ exp(canopy_influence[i]*(prec_data[i]-pt_inflexion_grass)) ) )
+      
+      grassB[i] = K_G_t_f_pluie_max*sigmo_pluie[i]*sigmo_forest_effect[i]
+  }
+    
+  for (i in 1:N){ fire_data[i] ~ dnorm( 1/( 1 + exp( -grassB[i]*b + offset ) ) , 1/sigma_xi**2)T(0,1) }
+  
+  # priors
+  
+  K_G_t_f_pluie_max ~ dunif(10,30)
+ 
+  b ~ dunif(0.47,0.51)
+  offset ~ dunif(2.00,4.00)
+  sigma_xi ~ dunif(0.02,0.07)
+  
+  log10delta_max ~ dunif(-4.999,-2)
+  pt_inflexion_grass ~ dnorm(600,1/600**2)T(200,2000)
+  lambda ~ dunif(0.003,0.009)
+
+  delta_max = 10^log10delta_max
+  delta_min = 10^(-5)
+  
+  }
+"
+Résultats :
+
+Iterations = 1001:10991
+Thinning interval = 10 
+Number of chains = 4 
+Sample size per chain = 1000 
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+                         Mean        SD  Naive SE Time-series SE
+K_G_t_f_pluie_max   10.000669 6.754e-04 1.068e-05      1.082e-05
+b                    0.470031 3.003e-05 4.748e-07      4.749e-07
+offset               3.999684 3.240e-04 5.122e-06      5.157e-06
+sigma_xi             0.069997 2.817e-06 4.454e-08      4.929e-08
+log10delta_max      -2.647668 7.170e-03 1.134e-04      1.090e-04
+pt_inflexion_grass 429.941867 4.417e+00 6.984e-02      6.903e-02
+lambda               0.003001 1.362e-06 2.153e-08      2.174e-08
+
+2. Quantiles for each variable:
+
+                        2.5%     25%        50%        75%      97.5%
+K_G_t_f_pluie_max   10.00002  10.000  10.000463  10.000928  10.002528
+b                    0.47000   0.470   0.470021   0.470043   0.470111
+offset               3.99882   4.000   3.999781   3.999914   3.999991
+sigma_xi             0.06999   0.070   0.069998   0.069999   0.070000
+log10delta_max      -2.66178  -2.653  -2.647660  -2.642734  -2.633818
+pt_inflexion_grass 421.12906 426.945 429.973657 432.936680 438.591253
+lambda               0.00300   0.003   0.003001   0.003002   0.003005
+
