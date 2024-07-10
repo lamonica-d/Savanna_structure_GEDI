@@ -444,4 +444,62 @@ create_mosaic_with_resized_images(image_folder,
 }
 ```
 
+```{r, resimulations}
+mcmc2 = cbind(mcmc[[1]],mcmc[[2]],mcmc[[3]],mcmc[[4]])
+# toutes les itérations des 4 chaînes post-burnin
 
+I = nrow(table_region)
+J = nrow(mcmc2)
+# 
+delta_min = 10**-5
+grass = matrix(nrow=I,ncol=J)
+simulations_grass = matrix(nrow=I,ncol=J)
+simulations_feu = matrix(nrow=I,ncol=J)
+print_i_j_stuff = TRUE
+# 
+for(i in 1:I){
+# #for(i in 1:10){
+#   
+  if(print_i_j_stuff == TRUE & i%%100 == 0){ print(paste("i",i,"/",I)) }
+# 
+  canopy_cover_i =  table_region[i,"canopy_cover"]
+  pluie_i = table_region[i,"mean_precip"]
+# 
+for (j in 1:J){
+# #  for (j in 1:10){ 
+  
+    delta_max_j = 10**(mcmc2[j,"log10delta_max"])
+    pt_inflexion_grass = mcmc2[j,"pt_inflexion_grass"]
+    
+    sigmo_pluie_simu_i_j = ( 1/ (1+ exp(-mcmc2[j,"lambda"]*(pluie_i-pt_inflexion_grass)) ) )
+
+    canopy_influence_i_j = delta_min + canopy_cover_i*(delta_max_j-delta_min)
+    sigmo_forest_effect_simu_i_j = (2/(1+ exp(canopy_influence_i_j*(pluie_i-pt_inflexion_grass)) ) )
+    
+    grass_simu_i_j = mcmc2[j,"K_G_t_f_pluie_max"]*sigmo_pluie_simu_i_j*sigmo_forest_effect_simu_i_j
+    # stockage de G estimé dans la matrice simulations_grass
+    simulations_grass[i,j] = grass_simu_i_j
+    
+    p_feu_simu_i_j =  1/( 1 + exp( -grass_simu_i_j*mcmc2[j,"b"] + mcmc2[j,"offset"] ) )
+    effet_mesure = rnorm(n=1, mean = 0, sd = mcmc2[j,"sigma_xi"])
+    simulations_feu[i,j] = p_feu_simu_i_j + effet_mesure
+
+  } # fin de la boucle j
+} # fin de la boucle i
+# 
+saveRDS(simulations_grass,
+        file.path(
+                  # path_to_Savanna_structure_GEDI_folder,
+                  # "JAGS_outputs",
+                  new_folder,
+                  paste0(Sys.time(),"simulations_grass.RDS"))
+        )
+
+saveRDS(simulations_feu,
+        file.path(
+                  # path_to_Savanna_structure_GEDI_folder,
+                  # "JAGS_outputs",
+                  new_folder,
+                  paste0(Sys.time(),"simulations_feu.RDS"))
+        )
+```
