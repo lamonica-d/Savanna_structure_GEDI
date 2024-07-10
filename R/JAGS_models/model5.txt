@@ -17,8 +17,7 @@ model {
   # priors
   
   K_G_t_f_pluie_max ~ dunif(0.1,30)
- 
-  b ~ dunif(0.47,0.51)
+
   offset ~ dunif(2.00,4.00)
   sigma_xi ~ dunif(0.02,0.07)
   
@@ -28,6 +27,7 @@ model {
 
   delta_max = 10^log10delta_max
   delta_min = 10^(-5)
+  b ~ dunif(0.47,0.51)
   
   }
 "

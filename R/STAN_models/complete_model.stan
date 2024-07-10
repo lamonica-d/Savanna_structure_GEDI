@@ -19,7 +19,7 @@ functions {
   
   real delta_intensity(real cc, real delta_min, real delta_max){
     if (cc < 0 || cc > 1 || delta_min < 0 || delta_max < 0){ reject("delta_intensity input out of bounds"); }
-    return delta_max + (1-cc)*delta_min;
+    return delta_min + cc*(delta_max-delta_min);
   }
   
   real omega(real G, real pt_inflexion){

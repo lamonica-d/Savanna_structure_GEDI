@@ -1,0 +1,78 @@
+"
+model {
+    
+    for (i in 1:N){
+      
+      sigmo_pluie[i] = (1/ ( 1+ exp(-lambda*(prec_data[i]-pt_inflexion_grass)) ) )
+      
+      canopy_influence[i] = delta_min + cc_data[i]*(delta_max-delta_min)
+      
+      sigmo_forest_effect[i] = (2/(1+ exp(canopy_influence[i]*(prec_data[i]-pt_inflexion_grass)) ) )
+      
+      grassB[i] = K_G_t_f_pluie_max*sigmo_pluie[i]*sigmo_forest_effect[i]
+  }
+    
+  for (i in 1:N){ fire_data[i] ~ dnorm( 1/( 1 + exp( -grassB[i]*b + offset ) ) , 1/sigma_xi**2)T(0,1) }
+  
+  # priors
+  
+  K_G_t_f_pluie_max ~ dunif(0.1,30)
+
+  offset ~ dunif(2.00,4.00)
+  sigma_xi ~ dunif(0.02,0.07)
+  
+  log10delta_max ~ dunif(-4.999,0)
+  pt_inflexion_grass ~ dnorm(600,1/600**2)T(200,2000)
+  lambda ~ dunif(0.003,0.020)
+
+  delta_max = 10^log10delta_max
+  delta_min = 10^(-5)
+  b ~ dunif(0.47,0.51)
+  
+  }
+"
+Résultats :
+
+Iterations = 3001:52991
+Thinning interval = 10 
+Number of chains = 4 
+Sample size per chain = 5000 
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+                        Mean        SD  Naive SE Time-series SE
+K_G_t_f_pluie_max    3.59667 9.580e-02 6.774e-04      2.634e-03
+b                    0.48973 1.161e-02 8.210e-05      3.148e-04
+offset               2.02403 2.050e-02 1.449e-04      2.908e-04
+sigma_xi             0.07000 3.327e-06 2.353e-08      2.457e-08
+log10delta_max      -2.64901 2.012e-02 1.422e-04      1.578e-04
+pt_inflexion_grass 587.13457 4.605e+00 3.256e-02      3.426e-02
+lambda               0.01944 5.056e-04 3.575e-06      3.833e-06
+
+2. Quantiles for each variable:
+
+                        2.5%       25%       50%       75%     97.5%
+K_G_t_f_pluie_max    3.43113   3.51991   3.59588   3.66993   3.77656
+b                    0.47091   0.47964   0.48953   0.49981   0.50899
+offset               2.00076   2.00809   2.01869   2.03455   2.07570
+sigma_xi             0.06999   0.07000   0.07000   0.07000   0.07000
+log10delta_max      -2.69014  -2.66248  -2.64835  -2.63515  -2.61137
+pt_inflexion_grass 577.73194 584.11341 587.27846 590.33246 595.68890
+lambda               0.01812   0.01921   0.01959   0.01982   0.01998
+
+rhat :
+Potential scale reduction factors:
+
+                   Point est. Upper C.I.
+K_G_t_f_pluie_max           1       1.01
+b                           1       1.01
+offset                      1       1.00
+sigma_xi                    1       1.00
+log10delta_max              1       1.00
+pt_inflexion_grass          1       1.00
+lambda                      1       1.00
+
+Multivariate psrf
+
+1

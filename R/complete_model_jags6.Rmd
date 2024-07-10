@@ -247,16 +247,17 @@ jags_res=foreach(i =1:4,.combine='mcmc.list',.multicombine=TRUE)%dopar%{
 
 stopCluster(cl)
 
+new_folder = file.path(path_to_Savanna_structure_GEDI_folder,"JAGS_outputs",paste0(Sys.time(),"test"))
+dir.create(new_folder)
+
 saveRDS(jags_res,
         file.path(
-                  path_to_Savanna_structure_GEDI_folder,
-                  "JAGS_outputs",
-                  paste0("new_pop_10",Sys.time(),".RDS")
+                  # path_to_Savanna_structure_GEDI_folder,
+                  # "JAGS_outputs",
+                  new_folder,
+                  paste(Sys.time(),".RDS")
                   )
         )
-
-print(start-Sys.time())
-rm(start)
 
 # visualisation sortie JAGS
 
@@ -266,7 +267,7 @@ mcmc <- jags_res
 #                 file.path(
 #                           path_to_Savanna_structure_GEDI_folder,
 #                           "JAGS_outputs",
-#                           " .RDS"
+
 #                           )
 #                 )
 
@@ -284,20 +285,23 @@ gelman_rhat <- capture.output(gelman.diag(mcmc))
 # Écriture du contenu dans un nouveau fichier output.txt
 
 ##################################################################################
-output_file <- file.path(path_to_Savanna_structure_GEDI_folder,"JAGS_outputs",paste(Sys.time(),".txt"))
+output_file <- file.path(new_folder,paste(Sys.time(),".txt"))
 
 writeLines(c( readLines(model_txt) , "Résultats :", summary_result , "rhat :", gelman_rhat ), output_file)
 cat("That's all folks")
 }
 ##### Pour enregistrer visuellement les sorties du modèle :
 
-pdf(file.path(path_to_Savanna_structure_GEDI_folder,"JAGS_outputs",paste(Sys.time(),".pdf")))
+# pdf(file.path(path_to_Savanna_structure_GEDI_folder,"JAGS_outputs",".pdf")
+pdf(file.path(new_folder,paste(Sys.time(),".pdf")))
+{
+par(mfrow=c(3,2))
 # sink() to save the prints in the pdf
 
 # performances et allures des chaînes :
 
 {
-print( summary(mcmc)$statistics )
+# print( summary(mcmc)$statistics )
 for(j in 1:ncol(mcmc[[1]])){ plot(mcmc[,j],main=colnames(mcmc[[1]])[j]) }
 }
 
@@ -410,8 +414,9 @@ plot(
      ylab = "proba feu",
      main = "new_omega"
      )
+
 lines(G,1/( 1 + exp(-0.47*G+3.47)), col= "skyblue") # année 1995 (Wilgen 2000)
-lines(G,1/(1 + exp(-0.51*G+2.47)), col = "red") # année 1996 (Wilgen 2000), severe fire weather conditions
+lines(G,1/(1 + exp(-0.51*G+2.47)), col = "red")# année 1996 (Wilgen 2000), severe fire weather conditions
 # si on élargit un peu
 lines(G,1/( 1 + exp(-0.47*G+4.00)), col= "cyan")
 lines(G,1/(1 + exp(-0.51*G+2.00)), col = "darkred")
@@ -437,6 +442,9 @@ lines(G,1/( 1 + exp(-0.47*G+4.00)), col= "cyan")
 lines(G,1/(1 + exp(-0.51*G+2.00)), col = "darkred")
 
 dev.off() # vient clore l'enregistrement pdf(...) de début de bloc de code
+}
+print(Sys.time()-start)
+rm(start)
 
 # print( summary(mcmc)$statistics )
 # print( cor(mcmc[[1]]) )
