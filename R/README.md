@@ -4,7 +4,7 @@
 
 - **preprocessing_from_raw_data.Rmd** : crée *complete_corresponding_table_without_duplicate.RDS* et *complete_corresponding_table_without_duplicate_standardized.RDS* à partir des données de Le Bien
 
-- **sub_sampling_grid.RMD** :  crée les fichiers .RDS pour les régressions et les fichiers .geojson pour vérifier si l'échantillonnage est correct, et pour avoir des visualisations globales. Witold me disait qu'il existe une meilleure méthode pour avoir ce sampling à 10km (un peu compliqué mais moins que ce qu'on a fait avec le code R)
+- **sub_sampling_grid.RMD** :  crée les fichiers .RDS pour les régressions et les fichiers .geojson pour vérifier si l'échantillonnage est correct, et pour avoir des visualisations globales. Witold me disait qu'il existe une meilleure méthode pour avoir ce sampling à 10km (un peu compliqué mais moins que ce qu'on a fait avec le code R) Enregistrés dans le folder transformed_data.
 
 - **complete_model_jags.Rmd** : code qui appelle le fichier **model.txt** dans **JAGS_models** et génère dans un fichier dans JAGS_outputs les sorties textuelles, les corrélations, les graphiques des sorties, les graphiques des resimulations etc
 
@@ -19,7 +19,7 @@ Scripts R appelant des fonctions brms pour faire du glm, que j'avais finalement 
 - **script_propre_gamma_rh98.R**
 - **script_propre_glmm.R**
 
-scripts assez simples par rapport aux longues boucles avec resimulation et compagnie que j'avais tout de même laissées dans le le folder **regression** (voir plus bas)
+scripts assez simples par rapport aux longues boucles avec resimulation et compagnie que j'ai tout de même laissées dans le le folder **regression** (voir plus bas)
 
 # Autres
 
@@ -43,3 +43,10 @@ mais les régressions principales sont dans le folder R :
 # 
 
 **generate_ilots_data.R** : code naïf censé générer les îlots dans le folder **transformed_data_ilots** dans le folder principal. Je crois qu'il ne marche pas.
+
+# 
+
+**old_scripts** contient trois vieux scripts que j'ai resortis des **archives**. Je crois que **generate_hists_and_correlations**.Rmd génère les histogrammes et matrices de corrélations dans le folder figures, que **generate_sub_samples_of_3_ecoregions**.Rmd génère des échantillons 10^4 de couches vectorielles afin de pouvoir faire des visualisations QGIS, et que **visualisation_donnes_manquantes.Rmd** donne des summary de NA.
+
+Il est possible que des figures dans le folder figure aient été faites avec des vieux codes que j'ai mis dans le folder archive.
+
