@@ -1,39 +1,45 @@
-# Listes des scripts R présents dans ce folder 
+# Folder qui contient les scripts
                      
-- **"paths.R"** : fichier source qu'on charge dans tous les autres fichiers pour remplir automatiquement les chemins vers les données, les figures etc
-- **"README.md"**     
+- **paths.R** : fichier source qu'on charge dans tous les autres fichiers pour remplir automatiquement les chemins vers les données, les figures etc, selon l'utilisateur
 
-## Première partie
-- **"visualisation_donnes_manquantes.Rmd"** : visualisation NA selon les variables
+- **preprocessing_from_raw_data.Rmd** : crée *complete_corresponding_table_without_duplicate.RDS* et *complete_corresponding_table_without_duplicate_standardized.RDS* à partir des données de Le Bien
 
- - **"aires_geographiques.Rmd"** : génération des cartes des variables dans l'espace et des zones de NA associées à chaque variable avec ggplot                     
-- **"correlations.Rmd"** : génération des matrices de corrélation sur les données totales               
-- **"correlations_with_NA_replacement.Rmd"** : génération des matrices de corrélation sur les données avec NA feu transformé en 0
-- **"hists_corrplots_fire_rain_canopy_cover_height.Rmd"** : génération des histogrammes de feu, pluie, canopy_cover et canopy_height
-- **"premiers_tests_glm.Rmd"** : premiers tests glm 
-- **"script01.R"** : premier fichier Dom                                  
-- **"tests_lecture_ecoregions.Rmd"** : aggrégation de données écorégions plus précises suite au mail de Le Bien                
-- **generate_geojson_files_of_3_ecoregions.Rmd** : génère les fichiers geojson des 3 écorégions dans le folder *geojson_files* pour une lecture qgis       
+- **sub_sampling_grid.RMD** :  crée les fichiers .RDS pour les régressions et les fichiers .geojson pour vérifier si l'échantillonnage est correct, et pour avoir des visualisations globales. Witold me disait qu'il existe une meilleure méthode pour avoir ce sampling à 10km (un peu compliqué mais moins que ce qu'on a fait avec le code R)
 
-## Test régressions beta sur des données random
+- **complete_model_jags.Rmd** : code qui appelle le fichier **model.txt** dans **JAGS_models** et génère dans un fichier dans JAGS_outputs les sorties textuelles, les corrélations, les graphiques des sorties, les graphiques des resimulations etc
 
-- **"beta_reg_tests.Rmd"** : premiers tests sur la régression beta                               
-- **"test_beta_inflated.Rmd"** : tests sur la régression beta inflated   
-- **"test_brms1.RDS"** : sauvegarde d'une chaîne MCMC                                
-- **"test_brms2.RDS"** : sauvegarde d'une chaîne MCMC     
+- **hierarchical_model_jags.Rmd** : code qui appelle le fichier **modele_hierarchique.txt** dans **JAGS_models** et génère dans un fichier dans JAGS_outputs les sorties textuelles, les corrélations, les graphiques des sorties selon la localisation à 300km
 
-## Tests brms
+- **tentative_intersection.Rmd** : fichier qui permet de conserver uniquement les points dans les zones peu densément peuplées (<10 hab/km2) en réalisant l'intersection d'un raster et d'une couche vectorielle (il faut passer par QGIS au milieu mais c'est expliqué dedans). En fait on rajoute l'information de la densité de population à chaque point de la couche vectorielle et on réalise la condition <10 hab/km2 avec le code R une fois qu'on recharge le fichier QGIS.
 
-- **"tests_brms_3_ecoregions.Rmd"** : premiers essais glm sur les 3 écorégions Guinean forest-savanna, West_Sudanian et Sahelian Acacia   
-- **chaines_Guinean_100000_lignes.pdf** : sauvegarde du visuel des chaînes pour les premières 10**5 données de Guinean avec **tests_brms_3_ecoregions.Rmd**          
+Scripts R appelant des fonctions brms pour faire du glm, que j'avais finalement splittés :
 
-- **generate_sub_samples_of_3_ecoregions.Rmd** : génère des sous-échantillons randoms 10^4 lignes des 3 écorégions
-- **sub_sample_Guinean.RDS** : sous-échantillon random 10^4 lignes de Guinean généré avec **generate_sub_samples_of_3_ecoregions.Rmd**
-- **test_car_model.Rmd** : tentative de car() dans brm() sur **sub_sample_10_4_Guinean.RDS**
+- **script_propre_beta_canopy_cover.R**
+- **script_propre_beta_feu_en_fonction_pluie.R**
+- **script_propre_gamma_rh98.R**
+- **script_propre_glmm.R**
 
-## A partir du 25 Mars
+scripts assez simples par rapport aux longues boucles avec resimulation et compagnie que j'avais tout de même laissées dans le le folder **regression** (voir plus bas)
 
-- **tests_regressions_STAN.Rmd** : tests STAN génériques pas spécifiques à nos données, liés aux fichiers stan dans le folder STAN_models
-- **preprocessing_from_raw_data.Rmd** : create *complete_corresponding_table_without_duplicate.RDS* and *complete_corresponding_table_without_duplicate_standardized.RDS* from raw data
-- **sub_sampling_grid.RMD** : create the .RDS files for regressions and .geojson files to check if the sampling is fine, and for having global visualisations
-- **regressions_script.R** : 
+# Autres
+
+**complete_model_STAN** : code qui appelle le code stan du modèle dans le folder **STAN_models**. (pas à jour par rapport à la version finale en JAGS) mais qui peut donner éventuellement une base si on souhaite estimer le modèle avec STAN.
+
+Je l'avais codé à la fois en JAGS et en STAN à un moment dans la continuité des tps d'écotox aussi pour apprendre simultanément les deux langages et appréhender les différences.
+
+# 
+il y a d'autres régressions que j'avais faites dans le folder **regression**, avec une boucle sur les écorégions, avec les resimulations...
+j'avais finalement splitté le code en différents fichiers afin d'avoir un seul type de régression par fichier
+
+ça peut éventuellement donner une base si on reprend les glms...
+ou pas
+
+mais les régressions principales sont dans le folder R :
+- R/script_propre_beta_canopy_cover.R
+- R/script_propre_beta_feu_en_fonction_pluie.R
+- R/script_propre_gamma_rh98.R
+- R/script_propre_glmm.R
+
+# 
+
+**generate_ilots_data.R** : code naïf censé générer les îlots dans le folder **transformed_data_ilots** dans le folder principal. Je crois qu'il ne marche pas.

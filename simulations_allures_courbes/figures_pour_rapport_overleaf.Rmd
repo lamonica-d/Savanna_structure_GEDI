@@ -1,0 +1,477 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, echo=FALSE, include = FALSE}
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R")
+getwd()
+```
+
+
+
+```{r functions, echo=FALSE, include = FALSE}
+
+sigmo_pluie <- function(W,lambda,decalage){
+  return( 1/(1+exp(-lambda*(W-decalage))) )
+}
+
+sigmo_coeff_competition <- function(W,delta,decalage){
+  return( 2/(1+exp(-delta*(-W+decalage))) )
+}
+
+omega <- function(G,point_inflexion){return((G**2)/((G**2)+(point_inflexion**2)))}
+
+df_graphique = as.data.frame(matrix(nrow=4,ncol=2))
+colnames(df_graphique) = c("pluie (mm yr-1)","biomasse (t.ha-1)")
+df_graphique2 = df_graphique
+
+df_graphique[1,] = c(400,2.3)
+df_graphique[2,] = c(500,3)
+df_graphique[3,] = c(600,4.2)
+df_graphique[4,] = c(700,5.2)
+df_graphique[5,] = c(750,6)
+df_graphique[6,] = c(1000,8.75)
+
+df_graphique2[1,] = c(400,2.3)
+df_graphique2[2,] = c(500,3)
+df_graphique2[3,] = c(600,4.3)
+df_graphique2[4,] = c(700,6.5)
+df_graphique2[5,] = c(800,9)
+df_graphique2[6,] = c(900,12)
+```
+
+
+```{r all functions, echo=TRUE, include = TRUE}
+lambdas = seq(0.0017,0.0088,length=20)
+deltas = seq(-5,-2,length=20)
+deltas = 10**deltas
+# W = 1000 ; *delta=10**-5 = 10**-2 ; exp(-100*-2) = 0.99 presque plat
+
+palette_deltas <- colorRampPalette(c("blue", "green"))(length(deltas))
+
+W_values = seq(0,3500,by=10)
+point_inflexions = seq(500,1100,by=200)
+K_Gs = seq(5,20,by=3)
+length(K_Gs)*length(point_inflexions)*length(lambdas)
+
+u = 0
+for(K_G in 20:20){
+  print(K_G)
+for(pt_inflx in point_inflexions){
+for(i in 1:length(lambdas)){
+  u = u + 1
+  # pdf(
+  #     file.path(
+  #               path_to_Savanna_structure_GEDI_folder,
+  #               "figures",
+  #               "forme_fonctions",
+  #               paste0(
+  #               sprintf("%03d",u),
+  #               # ",K_G=",sprintf("%02d",round(K_G,1)),",",
+  #               # "pt_inflx=",sprintf("%04d",pt_inflx),
+  #               # ",G(W,lambda_",sprintf("%02d", as.integer(i)),",delta)",
+  #               ".pdf")
+  #               )
+  #   )
+  
+  S = sigmo_pluie(W_values,lambdas[i],decalage=pt_inflx)
+  
+  par(mfrow = c(2, 2))
+
+  plot(
+       W_values,
+       K_G*S,
+       # main = paste0(sprintf("%03d",u),";",round(K_G,2),"*S(W,lambda_",i,"=",round(lambdas[i],5),",",pt_inflx,")"),
+       main = paste0(round(K_G,2),"*S(W,lambda_",i,"=",round(lambdas[i],5),",",pt_inflx,")"),
+       ylab = paste0(round(K_G,2),"*S(W,lambda_",i,"=",round(lambdas[i],5),",",pt_inflx,")"),
+       ylim = c(0,K_G)
+       )
+  
+  abline(v=pt_inflx,lty=2)
+  abline(h=K_G*0.5,lty=2)
+  lines(df_graphique,col="deeppink")
+  lines(df_graphique2,col="deeppink")
+  
+  plot.new()
+  
+  legend("center",
+         # legend = paste0("j=",1:length(deltas)," delta=",round(deltas,6)),
+         legend = paste0("delta=",round(deltas,6)), 
+         col = palette_deltas, 
+         lty = 1,
+         xpd = TRUE)
+  
+  plot(
+       x=c(0),
+       y=c(0),
+       xlim=c(0,3500),
+       ylim = c(0,K_G),
+       xlab = "W",
+       main = paste0(round(K_G,2),"*G_hat(W,lambda=",round(lambdas[i],5),",delta",",",pt_inflx,")"),
+       ylab = paste0(round(K_G,2),"*G_hat(W,lambda=",round(lambdas[i],5),",delta",",",pt_inflx,")"),
+       )
+  lines(df_graphique,col="deeppink")
+  lines(df_graphique2,col="deeppink")
+
+  abline(v=pt_inflx,lty=2)
+  abline(h=K_G*0.5,lty=2)
+ 
+  for(j in 1:length(deltas)){
+     S = sigmo_pluie(W_values,lambdas[i],decalage=pt_inflx)
+     G_hat = K_G*S*sigmo_coeff_competition(W_values,deltas[j],pt_inflx)
+     lines(W_values, G_hat, col = palette_deltas[j])
+     lines(W_values,K_G*S,col="black")
+  }
+  
+  plot(
+       x=c(0),
+       y=c(0),
+       xlim=c(0,3500),
+       ylim = c(0,2),
+       xlab = "W",
+       main = paste0("eta(W,delta",",",pt_inflx,")"),
+       ylab = paste0("eta(W,delta",",",pt_inflx,")"),
+       )
+  
+  abline(v=pt_inflx,lty=2)
+  lines(df_graphique,col="deeppink")
+  lines(df_graphique2,col="deeppink")
+ 
+  for(j in 1:length(deltas)){
+     eta = sigmo_coeff_competition(W_values,deltas[j],pt_inflx)
+     lines(W_values, eta, col = palette_deltas[j])
+  }
+  
+  # dev.off()
+}}}
+```
+
+```{r S_function, echo=TRUE, include = TRUE}
+lambdas = seq(0.0017,0.0088,length=20)
+deltas = seq(-5,-2,length=20)
+deltas = 10**deltas
+# W = 1000 ; *delta=10**-5 = 10**-2 ; exp(-100*-2) = 0.99 presque plat
+
+palette_deltas <- colorRampPalette(c("blue", "green"))(length(deltas))
+palette_lambdas <- colorRampPalette(c("cyan", "cornflowerblue"))(length(lambdas))
+
+W_values = seq(0,3500,by=10)
+point_inflexions = seq(500,1100,by=100)
+K_Gs = seq(5,20,by=3)
+length(K_Gs)*length(point_inflexions)*length(lambdas)
+
+u = 0
+for(K_G in 20:20){
+  print(K_G)
+for(pt_inflx in point_inflexions){
+
+  u = u+1
+  # pdf(
+  #     file.path(
+  #               path_to_Savanna_structure_GEDI_folder,
+  #               "figures",
+  #               "forme_fonctions",
+  #               paste0(
+  #               sprintf("%03d",u),
+  #               # ",K_G=",sprintf("%02d",round(K_G,1)),",",
+  #               # "pt_inflx=",sprintf("%04d",pt_inflx),
+  #               # ",G(W,lambda_",sprintf("%02d", as.integer(i)),",delta)",
+  #               "pt_inflx=",pt_inflx,".pdf")
+  #               )
+  #   )
+  
+  par(mfrow = c(1,2))
+
+  plot(
+       x=c(0),
+       y=c(0),
+       xlim=c(0,3500),
+       ylim = c(0,K_G),
+       xlab = "W",
+       # main = paste0(round(K_G,2),"*S(W,lambda=",round(lambdas[i],5),",W_infl=",pt_inflx,")"),
+       ylab = paste0(round(K_G,2),"*S(W,lambda=",round(lambdas[i],5),",W_infl=",pt_inflx,")"),
+       )
+  lines(df_graphique,col="deeppink")
+  lines(df_graphique2,col="deeppink")
+
+  abline(v=pt_inflx,lty=2)
+  abline(h=K_G*0.5,lty=2)
+ 
+  for(j in 1:length(lambdas)){
+     S = sigmo_pluie(W_values,lambdas[j],decalage=pt_inflx)
+     lines(W_values,K_G*S,col=palette_lambdas[j])
+  }
+  
+  plot.new()
+  
+  legend("center",
+         # legend = paste0("j=",1:length(deltas)," delta=",round(deltas,6)),
+         legend = paste0("lambda=",round(lambdas,6)), 
+         col = palette_lambdas, 
+         lty = 1,
+         xpd = TRUE)
+  
+  
+  # dev.off()
+}}
+```
+
+```{r eta_function, echo=TRUE, include = TRUE}
+lambdas = seq(0.0017,0.0088,length=20)
+deltas = seq(-5,-2,length=20)
+deltas = 10**deltas
+# W = 1000 ; *delta=10**-5 = 10**-2 ; exp(-100*-2) = 0.99 presque plat
+
+palette_deltas <- colorRampPalette(c("blue", "green"))(length(deltas))
+palette_lambdas <- colorRampPalette(c("cyan", "cornflowerblue"))(length(lambdas))
+
+W_values = seq(0,3500,by=10)
+point_inflexions = seq(500,1100,by=100)
+K_Gs = seq(5,20,by=3)
+length(K_Gs)*length(point_inflexions)*length(lambdas)
+
+u = 0
+for(K_G in 20:20){
+  print(K_G)
+for(pt_inflx in 900:900){
+
+  u = u+1
+  pdf(
+      file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures",
+                "forme_fonctions",
+                paste0("eta",
+                sprintf("%03d",u),
+                # ",K_G=",sprintf("%02d",round(K_G,1)),",",
+                # "pt_inflx=",sprintf("%04d",pt_inflx),
+                # ",G(W,lambda_",sprintf("%02d", as.integer(i)),",delta)",
+                "pt_inflx=",pt_inflx,".pdf")
+                )
+    )
+  
+  par(mfrow = c(1,2))
+
+  plot(
+       x=c(0),
+       y=c(0),
+       xlim=c(0,3500),
+       ylim = c(0,2),
+       xlab = "W",
+       # main = paste0(round(K_G,2),"*S(W,lambda=",round(lambdas[i],5),",W_infl=",pt_inflx,")"),
+       ylab = paste0("eta(W,lambda=",round(lambdas[10],5),",W_infl=",pt_inflx,")"),
+       )
+
+  abline(v=pt_inflx,lty=2)
+  abline(h=1,lty=2)
+ 
+  for(j in 1:length(deltas)){
+     eta = sigmo_coeff_competition(W_values,deltas[j],pt_inflx)
+     lines(W_values, eta, col = palette_deltas[j])
+  }
+  
+  
+  plot.new()
+  
+  legend("center",
+         # legend = paste0("j=",1:length(deltas)," delta=",round(deltas,6)),
+         legend = paste0("delta=",round(deltas,6)), 
+         col = palette_deltas, 
+         lty = 1,
+         xpd = TRUE)
+  
+  
+  dev.off()
+}}
+```
+
+```{r G=S*eta, echo=TRUE, include = TRUE}
+lambdas = seq(0.0017,0.0088,length=20)
+deltas = seq(-5,-2,length=20)
+deltas = 10**deltas
+# W = 1000 ; *delta=10**-5 = 10**-2 ; exp(-100*-2) = 0.99 presque plat
+
+palette_deltas <- colorRampPalette(c("blue", "green"))(length(deltas))
+palette_lambdas <- colorRampPalette(c("cyan", "cornflowerblue"))(length(lambdas))
+
+W_values = seq(0,3500,by=10)
+point_inflexions = seq(500,1100,by=100)
+K_Gs = seq(5,20,by=3)
+length(K_Gs)*length(point_inflexions)*length(lambdas)
+
+u = 0
+for(K_G in 20:20){
+  print(K_G)
+for(pt_inflx in 900:900){
+
+  u = u+1
+  pdf(
+      file.path(
+                path_to_Savanna_structure_GEDI_folder,
+                "figures",
+                "forme_fonctions",
+                paste0("S*eta",
+                sprintf("%03d",u),
+                # ",K_G=",sprintf("%02d",round(K_G,1)),",",
+                # "pt_inflx=",sprintf("%04d",pt_inflx),
+                # ",G(W,lambda_",sprintf("%02d", as.integer(i)),",delta)",
+                "pt_inflx=",pt_inflx,".pdf")
+                )
+    )
+  
+  par(mfrow = c(1,2))
+
+  plot(
+       x=c(0),
+       y=c(0),
+       xlim=c(0,3500),
+       ylim = c(0,K_G),
+       xlab = "W",
+       # main = paste0(round(K_G,2),"*S(W,lambda=",round(lambdas[i],5),",W_infl=",pt_inflx,")"),
+       ylab = paste0("20S(W,lambda=",round(lambdas[10],5),",W_infl=",pt_inflx,")","eta(W,lambda=",round(lambdas[10],5),",W_infl=",pt_inflx,")"),
+       )
+
+  abline(v=pt_inflx,lty=2)
+  abline(h=K_G*0.5,lty=2)
+  
+  lines(df_graphique,col="deeppink")
+  lines(df_graphique2,col="deeppink")
+ 
+  for(j in 1:length(deltas)){
+     S = sigmo_pluie(W_values,lambdas[10],decalage=pt_inflx)
+     G_hat = K_G*S*sigmo_coeff_competition(W_values,deltas[j],pt_inflx)
+     lines(W_values, G_hat, col = palette_deltas[j])
+     lines(W_values,K_G*S,col="black")
+  }
+  
+  
+  plot.new()
+  
+  legend("center",
+         # legend = paste0("j=",1:length(deltas)," delta=",round(deltas,6)),
+         legend = paste0("delta=",round(deltas,6)), 
+         col = palette_deltas, 
+         lty = 1,
+         xpd = TRUE)
+  
+  
+  dev.off()
+}}
+```
+
+
+```{r omega, include = TRUE}
+Holling_3 <- function(x,alpha){return((x**2)/((alpha**2)+(x**2)))}
+
+G = seq(0.001,10,length=10**3)
+
+for(alpha in seq(1.5,6.5,by=0.5)){
+  
+  p_feu = Holling_3(G,alpha=3.5)
+  
+  plot(G,
+       p_feu,
+       # main=paste("pt_inflexion=",pt_inflexion,"t.ha-1"),
+       xlim=c(0,10),
+       ylim=c(0,1),
+       xlab = "G in (t.ha-1)",
+       ylab = paste("omega(G,alpha=",alpha,")"),
+       main = paste("alpha=",alpha)
+       )
+  
+    abline(v=3.5,lty=2)
+    abline(h=0.5,lty=2)
+}
+
+```
+
+```{r, new_omega}
+########################################################################
+# Nouvelle fonction d'après Wilgen 2000 :
+
+new_omega <- function(G,b,offset){
+  return( 1/ (1+exp(-b*G+offset)) )
+}
+
+G = seq(0.001,15,length=10**3)
+
+# offset = seq(1.5,6.5,by=0.5)
+{
+b_values = c(0.47,0.51)
+offset_values = c(2.47,3,3.47)
+
+
+palette <- rainbow( length(b_values)*length(offset_values) )
+u = 0
+legend_couleur = c()
+
+par(mfrow=c(1,2))
+plot(
+     c(0),
+     c(0),
+     xlim=c(0,15),
+     ylim=c(0,1),
+     xlab = "G in (t.ha-1)",
+     ylab = "proba feu"
+     )
+
+for(offset in offset_values){
+for(b in b_values){
+
+  p_feu = new_omega(G,b,offset)
+  print(p_feu[1:5])
+  u = u + 1 # incrément couleur
+  legend_couleur = c(legend_couleur,paste0("u=",u," b=",b," offset=",offset))
+  
+  lines(G,
+       p_feu,
+       # main=paste("pt_inflexion=",pt_inflexion,"t.ha-1"),
+       xlim=c(0,15),
+       ylim=c(0,1),
+       col = palette[u],
+       # ylab = paste("new_omega(G,b=",b,"offset=",offset,")"),
+       # main = paste("b=",b,"offset=",offset)
+       )
+  
+    # abline(v=3.5,lty=2)
+    abline(h=1,lty=2)
+}}
+plot.new()
+legend("center", legend = legend_couleur, col = palette, lty = 1,xpd = TRUE)
+}
+```
+
+```{r RESULT, include = TRUE}
+
+W_values = seq(0,3500,by=10)
+
+S = sigmo_pluie(W_values,lambda = 8.800e-03 ,decalage=925.9)
+eta = sigmo_coeff_competition(W_values,delta=10**-2,decalage=925.9)
+
+plot(
+     W_values,
+     K_G*S*eta,
+     # main = paste0(sprintf("%03d",u),";",round(K_G,2),"*S(W,lambda_",i,"=",round(lambdas[i],5),",",pt_inflx,")"),
+     # main = paste0(round(K_G,2),"*S*eta"),
+     ylab = paste0(round(K_G,2),"*S*eta"),
+     ylim = c(0,K_G)
+     )
+  
+abline(v=pt_inflx,lty=2)
+abline(h=K_G*0.5,lty=2)
+lines(df_graphique,col="deeppink")
+lines(df_graphique2,col="deeppink")
+
+```
+
+
+
+
+

@@ -1,0 +1,1 @@
+différents graphes que j'avais réalisés au début du stage, voir aussi les fichiers /figures/spatial_fire /figures/spatial_rain /figures/spatial_canopy_cover pour voir les valeurs manquantes dans l'espace

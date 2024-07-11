@@ -1,0 +1,406 @@
+---
+title: "Untitled"
+output:
+  html_document: default
+  pdf_document: default
+date: "`r Sys.Date()`"
+editor_options:
+  chunk_output_type: console
+---
+
+```{r, include = FALSE}
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R")
+getwd()
+# Libraries
+library(terra)
+# Encoding :
+print("é è û")
+```
+
+
+```{r, include = TRUE}
+sigmo_pluie <- function(W,lambda,decalage){
+  return(
+    1/(1+exp(-lambda*(W-decalage)))
+    )
+}
+max_W = 3000
+W_values = seq(-max_W,max_W,by=10)
+decalage = 0
+# decalage = 500
+
+K_G_pluie_max = 16 # t.ha-1
+
+lambdas = seq(4,2,length=15)
+lambdas  = 10**-lambdas
+
+palette <- rainbow(length(lambdas))
+plot.new()
+legend("center", legend = paste(round(lambdas,4)), col = palette, lty = 1,xpd = TRUE)
+
+{
+
+plot(
+     x=c(0),
+     y=c(0),
+     xlim=c(-max_W,max_W),
+     ylim = c(0,1),
+     xlab = "W", ylab = ""
+     )
+
+for(i in 1:length(lambdas)){
+   grass = sigmo_pluie(W_values,lambdas[i],decalage = decalage)
+   lines(W_values, grass, col = palette[i])
+   abline(v=0,lty=2)
+   abline(h=K_G_pluie_max,lty=2)
+   # legend("topleft",paste0("K_G=",K_G_pluie_max))
+}
+
+}
+```
+
+```{r, include = TRUE}
+df_graphique = as.data.frame(matrix(nrow=4,ncol=2))
+colnames(df_graphique) = c("pluie (mm yr-1)","biomasse (t.ha-1)")
+df_graphique2 = df_graphique
+
+df_graphique[1,] = c(400,2.3)
+df_graphique[2,] = c(500,3)
+df_graphique[3,] = c(600,4.2)
+df_graphique[4,] = c(700,5.2)
+df_graphique[5,] = c(750,6)
+df_graphique[6,] = c(1000,8.75)
+
+df_graphique2[1,] = c(400,2.3)
+df_graphique2[2,] = c(500,3)
+df_graphique2[3,] = c(600,4.3)
+df_graphique2[4,] = c(700,6.5)
+df_graphique2[5,] = c(800,9)
+df_graphique2[6,] = c(900,12)
+
+plot(df_graphique,
+     xlim=c(0,1500),
+     ylim=c(0,15)
+     )
+lines(df_graphique2,col="blue")
+
+plot(df_graphique2,
+     xlim=c(0,1500),
+     ylim=c(0,15),
+     col="blue"
+     )
+```
+
+```{r, include = TRUE}
+partie_lineaire2 = df_graphique2[4:6,]
+plot(partie_lineaire2,pch=1,
+     xlim=c(0,1500),
+     ylim=c(0,15),
+     col="blue"
+     )
+
+partie_lineaire1 = df_graphique[3:6,]
+plot(partie_lineaire2,pch=1,
+     xlim=c(0,1500),
+     ylim=c(0,15),
+     col="blue"
+     )
+```
+
+```{r, include = TRUE}
+colnames(df_graphique)
+# [1] "pluie (mm yr-1)"   "biomasse (t.ha-1)"
+modlin1 <- lm(df_graphique[3:6,"biomasse (t.ha-1)"] ~ df_graphique[3:6,"pluie (mm yr-1)"])
+summary(modlin1)
+
+plot(df_graphique,
+     xlim=c(0,1500),
+     ylim=c(0,15)
+     )
+
+plot(df_graphique[3:6,],
+     xlim=c(0,1500),
+     ylim=c(0,15)
+     )
+lines(1000,modlin1$coefficient[1]+modlin1$coefficient[2]*1000,col="red")
+abline(a=modlin1$coefficient[1],b=modlin1$coefficient[2])
+plot(1000,modlin1$coefficient[1]+modlin1$coefficient[2]*1000,col="red",
+     main=paste(round(modlin1$coefficient[1]+modlin1$coefficient[2]*1000,2)),
+     xlim=c(0,1500),
+     ylim=c(0,15)
+     )
+abline(a=modlin1$coefficient[1],b=modlin1$coefficient[2])
+
+```
+
+```{r, include = TRUE}
+colnames(df_graphique)
+# [1] "pluie (mm yr-1)"   "biomasse (t.ha-1)"
+
+modlin2 <- lm(df_graphique2[4:6,"biomasse (t.ha-1)"] ~ df_graphique2[4:6,"pluie (mm yr-1)"])
+summary(modlin2)
+
+plot(df_graphique2,
+     xlim=c(0,1500),
+     ylim=c(0,15),
+     col="blue"
+     )
+
+plot(df_graphique2[4:6,],
+     xlim=c(0,1500),
+     ylim=c(0,15),
+     col="blue"
+     )
+abline(a=modlin2$coefficient[1],b=modlin2$coefficient[2])
+
+plot(1000,modlin2$coefficient[1]+modlin2$coefficient[2]*1000,col="red",
+     main=paste(round(modlin2$coefficient[1]+modlin2$coefficient[2]*1000,2)),
+     xlim=c(0,1500),
+     ylim=c(0,15)
+     )
+abline(a=modlin2$coefficient[1],b=modlin2$coefficient[2])
+```
+
+```{r}
+intercept1 = modlin1$coefficient[1]
+intercept2 = modlin2$coefficient[1]
+
+pente1 = modlin1$coefficient[2]
+pente2 = modlin2$coefficient[2]
+```
+
+```{r}
+sigmo_pluie <- function(W,lambda,decalage){
+  return(
+    1/(1+exp(-lambda*(W-decalage)))
+    )
+}
+max_W = 3000
+W_values = seq(-max_W,max_W,by=10)
+decalage = 0
+# decalage = 500
+
+K_G_pluie_max = 16 # t.ha-1
+
+lambdas = seq(4,2,length=15)
+lambdas  = 10**-lambdas
+
+palette <- rainbow(length(lambdas))
+plot.new()
+legend("center", legend = paste(round(lambdas,4)), col = palette, lty = 1,xpd = TRUE)
+
+{
+
+plot(
+     x=c(0),
+     y=c(0),
+     xlim=c(-max_W,max_W),
+     ylim = c(0,1),
+     xlab = "W", ylab = ""
+     )
+
+for(i in 1:length(lambdas)){
+   grass = sigmo_pluie(W_values,lambdas[i],decalage = decalage)
+   lines(W_values, grass, col = palette[i])
+   abline(a=0.5,b=lambdas[i]/4,lty=2,col = palette[i])
+
+}
+
+  abline(v=0,lty=2)
+  abline(h=K_G_pluie_max,lty=2)
+}
+```
+
+```{r}
+# Restreignons la fenêtre :
+
+sigmo_pluie <- function(W,lambda,decalage){
+  return(
+    1/(1+exp(-lambda*(W-decalage)))
+    )
+}
+max_W = 3000
+W_values = seq(-max_W,max_W,by=10)
+decalage = 0
+# decalage = 500
+
+K_G_pluie_max = 16 # t.ha-1
+
+lambdas = seq(4,2,length=15)
+lambdas  = 10**-lambdas
+
+palette <- rainbow(length(lambdas))
+plot.new()
+legend("center", legend = paste(round(lambdas,4)), col = palette, lty = 1,xpd = TRUE)
+
+{
+
+plot(
+     x=c(0),
+     y=c(0),
+     xlim=c(-1200,1200),
+     ylim = c(0,K_G_pluie_max),
+     xlab = "W", ylab = ""
+     )
+
+for(i in 1:length(lambdas)){
+   grass = K_G_pluie_max*sigmo_pluie(W_values,lambdas[i],decalage = decalage)
+   lines(W_values, grass, col = palette[i])
+   abline(a=K_G_pluie_max*0.5,b=K_G_pluie_max*lambdas[i]/4,lty=2,col = palette[i])
+
+}
+
+  abline(v=0,lty=2)
+  abline(h=8.6,col="pink",lty=2)
+  abline(h=14.67,col="forestgreen",lty=2)
+
+  abline(a=intercept1,b=pente1,col="pink")
+  abline(a=intercept2,b=pente2,col="forestgreen")
+}
+```
+
+```{r}
+# Décalons :
+
+sigmo_pluie <- function(W,lambda,decalage){
+  return(
+    1/(1+exp(-lambda*(W-decalage)))
+    )
+}
+max_W = 3000
+W_values = seq(-max_W,max_W,by=10)
+decalage = 0
+# decalage = 500
+
+K_G_pluie_max = 16 # t.ha-1
+
+lambdas = seq(4,2,length=15)
+lambdas  = 10**-lambdas
+
+palette <- rainbow(length(lambdas))
+plot.new()
+legend("center", legend = paste(round(lambdas,4)), col = palette, lty = 1,xpd = TRUE)
+
+{
+
+plot(
+     x=c(0),
+     y=c(0),
+     xlim=c(-1200,1200),
+     ylim = c(0,K_G_pluie_max),
+     xlab = "W", ylab = ""
+     )
+
+for(i in 1:length(lambdas)){
+   grass = K_G_pluie_max*sigmo_pluie(W_values,lambdas[i],decalage = decalage)
+   # lines(W_values, grass, col = palette[i])
+   abline(a=K_G_pluie_max*0.5,b=K_G_pluie_max*lambdas[i]/4,lty=2,col = palette[i])
+
+}
+
+  abline(v=0,lty=2)
+  abline(h=8.6,col="pink",lty=2)
+  abline(h=14.67,col="forestgreen",lty=2)
+  abline(h=K_G_pluie_max*0.5,col="black")
+
+  abline(a=intercept1,b=pente1,col="pink")
+  abline(a=intercept2,b=pente2,col="forestgreen")
+}
+```
+
+```{r}
+sigmo_pluie <- function(W,lambda,decalage){
+  return(
+    1/(1+exp(-lambda*(W-decalage)))
+    )
+}
+max_W = 3000
+W_values = seq(-max_W,max_W,by=10)
+decalage = 600
+
+K_G_pluie_max = 16 # t.ha-1
+
+pente1
+# 0.01146043
+pente2
+#  0.0275
+
+lambdas = seq(4*0.7*1.1,4*1.4*2.75,length=15)
+lambdas = 10**-2*lambdas
+print(lambdas)
+print(pente1<lambdas & lambdas<pente2)
+print(lambdas)
+
+par(mfrow = c(1, 2))
+
+palette <- rainbow(length(lambdas))
+plot.new()
+legend("center", legend = paste("lambda=",round(lambdas/4,4)), col = palette, lty = 1,xpd = TRUE)
+
+{
+
+plot(
+     x=c(0),
+     y=c(0),
+     xlim=c(0,2000),
+     ylim = c(0,K_G_pluie_max),
+     xlab = "W", ylab = ""
+     )
+
+for(i in 1:length(lambdas)){
+   grass = K_G_pluie_max*sigmo_pluie(W_values,lambdas[i],decalage = decalage)
+   lines(W_values, grass, col = palette[i])
+   abline(v=0,lty=2)
+   abline(h=K_G_pluie_max,lty=2)
+   # legend("topleft",paste0("K_G=",K_G_pluie_max))
+}
+
+}
+```
+
+```{r, include = TRUE}
+# Sigmoïde 2
+
+# sigmo_pluie <- function(W,lambda,decalage){
+#   return(
+#     1/(1+exp(-lambda*(W-decalage)))
+#     )
+# }
+# max_W = 3000
+# W_values = seq(-max_W,max_W,by=10)
+# decalage = 0
+# # decalage = 500
+# 
+# K_G_pluie_max = 16 # t.ha-1
+# 
+# lambdas = seq(4,2,length=15)
+# lambdas  = 10**-lambdas
+# 
+# palette <- rainbow(length(lambdas))
+# plot.new()
+# legend("center", legend = paste(round(lambdas,4)), col = palette, lty = 1,xpd = TRUE)
+# 
+# {
+# 
+# plot(
+#      x=c(0),
+#      y=c(0),
+#      xlim=c(-max_W,max_W),
+#      ylim = c(0,1),
+#      xlab = "W", ylab = ""
+#      )
+# 
+# for(i in 1:length(lambdas)){
+#    grass = sigmo_pluie(W_values,lambdas[i],decalage = decalage)
+#    lines(W_values, grass, col = palette[i])
+#    abline(v=0,lty=2)
+#    abline(h=K_G_pluie_max,lty=2)
+#    # legend("topleft",paste0("K_G=",K_G_pluie_max))
+# }
+# 
+# }
+```
+

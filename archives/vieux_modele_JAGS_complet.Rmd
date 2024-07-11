@@ -1,0 +1,524 @@
+---
+title: "First test complete model"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, echo=FALSE, include = FALSE}
+# Cleaning the environment
+rm(list=ls())
+# Getting the paths
+source("paths.R")
+# Setting the current path
+path_to_R_folder = file.path(
+                             path_to_Savanna_structure_GEDI_folder,
+                             "R"
+                             )
+setwd(path_to_R_folder)
+getwd()
+
+# Libraries
+library(rjags)
+# Encoding :
+print("é è û")
+```
+
+```{r data_loading, echo=FALSE, include = FALSE}
+
+table_region <- readRDS(
+                file.path(
+                  path_to_Savanna_structure_GEDI_folder,
+                  "transformed_data",
+                  paste0("Guinean_forest-savanna",".RDS"))
+                )
+              
+names = c("West_Sudanian_savanna","Sahelian_Acacia_savanna",
+          "Western_Congolian_forest-savanna","Southern_Congolian_forest-savanna","Northern_Congolian_Forest-Savanna")
+
+# load data
+for(name in names){
+  print(name)
+    table_region <- rbind(table_region,
+                                       readRDS(
+                                        file.path(
+                                          path_to_Savanna_structure_GEDI_folder,
+                                          "transformed_data",
+                                          paste0(name,".RDS"))
+                                              )
+    )
+    }
+
+fire_freq_nozero <- table_region$fire_freq
+sum(abs(fire_freq_nozero)<10**-10)
+fire_freq_nozero[abs(fire_freq_nozero)<10**-10] <- 10**-3
+
+canopy_cover_nozero <- table_region$canopy_cover
+sum(abs(canopy_cover_nozero)<10**-10)
+canopy_cover_nozero[abs(canopy_cover_nozero)<10**-10] <- 10**-3
+
+head(table_region,2)
+
+delta_min = 0.0017 
+delta_max = 0.0088
+             
+data <- list(
+             N = nrow(table_region), 
+             prec_data = table_region$mean_precip,
+             fire_data = fire_freq_nozero, 
+             cc_data = canopy_cover_nozero,
+             delta_min = delta_min,
+             delta_max = delta_max
+             ) 
+```
+
+
+```{r model, echo=FALSE, include = FALSE}
+ # model and jags inference
+  model <-  "
+  model {
+    
+    for (i in 1:N){
+      
+      sigmo_pluie[i] = (1/(1+exp(-lambda*(prec_data[i]-pt_inflexion_grass))))
+      
+      canopy_influence[i] = delta_max + (1-cc_data[i])*delta_min
+      sigmo_competition[i] = (2/(1+exp(canopy_influence[i]*(prec_data[i]-pt_inflexion_grass))))
+      
+      grassB[i] = sigmo_pluie[i]*sigmo_competition[i]
+  }
+    
+  for (i in 1:N){
+      
+      fire_data[i] ~ dnorm(grassB[i], 1/0.0025)T(0,1)
+      
+      # curve(dnorm(x,0.5,sd=0.1),xlim=c(0,1))
+      # fire_data[i] ~ dnorm(grassB[i]**2/(grassB[i]**2 + pt_inflexion_feu**2) , 1/0.01)T(0,1)
+      
+      }
+  
+  # priors
+  
+  pt_inflexion_grass ~ dnorm(600,1/200**2)
+  # curve(dnorm(x,600,sd=400),xlim=c(0,3000))
+  
+  # pt_inflexion_feu ~ dunif(2.5,4.5)
+  lambda ~ dunif(0.0017,0.0088) # dunif(0.00010,0.0088)
+  
+  }
+"
+```
+
+
+```{r inits, echo=FALSE, include = FALSE}
+inits <- list(
+               list(
+                   pt_inflexion_grass = 600,
+                   lambda = 0.0025 # runif(1,0.0017,0.0088)
+                    ),
+               
+               list(
+                 pt_inflexion_grass = 800,
+                 lambda = 0.0065 # runif(1,0.0017,0.0088)
+               ),
+               
+               list(
+                 pt_inflexion_grass = 400,
+                 lambda = 0.0040 # runif(1,0.0017,0.0088)
+               )   
+               
+              )
+```
+
+
+```{r mcmc, echo=FALSE, include = FALSE}
+#   
+m <- rjags::jags.model(
+                        textConnection(model),
+                        inits = inits,
+                        data = data,
+                        n.chains = length(inits),
+                        n.adapt = 10**3 # est-ce suffisant ?
+                        )
+# burnin
+update(m, 10**3)
+mcmc <- rjags::coda.samples(
+                             m,
+                             variable.names = c(
+                                                "lambda",
+                                                "pt_inflexion_grass"
+                                                ),
+                             n.iter = 5*10**4,
+                             thin = 10
+                             )
+```
+
+
+```{r save_file, echo=FALSE, include = FALSE}
+# save_rds_files = TRUE
+# 
+# if(save_rds_files==TRUE){
+# 
+#         saveRDS(mcmc,
+#                 file.path(
+#                   path_to_Savanna_structure_GEDI_folder,
+#                   "outputs",
+#                   "JAGS_outputs",
+#                   paste0(name,"complete_model_29avril.RDS"))
+#                 )
+# }
+
+mcmc <- readRDS(
+                file.path(
+                  path_to_Savanna_structure_GEDI_folder,
+                  "outputs",
+                  "JAGS_outputs",
+                  paste0("complete_model_29avril.RDS"))
+                )
+```
+
+
+```{r summaries, echo=TRUE, include = TRUE}
+print(summary(mcmc))
+summary(mcmc)$statistics
+
+K_G_t_f_pluie_max_mcmc = 1 #summary(mcmc)$statistics["K_G_t_f_pluie_max",1]
+pt_inflexion_grass_mcmc = summary(mcmc)$statistics["pt_inflexion_grass",1]
+lambda_mcmc = summary(mcmc)$statistics["lambda",1]
+pt_inflexion_feu_mcmc = summary(mcmc)$statistics["pt_inflexion_feu",1]
+```
+
+```{r mcmc_diagnosis, echo=TRUE, include = TRUE}
+autocorr.plot(mcmc[[1]], ask = "TRUE")
+ par(mar = c(2,0,0,0))
+# c(bottom, left, top, right)
+# default is c(5, 4, 4, 2)
+plot(mcmc, trace = T)
+
+gelman.diag(mcmc)
+```
+
+```{r VRAIES DONNEES, echo=FALSE, include = TRUE}
+
+print("vraies donnees")
+
+df_graphique = as.data.frame(matrix(nrow=4,ncol=2))
+colnames(df_graphique) = c("pluie (mm yr-1)","biomasse (t.ha-1)")
+df_graphique2 = df_graphique
+
+df_graphique[1,] = c(400,2.3)
+df_graphique[2,] = c(500,3)
+df_graphique[3,] = c(600,4.2)
+df_graphique[4,] = c(700,5.2)
+df_graphique[5,] = c(750,6)
+df_graphique[6,] = c(1000,8.75)
+
+df_graphique2[1,] = c(400,2.3)
+df_graphique2[2,] = c(500,3)
+df_graphique2[3,] = c(600,4.3)
+df_graphique2[4,] = c(700,6.5)
+df_graphique2[5,] = c(800,9)
+df_graphique2[6,] = c(900,12)
+```
+
+```{r, echo=FALSE, include = FALSE}
+# just the functions
+
+sigmo_pluie <- function(W,lambda,decalage){
+  return(
+    1/(1+exp(-lambda*(W-decalage)))
+    )
+}
+
+sigmo_coeff_competition <- function(W,delta,decalage){
+  return(
+    1/(1+exp(-delta*(-W+decalage)))
+    )
+}
+
+omega <- function(G,point_inflexion){return((G**2)/((G**2)+(point_inflexion**2)))}
+
+display_mcmc_output_sigmoides = function(K_G_t_f_pluie_max_mcmc,lambda_mcmc,pt_inflexion_feu_mcmc,pt_inflexion_grass_mcmc){
+  
+  pentes = seq(0.00043,0.0022,length=20)
+  lambdas = 4*pentes
+  # print("pentes")
+  # print(pentes)
+  # print("lambdas")
+  # print(lambdas)
+  
+  pente1 = 0.00688
+  pente2 = 0.0022
+
+  lambda1 = 0.00172
+  lambda2 = 0.0088
+  
+  max_W = 3500
+  W_values = seq(0,max_W,by=10)
+
+  # Premier graphique
+    
+  print("valeurs lambda_mcmc_possibles")
+
+  palette <- rainbow(length(lambdas))
+  par(mfrow = c(1, 2))
+  plot.new()
+  # legend("center", legend = paste("lambda=",round(lambdas,4),"pente=",round(lambdas/4,4)), col = palette, lty = 1,xpd = TRUE)
+  legend("center", legend = paste("lambda=",round(lambdas,4)), col = palette, lty = 1,xpd = TRUE)
+  
+  plot(
+       x=c(0),
+       y=c(0),
+       xlim=c(0,3500),
+       xaxt = "n",
+       ylim = c(0,1),
+       xlab = "W", ylab = "grass (à constante multiplicative près)",
+       main = "range de lambdas possibles"
+       )
+  
+  for(i in 1:length(lambdas)){
+     grass = sigmo_pluie(W_values,lambdas[i],decalage = 0)
+     lines(W_values, grass, col = palette[i])
+     abline(a=0.5,b=lambdas[i]/4,lty=2,col = palette[i])
+     }
+    
+    abline(b=pente1,lwd=3)
+    abline(b=pente2,lwd=3)
+  
+    abline(v=0,lty=2)
+    
+    # Second graphique
+  
+    print("donnees post mcmc")
+
+    K_G_pluie_max = K_G_t_f_pluie_max_mcmc
+      
+    palette <- rainbow(length(lambdas))
+    par(mfrow = c(1, 2))
+    plot.new()
+
+    legend(
+      "center", 
+      legend = rbind(
+                     paste("lambda_mcmc=",round(lambda_mcmc,4),"yr.mm-1"),
+                     paste("K_G_mcmc=",round(K_G_t_f_pluie_max_mcmc,4),"t.ha-1")
+                     ),
+      lty = 1,
+      xpd = TRUE
+      )
+    
+    plot(
+         x=c(0),
+         y=c(0),
+         xlim=c(0,3500),
+         ylim = c(0,K_G_pluie_max),
+         xlab = "W", ylab = "mcmc_simulated_grass",
+         main = paste0("pt_inflexion=",round(pt_inflexion_grass_mcmc,2),"mm.yr-1")
+         )
+  
+    grass_simulated_by_mcmc = K_G_pluie_max*sigmo_pluie(W_values,lambda=lambda_mcmc,decalage = pt_inflexion_grass_mcmc)
+    lines(W_values, grass_simulated_by_mcmc, col = "black", lwd = 3)
+    
+    abline(v=pt_inflexion_grass_mcmc,lty=2)
+    abline(h=K_G_pluie_max,lty=2)
+    lines(df_graphique[,"pluie (mm yr-1)"],df_graphique[,"biomasse (t.ha-1)"],pch=1,
+          col="deeppink",lwd=3)
+    lines(df_graphique2[,"pluie (mm yr-1)"],df_graphique2[,"biomasse (t.ha-1)"],pch=1,
+          col="deeppink",lwd=3)
+    
+    # print(paste("lambda1=",lambda1,"pente1=",pente1))
+    # print(paste("lambda2=",lambda2,"pente2=",pente2))
+  
+    # Troisième graphique
+  
+    print("donnees post mcmc")
+    
+    K_G_pluie_max = K_G_t_f_pluie_max_mcmc
+      
+    palette <- rainbow(length(lambdas))
+    par(mfrow = c(1, 2))
+    plot.new()
+    legend("center", legend = paste("lambda=",round(lambdas,4)), col = palette, lty = 1,xpd = TRUE)
+
+    
+    plot(
+         x=c(0),
+         y=c(0),
+         xlim=c(0,3500),
+         ylim = c(0,K_G_pluie_max),
+         xlab = "W", ylab = "",
+         main = paste0("pt_inflexion=",round(pt_inflexion_grass_mcmc,2),"mm.yr-1")
+         )
+  
+  for(i in 1:length(lambdas)){
+       grass = K_G_pluie_max*sigmo_pluie(W_values,lambda=lambdas[i],decalage = pt_inflexion_grass_mcmc)
+       lines(W_values, grass, col = palette[i])
+       # abline(a=0.5,b=lambdas[i]/4,lty=2,col = palette[i])
+  }
+    
+    grass_simulated_by_mcmc = K_G_pluie_max*sigmo_pluie(W_values,lambda=lambda_mcmc,decalage = pt_inflexion_grass_mcmc)
+    lines(W_values, grass_simulated_by_mcmc, col = "black", lwd = 3)
+    
+    abline(v=pt_inflexion_grass_mcmc,lty=2)
+    abline(h=K_G_pluie_max,lty=2)
+    lines(df_graphique[,"pluie (mm yr-1)"],df_graphique[,"biomasse (t.ha-1)"],pch=1,
+          col="deeppink",lwd=3)
+    lines(df_graphique2[,"pluie (mm yr-1)"],df_graphique2[,"biomasse (t.ha-1)"],pch=1,
+          col="deeppink",lwd=3)
+    
+    # print(paste("lambda1=",lambda1,"pente1=",pente1))
+    # print(paste("lambda2=",lambda2,"pente2=",pente2))
+    
+    # Quatrième graphique
+    
+    par(mfrow = c(1, 2))
+    plot.new()
+
+    G = seq(0.00001,16,length=10**3)
+    p_feu = omega(G,pt_inflexion_feu_mcmc)
+    
+    legend(
+          "center", 
+          legend = rbind(
+                         paste("inflexion_feu_mcmc=",round(pt_inflexion_feu_mcmc,4),"t.ha-1")
+                         ),
+          lty = 1,
+          xpd = TRUE
+      )
+    
+    plot(G,
+         p_feu,
+         main=paste("omega(G)"),
+         xlim=c(0,16),
+         ylim=c(0,1),
+         xlab = "t.ha-1",
+         ylab = "p_feu"
+         )
+    abline(v=pt_inflexion_feu_mcmc)
+    
+} # end of display_mcmc_output_sigmoides function definition
+```
+
+```{r display_mcmc_outputs, echo =TRUE, include = TRUE}
+display_mcmc_output_sigmoides(
+                              1,
+                              lambda_mcmc,
+                              pt_inflexion_feu_mcmc,
+                              pt_inflexion_grass_mcmc
+                              )
+```
+
+```{r simulation post_mcmc, echo = FALSE, include = FALSE}
+mcmc
+length(mcmc)
+list(mcmc)
+mcmc_tot = as.data.frame(as.matrix(mcmc))
+mcmc_tot
+dim(mcmc_tot)
+# 10**4 iters / 10 thinnin = 10**3 ; 10**3*3 chaînes = 3000 iters
+```
+
+
+```{r real_fire_data, echo = FALSE, include = TRUE}
+plot(fire_freq_nozero,xlab="points (x_i,y_i)")
+plot(sort(fire_freq_nozero),xlab="points (x_i,y_i)")
+hist(fire_freq_nozero,breaks=50)
+abline(v=median(fire_freq_nozero),col="blue")
+abline(v=mean(fire_freq_nozero),col="red")
+hist(fire_freq_nozero,breaks=50,freq=FALSE)
+summary(fire_freq_nozero)
+mean(fire_freq_nozero)
+sd(fire_freq_nozero)
+```
+
+```{r simulations, echo = FALSE, include = TRUE}
+I = nrow(table_region)
+J = nrow(mcmc_tot)
+
+grass = matrix(nrow=I,ncol=J)
+simulations = matrix(nrow=I,ncol=J)
+colnames(mcmc_tot)
+print_i_j_stuff = TRUE
+
+for(i in 1:I){
+  
+  if(print_i_j_stuff == TRUE & i%%100 == 0){ print(paste("i",i,"/",I)) }
+
+  canopy_influence_i = delta_max + (1-canopy_cover_nozero[i])*delta_min
+
+  for (j in 1:J){
+
+    sigmo_pluie_simu_i_j = sigmo_pluie(
+                                       W=table_region[i,"mean_precip"],
+                                       lambda = mcmc_tot[j,"lambda"],
+                                       decalage = mcmc_tot[j,"pt_inflexion_grass"]
+                                       )
+    
+    sigmo_coeff_competition_simu_i_j = sigmo_coeff_competition(
+                                                               W=table_region[i,"mean_precip"],
+                                                               delta = canopy_influence_i,
+                                                               decalage = mcmc_tot[j,"pt_inflexion_grass"]
+                                                               )
+    
+    grass_simu_i_j = 2*sigmo_pluie_simu_i_j*sigmo_coeff_competition_simu_i_j
+    grass[i,j] = grass_simu_i_j
+    
+    p_feu_simu_i_j = omega(G=grass_simu_i_j, point_inflexion =  mcmc_tot[j,"pt_inflexion_feu"])
+
+    simu = rnorm(n=1, mean = p_feu_simu_i_j, sd = 0.1)
+    simulations[i,j] = min ( max(simu, 0), 1)
+  }
+}
+
+saveRDS(simulations,
+        file.path(
+                  path_to_Savanna_structure_GEDI_folder,
+                  "outputs",
+                  "JAGS_outputs",
+                  paste0("simulations"))
+        )
+```
+
+```{r simulations_results, echo = FALSE, include = TRUE}
+
+mean_simulated_grass = matrix(nrow=I,ncol=1)
+sd_simulated_grass = matrix(nrow=I,ncol=1)
+
+mean_simulations = matrix(nrow=I,ncol=1)
+sd_simulations = matrix(nrow=I,ncol=1)
+for(i in 1:1400){
+  mean_simulations[i,1] = mean(simulations[i,])
+  sd_simulations[i,1] = sd(simulations[i,])
+  
+  mean_simulated_grass[i,1] = mean(grass[i,])
+  sd_simulated_grass[i,1] = sd(grass[i,])
+}
+
+head(mean_simulations,5)
+
+plot(
+     fire_freq_nozero,
+     mean_simulations,
+     xlim=c(0,1),
+     ylim=c(0,1)
+     )
+
+abline(0,1,col="red")
+
+{hist(mean_simulations,
+     breaks=50,
+     xlim=c(0,1))
+
+abline(v=mean(fire_freq_nozero),col="blue")
+
+hist(sd_simulations,
+     breaks=50,
+     xlim=c(0,1))
+
+abline(v=sd(fire_freq_nozero),col="blue")}
+
+hist(mean_simulated_grass,breaks=100)
+summary(mean_simulated_grass)
+
+```
+
+

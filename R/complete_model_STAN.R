@@ -126,7 +126,6 @@ if(save_rds_files==TRUE){
         saveRDS(mcmc,
                 file.path(
                   path_to_Savanna_structure_GEDI_folder,
-                  "outputs",
                   "STAN_outputs",
                   paste0(name,"_complete_model.RDS"))
                 )
