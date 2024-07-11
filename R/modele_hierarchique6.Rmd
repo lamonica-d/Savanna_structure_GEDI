@@ -18,6 +18,8 @@ library(dclone)
 library(snow)
 library(parallel)
 library(doParallel)
+library(ggplot2)
+library(gridExtra)
 ```
 
 ```{r data_loading, echo=FALSE, include = FALSE}
@@ -203,6 +205,60 @@ output_file <- file.path(new_folder,paste(Sys.time(),".txt"))
 writeLines(c( readLines(model_txt) , "Résultats :", summary_result , "rhat :", gelman_rhat ), output_file)
 cat("That's all folks")
 }
+
+pdf(file.path(new_folder,paste(Sys.time(),"hists.pdf")))
+{
+########################### Histogrammes forest, feu, pluie
+# (utiliser geom_density au lieu de geom_histogram pour avoir les densités)
+# sinon en mettant la même hauteur_barre_y_max pour les 3 graphes, je pense que c'est bien pour comparer
+hauteur_barre_y_max = 1000
+  
+plot_fire <- ggplot(
+                table_region,
+                aes(x=fire_freq)
+                ) +
+                    geom_histogram(
+                      position="identity",
+                      bins = 30,
+                      colour = "white",
+                      fill = "red",
+                      alpha = 0.6
+                    ) +
+                labs(x = paste0("fire frequence")) +
+                ylim(0, hauteur_barre_y_max)
+
+plot_rain <- ggplot(
+                table_region,
+                aes(x=mean_precip)
+                ) +
+                    geom_histogram(
+                      position="identity",
+                      bins = 30,
+                      colour = "white",
+                      fill = "cyan",
+                      alpha = 0.6
+                    ) +
+                labs(x = paste0("rainfall")) +
+                ylim(0, hauteur_barre_y_max)
+
+plot_forest <- ggplot(
+                  table_region,
+                  aes(x=canopy_cover)
+                  ) +
+                      geom_histogram(
+                        position="identity",
+                        bins = 30,
+                        colour = "white",
+                        fill = "forestgreen",
+                        alpha = 0.6
+                      ) +
+                  labs(x = paste0("canopy_cover")) +
+                ylim(0, hauteur_barre_y_max)
+
+grid.arrange(plot_fire, plot_rain, plot_forest, ncol = 3)
+rm(hauteur_barre_y_max)
+dev.off()
+}
 ```
 
 
@@ -350,7 +406,8 @@ dev.off()
 ```
 
 ```{r}
-# Test pour concaténer ces images
+# Test pour concaténer ces images une fois créées dans le dossier
+# infructueux pour l'instant, problèmes de poids des images
 library(magick)
 options(magick.timestamp = FALSE, magick.memory = "8GB")
 

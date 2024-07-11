@@ -18,6 +18,8 @@ library(dclone)
 library(snow)
 library(parallel)
 library(doParallel)
+library(ggplot2)
+library(gridExtra)
 ```
 
 ```{r data_loading, echo=FALSE, include = FALSE}
@@ -116,6 +118,8 @@ for(i in 1:length(lambdas)){
    abline(h=K_G_pluie_max,lty=2)
    # legend("topleft",paste0("K_G=",K_G_pluie_max))
 }}
+
+require(ggplot2)
 
 # nettoyage
 rm(b)
@@ -263,13 +267,10 @@ saveRDS(jags_res,
 
 mcmc <- jags_res
 
-# mcmc <- readRDS(
-#                 file.path(
-#                           path_to_Savanna_structure_GEDI_folder,
-#                           "JAGS_outputs",
+# si besoin de charger :
 
-#                           )
-#                 )
+# new_folder = file.path(path_to_Savanna_structure_GEDI_folder,"JAGS_outputs","2024-07-10 16:39:39.06136")
+# mcmc <- readRDS(file.path(new_folder,"2024-07-10 16:39:39.063062 .RDS"))
 
 
 ##### Pour enregistrer un fichier texte qui comprend le modele.txt + les résultats
@@ -281,13 +282,19 @@ model_txt <- file.path(path_to_Savanna_structure_GEDI_folder,"R","JAGS_models","
 # Calcul du summary du tableau
 summary_result <- capture.output(summary(mcmc))
 gelman_rhat <- capture.output(gelman.diag(mcmc))
-
+corr_chaine_1 <- capture.output(cor(mcmc[[1]])*upper.tri(cor(mcmc[[1]]), diag = TRUE))
 # Écriture du contenu dans un nouveau fichier output.txt
 
 ##################################################################################
 output_file <- file.path(new_folder,paste(Sys.time(),".txt"))
 
-writeLines(c( readLines(model_txt) , "Résultats :", summary_result , "rhat :", gelman_rhat ), output_file)
+writeLines(
+            c( readLines(model_txt) ,
+               "Résultats :", summary_result , 
+               "correlations", corr_chaine_1,
+               "rhat :", gelman_rhat),
+            output_file)
+
 cat("That's all folks")
 }
 ##### Pour enregistrer visuellement les sorties du modèle :
@@ -295,6 +302,56 @@ cat("That's all folks")
 # pdf(file.path(path_to_Savanna_structure_GEDI_folder,"JAGS_outputs",".pdf")
 pdf(file.path(new_folder,paste(Sys.time(),".pdf")))
 {
+########################### Histogrammes forest, feu, pluie
+# (utiliser geom_density au lieu de geom_histogram pour avoir les densités)
+# sinon en mettant la même hauteur_barre_y_max pour les 3 graphes, je pense que c'est bien pour comparer
+hauteur_barre_y_max = 1000
+  
+plot_fire <- ggplot(
+                table_region,
+                aes(x=fire_freq)
+                ) +
+                    geom_histogram(
+                      position="identity",
+                      bins = 30,
+                      colour = "white",
+                      fill = "red",
+                      alpha = 0.6
+                    ) +
+                labs(x = paste0("fire frequence")) +
+                ylim(0, hauteur_barre_y_max)
+
+plot_rain <- ggplot(
+                table_region,
+                aes(x=mean_precip)
+                ) +
+                    geom_histogram(
+                      position="identity",
+                      bins = 30,
+                      colour = "white",
+                      fill = "cyan",
+                      alpha = 0.6
+                    ) +
+                labs(x = paste0("rainfall")) +
+                ylim(0, hauteur_barre_y_max)
+
+plot_forest <- ggplot(
+                  table_region,
+                  aes(x=canopy_cover)
+                  ) +
+                      geom_histogram(
+                        position="identity",
+                        bins = 30,
+                        colour = "white",
+                        fill = "forestgreen",
+                        alpha = 0.6
+                      ) +
+                  labs(x = paste0("canopy_cover")) +
+                ylim(0, hauteur_barre_y_max)
+
+grid.arrange(plot_fire, plot_rain, plot_forest, ncol = 3)
+rm(hauteur_barre_y_max)
+
 par(mfrow=c(3,2))
 # sink() to save the prints in the pdf
 
@@ -620,8 +677,8 @@ colnames(new_table)[2] = c("y_TRUE2")
 colnames(new_table)[3] = c("diff")
 
 # diff = table_region$fire_freq - mean_simu_feu
-# diff < 0 <=> table_region$fire_freq < mean_simu_feu
-# diff >= 0 <=> table_region$fire_freq >= mean_simu_feu
+# diff < 0 <=> table_region$fire_freq < mean_simu_feu sous-estimation
+# diff >= 0 <=> table_region$fire_freq >= mean_simu_feu sur-estimation
 
 require("sf")
 sf_obj <- st_as_sf(new_table,coords = c("x_TRUE2", "y_TRUE2"),crs = 4326)
