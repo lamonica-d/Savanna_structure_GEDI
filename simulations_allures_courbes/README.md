@@ -2,7 +2,7 @@
 
 - lambdas_slopes_visualisation_partie1.Rmd (knit -> html) : premier fichier dans lequel j'avais essayé de calibrer des bornes de pentes pour lambda et de définir le "cône rose" de valeurs de l'UNESCO que j'affiche par la suite
 
-- lambdas_slopes_visualisation_partie1.Rmd (knit -> html) : la suite
+- lambdas_slopes_visualisation_partie2.Rmd (knit -> html) : la suite
 
 - visualisation_sigmoides_croissante_decroissante.Rmd (knit -> html) : premiers essais de multiplication de sigmoides croissante et décroissantes que j'ai ensuite utilisés pour calibrer S croissance herbacée théorique en fonction de la pluie et eta l'effet de la forêt.
 
