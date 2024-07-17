@@ -35,5 +35,5 @@ pdfunite batch_*.pdf all.pdf
 
 # Clean up intermediate batch files and single PDFs
 rm batch_*.pdf
-find . -maxdepth 1 -type f ! -name 'all.pdf' ! -name 'merge_pdfs.sh' -exec rm -v {} +
+find . -maxdepth 1 -type f ! -name 'all.pdf' ! -name 'merge_pdfs.sh' -name 'README.md' ! -exec rm -v {} +
 
