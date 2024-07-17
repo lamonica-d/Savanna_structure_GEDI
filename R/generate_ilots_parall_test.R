@@ -67,7 +67,7 @@ specific_table <- readRDS(file = "rawdata_post_preprocessing/6_ecoregions_withou
 #          == "Western_Congolian_forest-savanna")
 specific_table <- subset(specific_table,ecoregion
                          == "Northern_Congolian_Forest-Savanna")# "West_Sudanian_savanna") #Sahelian_Acacia_savanna
-#specific_table <- specific_table[1:(nrow(specific_table)/3),]
+specific_table <- specific_table[1:200000,]
 #7140903
 rownames(specific_table) = 1:nrow(specific_table)
 specific_table <- cbind(
@@ -112,14 +112,28 @@ colnames(table_kept_cells) <- c("keep", "x.meter", "y.meter")
 
 #3) pour chaque cellule de la table : calcul de l'extent
 extent_list <- list()
-for (i in 1:nrow(table_kept_cells)){
+plot(x = c(window[1],window[3]), y = c(window[2],window[3]), xlim =c(2039000,2481000),
+     ylim=c(790000,845000), type="n")
+
+par(mfrow = c(1,1))
+for (i in 1:10){  #nrow(table_kept_cells)){
   x.random <- table_kept_cells$x.meter[i]
   y.random <- table_kept_cells$y.meter[i]
-  extent_list[[i]] <- st_polygon(list(rbind(c(x.random - cell/2, y.random - cell/2),
-                                          c(x.random + cell/2, y.random - cell/2), 
-                                          c(x.random + cell/2, y.random + cell/2),
-                                          c(x.random - cell/2, y.random + cell/2),
-                                          c(x.random - cell/2, y.random - cell/2))))
+  
+  
+  points(x= c(x.random - cell/2,x.random + cell/2,
+              x.random + cell/2,x.random - cell/2), 
+         y=c(y.random - cell/2,y.random - cell/2,
+             y.random + cell/2,y.random + cell/2), 
+         col= rainbow(10)[i], pch=16)
+  points(x.random,y.random, col= rainbow(10)[i])
+  
+  
+  # extent_list[[i]] <- st_polygon(list(rbind(c(x.random - cell/2, y.random - cell/2),
+  #                                         c(x.random + cell/2, y.random - cell/2), 
+  #                                         c(x.random + cell/2, y.random + cell/2),
+  #                                         c(x.random - cell/2, y.random + cell/2),
+  #                                         c(x.random - cell/2, y.random - cell/2))))
 }
 
 #4) on intersect chaque extent (ie chaque ilot) avec le newspatvector 
