@@ -1,0 +1,540 @@
+
+# Cleaning the environment
+rm(list=ls())
+
+# Libraries
+library(rjags)
+library(dclone)
+library(snow)
+library(parallel)
+library(doParallel)
+library(ggplot2)
+library(gridExtra)
+
+
+table_region <- readRDS( file.path(
+  "transformed_data",
+  "subsampled_6_ecoregions.RDS")
+)
+head(table_region,10)
+
+data <- list(
+  N = nrow(table_region), 
+  prec_data = table_region$mean_precip,
+  fire_data = table_region$fire_freq, 
+  cc_data = table_region$canopy_cover
+) 
+
+
+ 
+
+# model and jags inference
+vals <- data.frame(matrix(nrow=7,ncol=4)) # 7 variables pour 4 chaînes
+rownames(vals) = c("K_G_t_f_pluie_max",
+                   "b",
+                   "offset",
+                   "sigma_xi",
+                   "log10delta_max",
+                   "pt_inflexion_grass",
+                   "lambda" #,
+                  # "sigma_biom"
+                  )
+
+vals["K_G_t_f_pluie_max",] = c(24,20,25,18)
+
+vals["b",] = c(0.48,0.49,0.50,0.49)
+vals["offset",] = c(2.48,3,3,3.47)
+vals["sigma_xi",] = c(0.03,0.065,0.04,0.06)
+
+vals["log10delta_max",] = c(-4.5,-2.5,-3.6,-2.1)
+vals["pt_inflexion_grass",] = c(900,600, 527, 446)
+vals["lambda",] = c(0.0047,0.0067,0.0077,0.0037)
+vals["sigma_biom",] = c(1.3,0.1,0,0.2)
+
+inits <- list(
+  list(
+    K_G_t_f_pluie_max = vals["K_G_t_f_pluie_max",1],
+    
+    b = vals["b",1],
+    offset = vals["offset",1],
+    sigma_xi = vals["sigma_xi",1],
+    
+    log10delta_max = vals["log10delta_max",1],
+    pt_inflexion_grass = vals["pt_inflexion_grass",1],
+    lambda = vals["lambda",1] #,
+  #  sigma_biom = vals["sigma_biom",1]
+  ),
+  
+  list(
+    K_G_t_f_pluie_max = vals["K_G_t_f_pluie_max",2],
+    
+    b = vals["b",2],
+    offset = vals["offset",2],
+    sigma_xi = vals["sigma_xi",2],
+    
+    log10delta_max = vals["log10delta_max",2],
+    pt_inflexion_grass = vals["pt_inflexion_grass",2],
+    lambda = vals["lambda",2] #,
+   # sigma_biom = vals["sigma_biom",2]
+    
+  ),
+  
+  list(
+    K_G_t_f_pluie_max = vals["K_G_t_f_pluie_max",3],
+    
+    b = vals["b",3],
+    offset = vals["offset",3],
+    sigma_xi = vals["sigma_xi",3],
+    
+    log10delta_max = vals["log10delta_max",3],
+    pt_inflexion_grass = vals["pt_inflexion_grass",3],
+    lambda = vals["lambda",3] #,
+   # sigma_biom = vals["sigma_biom",3]
+    
+  ),
+  list(
+    K_G_t_f_pluie_max = vals["K_G_t_f_pluie_max",4],
+    
+    b = vals["b",4],
+    offset = vals["offset",4],
+    sigma_xi = vals["sigma_xi",4],
+    
+    log10delta_max = vals["log10delta_max",4],
+    pt_inflexion_grass = vals["pt_inflexion_grass",4],
+    lambda = vals["lambda",4] #,
+  #  sigma_biom = vals["sigma_biom",4]
+    
+  )
+)
+
+variables <- rownames(vals) #[-length(vals$X1)]
+
+
+
+start = Sys.time()
+print(start)
+
+cl <- makePSOCKcluster(4)
+registerDoParallel(cl)
+
+# clusterExport(cl,"table_region")
+clusterExport(cl,"data")
+clusterExport(cl,"inits")
+clusterExport(cl,"variables")
+
+clusterEvalQ(cl,library(rjags))
+clusterEvalQ(cl,library(coda))
+clusterEvalQ(cl,library(runjags))
+clusterEvalQ(cl,library(doParallel))
+clusterEvalQ(cl,library(foreach))
+clusterEvalQ(cl,library(iterators))
+
+jags_res=foreach(i =1:4,.combine='mcmc.list',.multicombine=TRUE)%dopar%{
+  as.mcmc(run.jags(file.path("R","JAGS_models","model7.txt"),
+                   monitor=variables,
+                   data=data,
+                   n.chains=1, # on envoie les chaînes séparemment sur chaque coeur
+                   inits=dump.format(inits[[i]]),
+                   burnin=5*10**2,
+                   sample=5*10**3,
+                   thin=5,
+                   tempdir=FALSE,
+                   summarise=FALSE,
+                   adapt = 50,
+                   keep.jags.files=FALSE))
+  
+}
+
+stopCluster(cl)
+
+new_folder <- file.path("JAGS_outputs",paste0(Sys.time()))
+dir.create(new_folder)
+
+saveRDS(jags_res,
+        file.path(
+          new_folder,
+          paste(Sys.time(),".RDS")
+        )
+)
+
+# visualisation sortie JAGS
+
+mcmc <- jags_res
+
+# si besoin de charger :
+
+# new_folder = file.path(path_to_Savanna_structure_GEDI_folder,"JAGS_outputs","2024-07-10 16:39:39.06136")
+# mcmc <- readRDS(file.path(new_folder,"2024-07-10 16:39:39.063062 .RDS"))
+
+
+##### Pour enregistrer un fichier texte qui comprend le modele.txt + les résultats
+
+# Lecture du contenu du fichier model.txt
+
+  model_txt <- file.path("R","JAGS_models","model5.txt")
+  
+  # Calcul du summary du tableau
+  summary_result <- capture.output(summary(mcmc))
+  gelman_rhat <- capture.output(gelman.diag(mcmc))
+  corr_chaine_1 <- capture.output(cor(mcmc[[1]])*upper.tri(cor(mcmc[[1]]), diag = TRUE))
+  # Écriture du contenu dans un nouveau fichier output.txt
+  
+  ##################################################################################
+  output_file <- file.path(new_folder,paste(Sys.time(),".txt"))
+  
+  writeLines(
+    c( readLines(model_txt) ,
+       "Résultats :", summary_result , 
+       "correlations", corr_chaine_1,
+       "rhat :", gelman_rhat),
+    output_file)
+  
+  cat("That's all folks")
+
+##### Pour enregistrer visuellement les sorties du modèle :
+
+pdf(file.path(new_folder,paste(Sys.time(),".pdf")))
+{
+  ########################### Histogrammes forest, feu, pluie
+  # (utiliser geom_density au lieu de geom_histogram pour avoir les densités)
+  # sinon en mettant la même hauteur_barre_y_max pour les 3 graphes, je pense que c'est bien pour comparer
+  hauteur_barre_y_max = 1000
+  
+  plot_fire <- ggplot(
+    table_region,
+    aes(x=fire_freq)
+  ) +
+    geom_histogram(
+      position="identity",
+      bins = 30,
+      colour = "white",
+      fill = "red",
+      alpha = 0.6
+    ) +
+    labs(x = paste0("fire frequence")) +
+    ylim(0, hauteur_barre_y_max)
+  
+  plot_rain <- ggplot(
+    table_region,
+    aes(x=mean_precip)
+  ) +
+    geom_histogram(
+      position="identity",
+      bins = 30,
+      colour = "white",
+      fill = "cyan",
+      alpha = 0.6
+    ) +
+    labs(x = paste0("rainfall")) +
+    ylim(0, hauteur_barre_y_max)
+  
+  plot_forest <- ggplot(
+    table_region,
+    aes(x=canopy_cover)
+  ) +
+    geom_histogram(
+      position="identity",
+      bins = 30,
+      colour = "white",
+      fill = "forestgreen",
+      alpha = 0.6
+    ) +
+    labs(x = paste0("canopy_cover")) +
+    ylim(0, hauteur_barre_y_max)
+  
+  grid.arrange(plot_fire, plot_rain, plot_forest, ncol = 3)
+  rm(hauteur_barre_y_max)
+  
+  par(mfrow=c(3,2))
+  # sink() to save the prints in the pdf
+  
+  # performances et allures des chaînes :
+  
+  
+    # print( summary(mcmc)$statistics )
+    for(j in 1:ncol(mcmc[[1]])){ plot(mcmc[,j],main=colnames(mcmc[[1]])[j]) }
+
+  
+  autocorr.plot(mcmc[[1]], ask = "TRUE",lag.max=1)
+  
+ 
+  W_lim_graph = 1800
+  W = seq(0,W_lim_graph,by=10)
+  point_inflexions = seq(500,1100,by=200)
+  
+  K_G_t_f_pluie_max = summary(mcmc)$statistics["K_G_t_f_pluie_max",1]
+  pt_inflexion_grass = summary(mcmc)$statistics["pt_inflexion_grass",1]
+  lambda = summary(mcmc)$statistics["lambda",1]
+  
+  delta_min = 10**-5
+  log10delta_max = summary(mcmc)$statistics["log10delta_max",1]
+  delta_max = 10**log10delta_max
+  
+  deltas = seq(-5,log10delta_max,length=10)
+  deltas = 10**deltas
+  palette_deltas <- colorRampPalette(c("blue", "green"))(length(deltas))
+  
+    
+    par(mfrow = c(1, 2))
+    
+    # graphique G estimé en fonction de la pluie
+    plot(
+      x=c(0),
+      y=c(0),
+      xlim=c(0,W_lim_graph),
+      ylim = c(0,K_G_t_f_pluie_max),
+      xlab = "W",
+      main = "G_hat",
+      ylab = "G_hat"
+    )
+    
+    lines(df_graphique,col="deeppink")
+    lines(df_graphique2,col="deeppink")
+    
+    abline(v=pt_inflexion_grass,lty=2)
+    abline(h=K_G_t_f_pluie_max*0.5,lty=2)
+    abline(h=K_G_t_f_pluie_max,lty=2)
+    
+    S = rep(NA,length(W))
+    for(u in 1:length(W)){ S[u] = ( 1 / ( 1+ exp(-lambda*(W[u]-pt_inflexion_grass)) ) ) }
+    
+    for(j in 1:length(deltas)){
+      
+      forest_effect_j = rep(NA,length(W))
+      G_hat_j = rep(NA,length(W))
+      K_fois_S = rep(NA,length(W))
+      
+      for(u in 1:length(W)){
+        
+        forest_effect_j[u] = 2/(1+ exp(deltas[j]*(W[u]-pt_inflexion_grass)) ) 
+        G_hat_j[u] =  K_G_t_f_pluie_max*S[u]*forest_effect_j[u]
+        K_fois_S[u] = K_G_t_f_pluie_max*S[u]
+      }
+      
+      lines(W, G_hat_j, col = palette_deltas[j])
+      lines(W, K_fois_S,lty=2,col="black")
+    
+    
+    # légendes 
+    
+    plot.new()
+    
+    legend("center",
+           legend = paste0("delta=",round(deltas,6)), 
+           col = palette_deltas, 
+           lty = 1,
+           xpd = TRUE)
+    
+  }
+  
+  par(mfrow = c(1, 2))
+  # graphique probabilité feu en fonction de G estimé
+  
+  G = seq(0.001,K_G_t_f_pluie_max,length=100)
+  b = summary(mcmc)$statistics["b",1]
+  offset = summary(mcmc)$statistics["offset",1]
+  p_feu = 1/( 1 + exp( -G*b + offset ) )
+  
+  plot(
+    G,
+    p_feu,
+    xlim=c(0,K_G_t_f_pluie_max),
+    ylim=c(0,1),
+    xlab = "G in (t.ha-1)",
+    ylab = "proba feu",
+    main = "new_omega"
+  )
+  
+  lines(G,1/( 1 + exp(-0.47*G+3.47)), col= "skyblue") # année 1995 (Wilgen 2000)
+  lines(G,1/(1 + exp(-0.51*G+2.47)), col = "red")# année 1996 (Wilgen 2000), severe fire weather conditions
+  # si on élargit un peu
+  lines(G,1/( 1 + exp(-0.47*G+4.00)), col= "cyan")
+  lines(G,1/(1 + exp(-0.51*G+2.00)), col = "darkred")
+  
+  # avec le bruit sigma_xi
+  sigma_xi = summary(mcmc)$statistics["sigma_xi",1]
+  p_feu = p_feu + rnorm(length(p_feu),0,sigma_xi)
+  
+  plot(
+    G,
+    p_feu,
+    xlim=c(0,K_G_t_f_pluie_max),
+    ylim=c(0,1),
+    xlab = "G in (t.ha-1)",
+    ylab = "proba feu",
+    main = paste("sigma_xi =", round(sigma_xi,3))
+  )
+  
+  lines(G,1/( 1 + exp(-0.47*G+3.47)), col= "skyblue") # année 1995 (Wilgen 2000)
+  lines(G,1/(1 + exp(-0.51*G+2.47)), col = "red") # année 1996 (Wilgen 2000), severe fire weather conditions
+  # si on élargit un peu
+  lines(G,1/( 1 + exp(-0.47*G+4.00)), col= "cyan")
+  lines(G,1/(1 + exp(-0.51*G+2.00)), col = "darkred")
+  
+  dev.off() # vient clore l'enregistrement pdf(...) de début de bloc de code
+}
+print(Sys.time()-start)
+rm(start)
+
+
+
+mcmc2 = cbind(mcmc[[1]],mcmc[[2]],mcmc[[3]],mcmc[[4]])
+# toutes les itérations des 4 chaînes post-burnin
+
+I = nrow(table_region)
+J = nrow(mcmc2)
+# 
+delta_min = 10**-5
+grass = matrix(nrow=I,ncol=J)
+simulations_grass = matrix(nrow=I,ncol=J)
+simulations_feu = matrix(nrow=I,ncol=J)
+print_i_j_stuff = TRUE
+# 
+for(i in 1:I){
+  # #for(i in 1:10){
+  #   
+  if(print_i_j_stuff == TRUE & i%%100 == 0){ print(paste("i",i,"/",I)) }
+  # 
+  canopy_cover_i =  table_region[i,"canopy_cover"]
+  pluie_i = table_region[i,"mean_precip"]
+  # 
+  for (j in 1:J){
+    # #  for (j in 1:10){ 
+    
+    delta_max_j = 10**(mcmc2[j,"log10delta_max"])
+    pt_inflexion_grass = mcmc2[j,"pt_inflexion_grass"]
+    
+    sigmo_pluie_simu_i_j = ( 1/ (1+ exp(-mcmc2[j,"lambda"]*(pluie_i-pt_inflexion_grass)) ) )
+    
+    canopy_influence_i_j = delta_min + canopy_cover_i*(delta_max_j-delta_min)
+    sigmo_forest_effect_simu_i_j = (2/(1+ exp(canopy_influence_i_j*(pluie_i-pt_inflexion_grass)) ) )
+    
+    grass_simu_i_j = mcmc2[j,"K_G_t_f_pluie_max"]*sigmo_pluie_simu_i_j*sigmo_forest_effect_simu_i_j
+    # stockage de G estimé dans la matrice simulations_grass
+    simulations_grass[i,j] = grass_simu_i_j
+    
+    p_feu_simu_i_j =  1/( 1 + exp( -grass_simu_i_j*mcmc2[j,"b"] + mcmc2[j,"offset"] ) )
+    effet_mesure = rnorm(n=1, mean = 0, sd = mcmc2[j,"sigma_xi"])
+    simulations_feu[i,j] = p_feu_simu_i_j + effet_mesure
+    
+  } # fin de la boucle j
+} # fin de la boucle i
+# 
+saveRDS(simulations_grass,
+        file.path(
+          # path_to_Savanna_structure_GEDI_folder,
+          # "JAGS_outputs",
+          new_folder,
+          paste0(Sys.time(),"simulations_grass.RDS"))
+)
+
+saveRDS(simulations_feu,
+        file.path(
+          # path_to_Savanna_structure_GEDI_folder,
+          # "JAGS_outputs",
+          new_folder,
+          paste0(Sys.time(),"simulations_feu.RDS"))
+)
+
+
+mean_simu_grass = rowMeans(simulations_grass)
+mean_simu_feu = rowMeans(simulations_feu)
+
+pdf(file.path(new_folder,paste(Sys.time(),"resimulation.pdf")))
+
+{
+  par(mfrow=c(1,3))
+  G = seq(0.001,summary(mcmc)$statistics["K_G_t_f_pluie_max",1],length=100)
+  b = summary(mcmc)$statistics["b",1]
+  offset = summary(mcmc)$statistics["offset",1]
+  p_feu = 1/( 1 + exp( -G*b + offset ) )
+  
+  plot(
+    G,
+    p_feu,
+    xlim=c(0,summary(mcmc)$statistics["K_G_t_f_pluie_max",1]),
+    ylim=c(0,1),
+    xlab = "G in (t.ha-1)",
+    ylab = "proba feu",
+    main = "new_omega"
+  )
+  lines(G,1/( 1 + exp(-0.47*G+3.47)), col= "skyblue") # année 1995 (Wilgen 2000)
+  lines(G,1/(1 + exp(-0.51*G+2.47)), col = "red") # année 1996 (Wilgen 2000), severe fire weather conditions
+  # si on élargit un peu
+  lines(G,1/( 1 + exp(-0.47*G+4.00)), col= "cyan")
+  lines(G,1/(1 + exp(-0.51*G+2.00)), col = "darkred")
+  
+  plot(mean_simu_feu)
+  plot(mean_simu_grass)
+}
+# 
+{par(mfrow=c(1,1))
+  plot(table_region$fire_freq,mean_simu_feu,xlim=c(0,1),ylim=c(0,1))
+  abline(0,1,col="red")}
+
+{
+  summary(mean_simu_feu)
+  summary(table_region$fire_freq)
+}
+# 
+{par(mfrow=c(1,2))
+  hist(mean_simu_feu,breaks=30)
+  hist(table_region$fire_freq,breaks=30)}
+# 
+{par(mfrow=c(2,2))
+  plot(table_region$fire_freq)
+  plot(table_region$fire_freq,mean_simu_feu,xlim=c(0,1),ylim=c(0,1))
+  abline(0,1,col="red")
+  
+  indices <- sort(table_region$fire_freq,index.return=TRUE)$ix
+  fire_freq_sorted <- sort(table_region$fire_freq,index.return=TRUE)$x
+  
+  mean_simu_feu_ordre = rowMeans(simulations_feu)
+  simu_feu_sorted <- mean_simu_feu_ordre[indices]
+  plot(fire_freq_sorted)
+  plot(simu_feu_sorted)
+}
+
+cor(table_region$fire_freq,mean_simu_feu)
+cor(fire_freq_sorted[5000:6903],simu_feu_sorted[5000:6903])
+# conclusion : les valeurs nulles sont bien prédites, les valeurs non nulles ne sont pas prédites
+
+dev.off()
+
+cor(table_region$fire_freq,mean_simu_feu)
+```
+
+
+```{r}
+mean_simu_grass = rowMeans(simulations_grass)
+mean_simu_feu = rowMeans(simulations_feu)
+
+new_table = as.data.frame(
+  cbind(table_region$x_TRUE,
+        table_region$y_TRUE,
+        table_region$fire_freq-mean_simu_feu,
+        table_region,
+        mean_simu_feu,
+        mean_simu_grass)
+)
+
+colnames(new_table)[1] = c("x_TRUE2")
+colnames(new_table)[2] = c("y_TRUE2")
+colnames(new_table)[3] = c("diff")
+
+# diff = table_region$fire_freq - mean_simu_feu
+# diff < 0 <=> table_region$fire_freq < mean_simu_feu sous-estimation
+# diff >= 0 <=> table_region$fire_freq >= mean_simu_feu sur-estimation
+
+require("sf")
+sf_obj <- st_as_sf(new_table,coords = c("x_TRUE2", "y_TRUE2"),crs = 4326)
+
+st_write(
+  sf_obj,
+  #file.path(new_folder,paste(Sys.Date(),"resimulation.geojson")),
+  # il aime pas les . dans le new_folder, il faut le pettre dans le folder à la main pour l'instant
+  file.path(path_to_Savanna_structure_GEDI_folder,"JAGS_outputs",paste(Sys.Date(),"resimulation.geojson")),
+  delete_dsn = T
+)
+
+
