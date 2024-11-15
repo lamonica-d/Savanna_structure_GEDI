@@ -1,9 +1,6 @@
 
 # Cleaning the environment
 rm(list=ls())
-# Getting the paths
-source("paths.R")
-path_to_R_folder = file.path(path_to_Savanna_structure_GEDI_folder,"R")
 
 # Libraries
 library(fst)
