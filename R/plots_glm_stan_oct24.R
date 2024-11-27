@@ -5,6 +5,8 @@ library(dplyr)
 library(ggplot2)
 library(brms)
 library(viridis)
+library(rnaturalearth)
+library(sf)
 
 #load data
 table_region <- readRDS( file.path(
@@ -22,6 +24,7 @@ table_region <- cbind(table_region,
 #load brms fits
 mod_canopy_cover <- readRDS(file = "outputs/brms_regression_canopy_cover.RDS")
 mod_rh98 <- readRDS(file = "outputs/brms_regression_rh98_v3.RDS")
+mod_cc_rh98 <- readRDS(file = "outputs/brms_regression_cc_frh98.RDS")
 
 ##coeff
 
@@ -119,7 +122,7 @@ median_error_rh98 <- apply(X = pe_rh98, FUN = median, MARGIN = 2)
 signe_error_rh98 <- as.factor(ifelse(median_error_rh98 >0, 1, -1))
 
 pred_error_rh98 <- cbind(predictions_50_rh98, mean_error_rh98, signe_error_rh98,
-                         percent_error = mean_error_rh98/pred_error_rh98$rh98*100
+                         percent_error = mean_error_rh98/predictions_50_rh98$rh98*100
 )
 
 ggplot(data = pred_error_rh98, aes(x = x_TRUE, y = y_TRUE))+
@@ -134,7 +137,7 @@ ggplot(data = pred_error_rh98, aes(x = x_TRUE, y = y_TRUE))+
 #que les erreurs < 100% (on enlève 535 pts, ie 13%)
 pred_error_rh98_red <- subset(pred_error_rh98, percent_error < 100)
 
-
+world <- ne_countries()
 africa <- world %>% filter(continent == "Africa")
 pred_error_sf <- st_as_sf(pred_error_rh98_red, coords = c("x_TRUE", "y_TRUE"),
                           crs = "+proj=longlat +datum=WGS84")
@@ -149,3 +152,26 @@ ggplot(data=africa) +
   ggtitle("RH98")
 #theme(panel.background=element_rect(fill="slategray1"))
 
+
+median_error_cc <- apply(X = pe_cc, FUN = median, MARGIN = 2)
+signe_error_cc <- as.factor(ifelse(median_error_cc >0, 1, -1))
+
+pred_error_cc <- cbind(predictions_50_cc, mean_error_cc, signe_error_cc,
+                         percent_error = mean_error_cc/predictions_50_cc$canopy_cover*100
+)
+
+pred_error_cc_red <- subset(pred_error_cc, percent_error < 100)
+
+world <- ne_countries()
+africa <- world %>% filter(continent == "Africa")
+pred_error_sf <- st_as_sf(pred_error_cc_red, coords = c("x_TRUE", "y_TRUE"),
+                          crs = "+proj=longlat +datum=WGS84")
+
+ggplot(data=africa) +
+  geom_sf(color="black") + 
+  geom_sf(data=pred_error_sf, aes(color = percent_error, shape = signe_error_cc))+
+  scale_color_viridis()+
+  scale_shape_manual(values=c(17, 16)) +
+  coord_sf(xlim=c(-20, 40), ylim=c(-12, 20), expand=FALSE)+
+  labs(color = "Percent error", shape = "Error sign")+
+  ggtitle("Canopy cover")
