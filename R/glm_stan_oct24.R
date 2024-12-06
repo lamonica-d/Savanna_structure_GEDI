@@ -5,6 +5,7 @@ library(rstan)
 library(stringr) 
 library(brms)
 library(corrplot)
+library(loo)
 
 # Rstan commands :
 options(mc.cores = parallel::detectCores())
@@ -12,19 +13,12 @@ options(mc.cores = parallel::detectCores())
 
 table_region <- readRDS( file.path(
   "transformed_data",
-  "subsampled_6_ecoregions.RDS")
+  "subsampled_6_ecoregions_rh98sup3.RDS")
 )
 
-colnames(table_region)[13:15] <- c("fire_freq_std", 
-                                   "mean_precip_std",
-                                   "mean_temp_std")
-table_region <- table_region[,-12]
-table_region <- cbind(table_region, 
-                      mean_precip_carre = (table_region$mean_precip_std)^2)
-
 mod_rh98 <- brm(
-     rh98 ~ fire_freq_std + mean_precip_std + mean_precip_carre,
-         #+ mean_temp_std,
+     rh98 ~ fire_freq_std + mean_precip_std + mean_precip_carre + #fire_freq_std * mean_precip_std +
+        clay_percent_std,
       data = table_region, 
       family = brmsfamily(family = "Gamma",link="log"),
       
@@ -46,13 +40,13 @@ mod_rh98 <- brm(
 saveRDS(mod_rh98,
               file.path(
                 "outputs",
-                paste0("brms_regression_rh98_v3.RDS"))
+                paste0("brms_regression_rh98_03_12.RDS"))
 )
       
   
  
 mod_canopy_cover <- brm(
-      formula = canopy_cover ~ fire_freq_std + mean_precip_std + mean_temp_std,
+      formula = canopy_cover ~ fire_freq_std + mean_precip_std + clay_percent_std,
       data = table_region,
       family = brmsfamily(
         family = "zero_inflated_beta",
@@ -77,7 +71,7 @@ mod_canopy_cover <- brm(
 saveRDS(mod_canopy_cover,
               file.path(
                 "outputs",
-                paste0("brms_regression_canopy_cover.RDS")
+                paste0("brms_regression_canopy_cover_03_12.RDS")
               )
 )
  
@@ -110,6 +104,6 @@ mod_cc_rh98 <- brm(
 saveRDS(mod_cc_rh98,
         file.path(
           "outputs",
-          paste0("brms_regression_cc_frh98.RDS"))
+          paste0("brms_regression_cc_frh98_03_12.RDS"))
 )
 

@@ -29,6 +29,7 @@ grid_of_distant_cells <- function(target_nrow,target_ncol,plot_grid=FALSE){
   return(conserved)
 }
 
+library(terra)
 
 
 #1) load table
@@ -39,11 +40,26 @@ complete_table <- readRDS(file = file.path(
 )
 
 #2) remove fire_frq < 1/20
-complete_table_1 <- subset(complete_table, fire_freq > 1/20)
+complete_table_1_0 <- subset(complete_table, fire_freq > 1/20)
 rm(complete_table)
 
-#3) intersect to remove loc where > 10 hab/km2
-pop_data <- terra::rast("rawdata/AFR_PPP_2000_adj_v2.tif")
+#2bis) remove rh98 < 3
+complete_table_1 <- subset(complete_table_1_0, rh98 > 3)
+rm(complete_table_1_0)
+
+#3) get soil info & intersect & standardized
+soil_db <- rast(file.path("rawdata","soil_af_isda",
+                          "isda_clay.tot.psa_0-20cm_v0.13_30s.tif"))
+test <- terra::extract(soil_db, complete_table_1[,1:2])
+rm(soil_db)
+colnames(test)[2] <- "clay_percent"
+test_std <- (test$clay_percent - mean(test$clay_percent, na.rm = T))/sd(test$clay_percent, na.rm = T)
+complete_table_1 <- data.frame(complete_table_1, clay_percent = test$clay_percent,
+                               clay_percent_std = test_std)
+rm(test)
+
+#4) intersect to remove loc where > 10 hab/km2
+pop_data <- rast("rawdata/AFR_PPP_2000_adj_v2.tif")
 test <- terra::extract(pop_data, complete_table_1[,1:2])
 rm(pop_data)
 colnames(test)[2] <- "pop_density"
@@ -92,12 +108,12 @@ dy <- geodist::geodist(x = c(window[1],window[3]), y = c(window[1],window[4]), m
 
 #2) resampling
 y <- terra::rast(new_spatvector, ncol = target_ncol, nrow = target_nrow, nlyr = 1)
-values(y) <- grid_of_distant_cells(target_nrow,target_ncol)
+terra::values(y) <- grid_of_distant_cells(target_nrow,target_ncol)
 
 z <- terra::rasterize(new_spatvector, y, fun=sample, size = 1, field = "index_point")
 # fun = sample , size = 1 to get one random sample in the cell
 
-intermediate_table = data.frame(cbind(values(y),crds(y), values(z)))
+intermediate_table = data.frame(cbind(terra::values(y),terra::crds(y), terra::values(z)))
 colnames(intermediate_table)[1] = "keep"
 colnames(intermediate_table)[2] = "x_center_cell"
 colnames(intermediate_table)[3] = "y_center_cell"
@@ -134,11 +150,19 @@ rm(table_new)
 rm(trsf_data)
 rm(dist_cc_TRUE)
 
+#renaming columns
+colnames(conserved_sub_table)[13:15] <- c("fire_freq_std", 
+                                   "mean_precip_std",
+                                   "mean_temp_std")
+conserved_sub_table <- conserved_sub_table[,-12]
+conserved_sub_table <- cbind(conserved_sub_table, 
+                      mean_precip_carre = (conserved_sub_table$mean_precip_std)^2)
+
 #save
 saveRDS(
   object = conserved_sub_table,
   file = file.path(
     "transformed_data",
-    paste0("subsampled_6_ecoregions.RDS")
+    paste0("subsampled_6_ecoregions_rh98sup3.RDS")
   )
 )    
