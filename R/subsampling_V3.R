@@ -31,54 +31,12 @@ grid_of_distant_cells <- function(target_nrow,target_ncol,plot_grid=FALSE){
 
 library(terra)
 
-
-#1) load table
-complete_table <- readRDS(file = file.path(
-  "rawdata_post_preprocessing",
-  "6_ecoregions_without_duplicate_standardized_ONLY_over_6_ecoregions.RDS"
-)
-)
-
-#2) remove fire_frq < 1/20
-complete_table_1 <- subset(complete_table, fire_freq > 1/20)
-rm(complete_table)
-
-#3) get soil info & intersect & standardized
-soil_db <- rast(file.path("rawdata","soil_af_isda",
-                          "isda_clay.tot.psa_0-20cm_v0.13_30s.tif"))
-test <- terra::extract(soil_db, complete_table_1[,1:2])
-rm(soil_db)
-colnames(test)[2] <- "clay_percent"
-test_std <- (test$clay_percent - mean(test$clay_percent, na.rm = T))/sd(test$clay_percent, na.rm = T)
-complete_table_1 <- data.frame(complete_table_1, clay_percent = test$clay_percent,
-                               clay_percent_std = test_std)
-rm(test)
-rm(test_std)
-
-#4) intersect to remove loc where > 10 hab/km2
-pop_data <- rast("rawdata/AFR_PPP_2000_adj_v2.tif")
-test <- terra::extract(pop_data, complete_table_1[,1:2])
-rm(pop_data)
-colnames(test)[2] <- "pop_density"
-complete_table_1 <- data.frame(complete_table_1, pop_density = test$pop_density)
-rm(test)
-specific_table <- subset(complete_table_1, pop_density <= 10)
-rm(complete_table_1)
-
 ######sous échantillonnage tous les x km
 cell <- 10**4
 
-rownames(specific_table) = 1:nrow(specific_table)
-specific_table <- cbind(
-  1:nrow(specific_table),
-  specific_table$x,
-  specific_table$y,
-  specific_table
-)
-colnames(specific_table)[1] = "index"
-colnames(specific_table)[2] = "x_TRUE"
-colnames(specific_table)[3] = "y_TRUE"
-# then "x" and "y" columns can be modified as x_TRUE and y_TRUE are saved
+specific_table <- readRDS(
+  file.path( "transformed_data", paste0("data_pre_subsampling.RDS"))
+) 
 
 table_new <- data.frame(
   index_point = specific_table$index,
@@ -87,7 +45,9 @@ table_new <- data.frame(
   keep = rep(NA,nrow(specific_table)),
   rh98 = specific_table$rh98,
   cc = specific_table$canopy_cover,
-  clay_percent_std = specific_table$clay_percent_std
+  clay_percent_std = specific_table$clay_percent_std,
+  fire_freq_std = specific_table$fire_freq_std,
+  prec_std = specific_table$prec_std
 )
 
 # we just keep index x_TRUE and y_TRUE in table_new
@@ -98,9 +58,9 @@ new_spatvector <- terra::vect(table_new, geom = c("coordxTRUE", "coordyTRUE"), c
 window <- terra::ext(new_spatvector)
 dx <- geodist::geodist(x = c(window[1],window[3]), y = c(window[2],window[3]), measure = "haversine")
 dy <- geodist::geodist(x = c(window[1],window[3]), y = c(window[1],window[4]), measure = "haversine")
-(target_ncol <- round(dx/cell))
+target_ncol <- round(dx/cell)
 # Guinean 10**4 cells : 133
-(target_nrow <- round(dy/cell))
+target_nrow <- round(dy/cell)
 # Guinean 10**4 cells : 108
 
 # 133*108 = 14364
@@ -110,23 +70,32 @@ dy <- geodist::geodist(x = c(window[1],window[3]), y = c(window[1],window[4]), m
 y <- terra::rast(new_spatvector, ncol = target_ncol, nrow = target_nrow, nlyrs = 1)
 terra::values(y) <- grid_of_distant_cells(target_nrow,target_ncol)
 
+#variables
 z_q50 <- terra::rasterize(new_spatvector, y, fun=quantile, probs = c(0.5), na.rm = T,field = c("rh98", "cc")
 )
 z_q90 <- terra::rasterize(new_spatvector, y, fun=quantile, probs = c(0.9), na.rm = T,field = c("rh98", "cc")
 )
+#predictors
 z_clay <- terra::rasterize(new_spatvector, y, fun=mean, na.rm = T, field = "clay_percent_std")
+z_fire <- terra::rasterize(new_spatvector, y, fun=mean, na.rm = T, field = "fire_freq_std")
+z_prec <- terra::rasterize(new_spatvector, y, fun=mean, na.rm = T, field = "prec_std")
 #to keep track of the index point to get climatic variables
 z <- terra::rasterize(new_spatvector, y, fun=sample, size = 1, field = "index_point")
 
 intermediate_table <- data.frame(cbind(terra::values(y),terra::crds(y),terra::values(z),
-                                      terra::values(z_q50),terra::values(z_q90),terra::values(z_clay)))
+                                      terra::values(z_q50),terra::values(z_q90),
+                                      terra::values(z_clay),terra::values(z_fire),terra::values(z_prec)))
 
 colnames(intermediate_table)[1] = "keep"
 colnames(intermediate_table)[2] = "x_center_cell"
 colnames(intermediate_table)[3] = "y_center_cell"
-
-# nrow(crds(y)) 35964
-# length(values(z)) 35964 ok
+colnames(intermediate_table)[5] = "rh98_q50"
+colnames(intermediate_table)[6] = "cc_q50"
+colnames(intermediate_table)[7] = "rh98_q90"
+colnames(intermediate_table)[8] = "cc_q90"
+colnames(intermediate_table)[9] = "clay_percent_mean"
+colnames(intermediate_table)[10] = "fire_freq_mean"
+colnames(intermediate_table)[11] = "precip_mean"
 
 colnames(specific_table)[1] = "index_point"
 # we add x_center_cell and y_center_cell to the specific_table thanks to index_point
@@ -137,39 +106,43 @@ trsf_data <- merge(intermediate_table,
 conserved_sub_table <- trsf_data[trsf_data$keep==1,]
 conserved_sub_table <- subset(conserved_sub_table, select = -c(index_point,keep) )
 
-### removing the "ejected" points in the sea and so on :
-print(paste("nrow(conserved_sub_table) =",nrow(conserved_sub_table)))
-print("goodbye points in the sea")
-dist_cc_TRUE <- as.numeric()
-for (i in 1:nrow(conserved_sub_table)){
-  dist_cc_TRUE[i] = (1/1000) * geodist::geodist(x = conserved_sub_table[i,1:2], y = conserved_sub_table[i, 3:4])
-}
-conserved_sub_table <- conserved_sub_table[which(dist_cc_TRUE < sqrt(2)*10),]
-print(paste("nrow(conserved_sub_table) =",nrow(conserved_sub_table)))
-### 
+# ### removing the "ejected" points in the sea and so on :
+# print(paste("nrow(conserved_sub_table) =",nrow(conserved_sub_table)))
+# print("goodbye points in the sea")
+# dist_cc_TRUE <- as.numeric()
+# for (i in 1:nrow(conserved_sub_table)){
+#   dist_cc_TRUE[i] = (1/1000) * geodist::geodist(x = conserved_sub_table[i,1:2], y = conserved_sub_table[i, 3:4])
+# }
+# conserved_sub_table <- conserved_sub_table[which(dist_cc_TRUE < sqrt(2)*10),]
+# print(paste("nrow(conserved_sub_table) =",nrow(conserved_sub_table)))
+# ###
 
 rm(specific_table)
 rm(new_spatvector)
 rm(y)
 rm(z)
+rm(z_clay)
+rm(z_fire)
+rm(z_prec)
+rm(z_q50)
+rm(z_q90)
 rm(intermediate_table)
 rm(table_new)
 rm(trsf_data)
-rm(dist_cc_TRUE)
+#rm(dist_cc_TRUE)
 
-#renaming columns
-colnames(conserved_sub_table)[13:15] <- c("fire_freq_std", 
-                                          "mean_precip_std",
-                                          "mean_temp_std")
-conserved_sub_table <- conserved_sub_table[,-12]
+#add precipitation squared
 conserved_sub_table <- cbind(conserved_sub_table, 
-                             mean_precip_carre = (conserved_sub_table$mean_precip_std)^2)
+                             mean_precip_carre = (conserved_sub_table$precip_mean)^2)
+
+#remove row with NA
+conserved_sub_table <- conserved_sub_table[-which(is.na(conserved_sub_table$clay_percent)),]
 
 #save
 saveRDS(
   object = conserved_sub_table,
   file = file.path(
     "transformed_data",
-    paste0("subsampled_6_ecoregions_rh98sup3.RDS")
+    paste0("subsampled_v3_10000.RDS")
   )
 )    
