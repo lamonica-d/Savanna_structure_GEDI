@@ -33,7 +33,7 @@ library(terra)
 library(sf)
 
 ######sous échantillonnage tous les x km
-cell <- 10**6
+cell <- 10**5
 
 specific_table <- readRDS(
   file.path( "transformed_data", paste0("data_pre_subsampling.RDS"))
@@ -52,16 +52,16 @@ table_new <- data.frame(
 )
 
 #1) la grille
-meter_coord <- proj4::project(xy = table_new[,2:3], proj = "+proj=utm +datum=WGS84")
-table_new2 <- data.frame(table_new, x.meter = meter_coord$x, y.meter = meter_coord$y)
-new_spatvector <- terra::vect(table_new2[,c(1,10:11)], geom = c("x.meter", "y.meter"), crs = 3857) 
-
+new_spatvector <- terra::vect(table_new, geom = c("coordxTRUE", "coordyTRUE"), crs = "+proj=longlat +datum=WGS84") 
 # get new_spatvector "window" : xmin, xmax, ymin, ymax
 window <- terra::ext(new_spatvector)
+#input lat long, output meters
 dx <- geodist::geodist(x = c(window[1],window[3]), y = c(window[2],window[3]), measure = "haversine")
 dy <- geodist::geodist(x = c(window[1],window[3]), y = c(window[1],window[4]), measure = "haversine")
-(target_ncol <- round(dx/cell))
-(target_nrow <- round(dy/cell))
+target_ncol <- round(dx/cell)
+# Guinean 10**4 cells : 133
+target_nrow <- round(dy/cell)
+
 # dimensions of y an z : 108, 333, 1  (nrow, ncol, nlyr)
 y <- terra::rast(new_spatvector, ncols = target_ncol, nrows = target_nrow, nlyrs = 1)
 values(y) <- grid_of_distant_cells(target_nrow,target_ncol)
@@ -69,20 +69,24 @@ values(y) <- grid_of_distant_cells(target_nrow,target_ncol)
 #2) les cellules qu'on garde : une table avec coord du centre des cellules gardées
 table_kept_cells <- data.frame(cbind(values(y),crds(y)))
 table_kept_cells <- subset(table_kept_cells, lyr.1 == 1)
-colnames(table_kept_cells) <- c("keep", "x.meter", "y.meter")
+colnames(table_kept_cells) <- c("keep", "x.center", "y.center")
+
 
 #3) pour chaque cellule de la table : calcul de l'extent
-theta <- atan(table_kept_cells$y.meter[1]/table_kept_cells$x.meter[1])
+
+#!!!!!!!!
+#ici on a des coord latlong et une taille de cellule en metres donc a gerer
+
 extent_list <- list()
 for (i in 1:nrow(table_kept_cells)){
-  x.random <- table_kept_cells$x.meter[i]
-  y.random <- table_kept_cells$y.meter[i]
+  x.center <- table_kept_cells$x.meter[i]
+  y.center <- table_kept_cells$y.meter[i]
   extent_list[[i]] <- st_polygon(list(rbind(
-    c(x.random - cell/2, y.random - cell/2),
-    c(x.random + cell/2, y.random - cell/2),
-    c(x.random + cell/2, y.random + cell/2),
-    c(x.random - cell/2, y.random + cell/2),
-    c(x.random - cell/2, y.random - cell/2)
+    c(x.center - cell/2, y.center - cell/2),
+    c(x.center + cell/2, y.center - cell/2),
+    c(x.center + cell/2, y.center + cell/2),
+    c(x.center - cell/2, y.center + cell/2),
+    c(x.center - cell/2, y.center - cell/2)
     )))
 }
 
