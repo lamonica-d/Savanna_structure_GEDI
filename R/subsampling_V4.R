@@ -2,15 +2,15 @@
 grid_of_distant_cells <- function(target_nrow,target_ncol,plot_grid=FALSE){
   
   # first sub-grid
-  conserved1 <- rep(rep(c(TRUE,FALSE),each=target_ncol),times=target_nrow%/%2)
-  if (target_nrow%%2==1){ conserved1 <- c(conserved1,rep(TRUE,times=target_ncol)) }
+  conserved1 <- rep(rep(c(FALSE, TRUE),each=target_ncol),times=target_nrow%/%2)
+  if (target_nrow%%2==1){ conserved1 <- c(conserved1,rep(FALSE,times=target_ncol)) }
   
   # second sub-grid
   if (target_ncol%%2==0){ 
-    conserved2 <- rep(rep(c(TRUE,FALSE),times=target_ncol%/%2),times=target_nrow)
+    conserved2 <- rep(rep(c(FALSE,TRUE),times=target_ncol%/%2),times=target_nrow)
   }
   if (target_ncol%%2==1){ 
-    conserved2 <- rep(c(rep(c(TRUE,FALSE),times=target_ncol%/%2),TRUE),times=target_nrow)
+    conserved2 <- rep(c(rep(c(FALSE,TRUE),times=target_ncol%/%2),FALSE),times=target_nrow)
   }
   
   # final sub-grid
@@ -31,6 +31,7 @@ grid_of_distant_cells <- function(target_nrow,target_ncol,plot_grid=FALSE){
 
 library(terra)
 library(sf)
+library(proj4)
 
 ######sous échantillonnage tous les x km
 cell <- 10**5
@@ -67,6 +68,12 @@ values(y) <- grid_of_distant_cells(target_nrow,target_ncol)
 
 #2) les cellules qu'on garde : une table avec coord du centre des cellules gardées
 table_kept_cells <- data.frame(cbind(values(y),crds(y)))
+
+#!!!!remove first + last rows & columns!!!!!!
+#1st row 1:target_ncol, 
+#last row target_nrow*target_ncol - target_ncol:target_nrow*target_ncol
+
+#keep T cells only
 table_kept_cells <- subset(table_kept_cells, lyr.1 == 1)
 colnames(table_kept_cells) <- c("keep", "x.center", "y.center")
 
