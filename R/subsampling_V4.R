@@ -34,7 +34,7 @@ library(sf)
 library(proj4)
 
 ######sous échantillonnage tous les x km
-cell <- 10**5
+cell <- 10**4
 
 specific_table <- readRDS(
   file.path( "transformed_data", paste0("data_pre_subsampling.RDS"))
@@ -68,12 +68,6 @@ values(y) <- grid_of_distant_cells(target_nrow,target_ncol)
 
 #2) les cellules qu'on garde : une table avec coord du centre des cellules gardées
 table_kept_cells <- data.frame(cbind(values(y),crds(y)))
-
-#!!!!remove first + last rows & columns!!!!!!
-#1st row 1:target_ncol, 
-#last row target_nrow*target_ncol - target_ncol:target_nrow*target_ncol
-
-#keep T cells only
 table_kept_cells <- subset(table_kept_cells, lyr.1 == 1)
 colnames(table_kept_cells) <- c("keep", "x.center", "y.center")
 
@@ -114,6 +108,43 @@ for (i in 1:nrow(table_kept_cells)){
 nc <- st_as_sf(new_spatvector, coords = c("x.meter", "y.meter"), 
                crs = "+proj=eqc +lon_0=15.46875 +lat_ts=15.3756389 +datum=WGS84 +units=m +no_defs")
 
+#version parallel
+extent_list_parallel <- lapply(splitIndices(length(extent_list),10),
+                               function(i) extent_list[i])
+
+select_points_inside <- function(extent_list, nc, table_new){
+  
+  for (i in 1:nrow(table_kept_cells)){
+    extent_list[[i]] -> extent_i
+    print(paste("i",i,"/",nrow(table_kept_cells)))
+    print(Sys.time())
+    #intersect proprement dit
+    temp <- st_intersects(nc, extent_i)
+    
+    #points inside
+    pts_inside <- nc[which(lengths(temp)>0),]
+    if (nrow(pts_inside)>0){
+      coord_pts_inside <- st_coordinates(pts_inside)
+      df_pts_inside <- data.frame(index_point = pts_inside$index_point, x.meter = coord_pts_inside[,1],
+                                  y.meter = coord_pts_inside[,2], cell_id = i)
+      
+      #merge pour recup les observations
+      temp2 <- merge(df_pts_inside,
+                     subset(table_new),
+                     by = "index_point")
+      
+      #on range dans la list
+      index_points_list[[i]] <- temp2
+    }else{
+      next
+    }
+  }
+  
+}
+
+
+
+#version sequential
 index_points_list <- list()
 for (i in 1:nrow(table_kept_cells)){
   extent_list[[i]] -> extent_i
