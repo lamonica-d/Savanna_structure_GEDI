@@ -138,12 +138,13 @@ nc <- st_as_sf(new_spatvector, coords = c("x.meter", "y.meter"),
                crs = "+proj=eqc +lon_0=15.46875 +lat_ts=15.3756389 +datum=WGS84 +units=m +no_defs")
 
 #version parallel
-extent_list_parallel <- lapply(splitIndices(length(extent_list),10),
+nb_cpu <- 20
+extent_list_parallel <- lapply(splitIndices(length(extent_list),nb_cpu),
                                function(i) extent_list[i])
 
 Sys.time()
 
-cl <- makeCluster(10)
+cl <- makeCluster(nb_cpu)
 
 registerDoParallel(cl)
 clusterCall(cl, function () Sys.info () [c ( "nodename", "machine" ) ] )
@@ -155,7 +156,7 @@ clusterEvalQ(cl,library(iterators))
 clusterEvalQ(cl,library(sf))
 clusterEvalQ(cl,library(terra))
 
-test1 <- foreach(i=1:10, .inorder = T) %dopar%{
+test1 <- foreach(i=1:nb_cpu, .inorder = T) %dopar%{
   select_points_inside(extent_list_parallel[[i]], nc = nc, table_new = table_new)
 }
 
