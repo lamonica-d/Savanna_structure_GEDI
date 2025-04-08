@@ -12,3 +12,4 @@
 *.xml
 *figures/*
 *transformed_data_ilots/*
+*.pdf
