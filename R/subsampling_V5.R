@@ -35,7 +35,7 @@ grid_of_distant_cells <- function(target_nrow,target_ncol,plot_grid=FALSE){
   return(conserved)
 }
 
-select_points_inside <- function(extent_list, nc, table_new){
+select_points_inside <- function(extent_list, nc, table_new, table_kept_cells){
   df_all <- data.frame()
   
   for (i in 1:length(extent_list)){
@@ -48,7 +48,9 @@ select_points_inside <- function(extent_list, nc, table_new){
     if (nrow(pts_inside)>0){
       coord_pts_inside <- st_coordinates(pts_inside)
       df_pts_inside <- data.frame(index_point = pts_inside$index_point, x.meter = coord_pts_inside[,1],
-                                  y.meter = coord_pts_inside[,2], cell_id = i)
+                                  y.meter = coord_pts_inside[,2], cell_id = i,  
+                                  x.center = table_kept_cells$x.meter[i],
+                                  y.center = table_kept_cells$y.meter[i])
       
       #merge pour recup les observations
       temp2 <- merge(df_pts_inside,
@@ -66,9 +68,11 @@ select_points_inside <- function(extent_list, nc, table_new){
 
 ######sous échantillonnage tous les x metres
 cell <- 10**4
+##choix de la classe de precip
+q = 1
 
 #specific_table <- readRDS("data_pre_subsampling.RDS")
-specific_table <- readRDS(file.path("transformed_data", "data_pre_subsampling.RDS"))
+specific_table <- readRDS(file.path("transformed_data", paste0("data_classe_precip", 1, ".RDS")))
 
 table_new <- data.frame(
   index_point = specific_table$index,
@@ -80,6 +84,8 @@ table_new <- data.frame(
   fire_freq_std = specific_table$fire_freq_std,
   prec_std = specific_table$prec_std
 )
+
+rm(specific_table)
 
 #1) la grille
 new_spatvector <- terra::vect(table_new, geom = c("coordxTRUE", "coordyTRUE"), crs = "+proj=longlat +datum=WGS84") 
@@ -150,7 +156,7 @@ cl <- makeCluster(nb_cpu)
 registerDoParallel(cl)
 clusterCall(cl, function () Sys.info () [c ( "nodename", "machine" ) ] )
 
-clusterExport(cl,c("extent_list_parallel", "nc", "table_new"))
+clusterExport(cl,c("extent_list_parallel", "nc", "table_new", "table_kept_cells"))
 clusterEvalQ(cl,library(doParallel))
 clusterEvalQ(cl,library(foreach))
 clusterEvalQ(cl,library(iterators))
@@ -158,7 +164,7 @@ clusterEvalQ(cl,library(sf))
 clusterEvalQ(cl,library(terra))
 
 test1 <- foreach(i=1:nb_cpu, .inorder = T) %dopar%{
-  select_points_inside(extent_list_parallel[[i]], nc = nc, table_new = table_new)
+  select_points_inside(extent_list_parallel[[i]], nc = nc, table_new = table_new, table_kept_cells = table_kept_cells)
 }
 
 stopCluster(cl)
@@ -169,9 +175,8 @@ rm(temp2)
 rm(temp)
 rm(extent_list)
 rm(meter_coord)
-rm(specific_table)
 rm(table_new2)
 rm(df_pts_inside)
 rm(nc)
 
-saveRDS(test1, "data_point_in_cells_10e4.RDS")
+saveRDS(test1, paste0("data_point_in_cells_104_class_precip_",q))

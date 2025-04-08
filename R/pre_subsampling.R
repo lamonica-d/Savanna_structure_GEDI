@@ -57,3 +57,19 @@ saveRDS(
     paste0("data_pre_subsampling.RDS")
   )
 ) 
+
+##version avec cc!= 0 & classes de precip
+#rm cc == 0
+specific_table1 <- subset(specific_table, canopy_cover !=0)
+#classe de precip
+classes_prec <- quantile(specific_table1$mean_precip, probs=c(.25,.5,.75))
+data_classe1 <- subset(specific_table1, mean_precip <= classes_prec[1])
+data_classe2 <- subset(specific_table1, mean_precip > classes_prec[1] & mean_precip <= classes_prec[2])
+data_classe3 <- subset(specific_table1, mean_precip > classes_prec[2] & mean_precip <= classes_prec[3])
+data_classe4 <- subset(specific_table1, mean_precip > classes_prec[3])
+
+saveRDS(data_classe1, file.path("transformed_data","data_classe_precip1.RDS"))
+saveRDS(data_classe2, file.path("transformed_data","data_classe_precip2.RDS"))
+saveRDS(data_classe3, file.path("transformed_data","data_classe_precip3.RDS"))
+saveRDS(data_classe4, file.path("transformed_data","data_classe_precip4.RDS"))
+
