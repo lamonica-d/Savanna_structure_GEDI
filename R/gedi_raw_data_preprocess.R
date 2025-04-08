@@ -81,9 +81,7 @@ without_duplicate <- complete_corresponding_table %>% distinct(x, y, .keep_all =
 
 saveRDS(
   object = without_duplicate,
-  file = file.path(
-    path_to_Savanna_structure_GEDI_folder,
-    "rawdata_post_preprocessing",
+  file = file.path("rawdata_post_preprocessing",
     "complete_corresponding_table_without_duplicate.RDS"
   )
 )
@@ -96,7 +94,7 @@ duplicates <- janitor::get_dupes(without_duplicate, "x", "y") # prend quelques m
 
 # Standardisation et sauvegarde des données uniquement sur :
 
-list.files(path = file.path(path_to_GEDI_raw_data),full.names=FALSE)[c(10,18,19,23,26,27)]
+list.files(path = dir_rawdata,full.names=FALSE)[c(10,18,19,23,26,27)]
 
 names = c("Guinean_forest-savanna","West_Sudanian_savanna","Sahelian_Acacia_savanna",
           "Northern_Congolian_Forest-Savanna","Western_Congolian_forest-savanna","Southern_Congolian_forest-savanna")
