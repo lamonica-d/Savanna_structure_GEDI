@@ -50,6 +50,7 @@ saveRDS(df_plot,
         file = file.path("outputs", paste0("df_mapping_rh98_prec",j,".RDS")))
 }
 
+
 df_plot <- tibble()
 class_prec <- as.numeric()
 for (j in 1:4){
@@ -122,7 +123,7 @@ fig_b <- ggplot(data = df_plot_prec_estim) +
 #   scale_color_viridis_d()
 fig_c <- ggplot(data = df_plot_density) +
   geom_boxplot(aes(x = class_prec,y = r_unique_id, fill = class_prec))+
-  facet_grid(.~ term, labeller = labeller(term = var.labs))+
+  facet_grid(.~ term, labeller = labeller(term = var.labs), scales = "free")+
   theme_minimal()+
   scale_fill_viridis_d()+
   theme(legend.position = "none")+
