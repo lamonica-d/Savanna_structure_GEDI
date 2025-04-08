@@ -1,3 +1,0 @@
-Ce sont des vieux scripts. Je crois que generate_hists_and_correlations.Rmd génère les histogrammes et matrices de corrélations dans le folder figures, que generate_sub_samples_of_3_ecoregions.Rmd génère des échantillons 10**4 de couches vectorielles afin de pouvoir faire des visualisations QGIS, et que visualisation_donnes_manquantes.Rmd donne des summary de NA.
-
-Il est possible que des figures dans le folder figure aient été faites avec des vieux code que j'ai mis dans le folder archive. En tout cas ces 3 fichiers peuvent déjà donner matière d'inspiration si besoin de faire des copier-coller et adaptations.

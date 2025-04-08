@@ -1,0 +1,142 @@
+
+R version 4.3.1 (2023-06-16) -- "Beagle Scouts"
+Copyright (C) 2023 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R est un logiciel libre livré sans AUCUNE GARANTIE.
+Vous pouvez le redistribuer sous certaines conditions.
+Tapez 'license()' ou 'licence()' pour plus de détails.
+
+R est un projet collaboratif avec de nombreux contributeurs.
+Tapez 'contributors()' pour plus d'information et
+'citation()' pour la façon de le citer dans les publications.
+
+Tapez 'demo()' pour des démonstrations, 'help()' pour l'aide
+en ligne ou 'help.start()' pour obtenir l'aide au format HTML.
+Tapez 'q()' pour quitter R.
+
+[Sauvegarde de la session précédente restaurée]
+
+> library(brms)
+Le chargement a nécessité le package : Rcpp
+Loading 'brms' package (version 2.21.0). Useful instructions
+can be found by typing help('brms'). A more detailed introduction
+to the package is available through vignette('brms_overview').
+
+Attachement du package : ‘brms’
+
+L'objet suivant est masqué depuis ‘package:stats’:
+
+    ar
+
+> options(mc.cores = parallel::detectCores())
+> i=3
+> data <- readRDS("data_point_in_cells_10e4_prec_subsampled.RDS")
+> 
+> data_prec <- data[[i]]
+> 
+> ##inference
+> Sys.time()
+[1] "2025-02-28 17:01:24 CET"
+> mod_rh98_prec <- brm(
++   rh98 ~ (clay_percent_std + fire_freq_std|unique_id) + prec_std,
++   data = data_prec,family = brmsfamily(family = "lognormal"),
++   prior = NULL,warmup = 1*10**3, iter = 3*10**3,thin = 3,
++   chains = 3, cores = 3, silent=2
++ )
+
+SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 1).
+
+SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 2).
+
+SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 3).
+Chain 1: 
+Chain 1: Gradient evaluation took 0.119765 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1197.65 seconds.
+Chain 1: Adjust your expectations accordingly!
+Chain 1: 
+Chain 1: 
+Chain 2: 
+Chain 2: Gradient evaluation took 0.120703 seconds
+Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 1207.03 seconds.
+Chain 2: Adjust your expectations accordingly!
+Chain 2: 
+Chain 2: 
+Chain 3: 
+Chain 3: Gradient evaluation took 0.122552 seconds
+Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 1225.52 seconds.
+Chain 3: Adjust your expectations accordingly!
+Chain 3: 
+Chain 3: 
+Chain 2: Iteration:    1 / 3000 [  0%]  (Warmup)
+Chain 1: Iteration:    1 / 3000 [  0%]  (Warmup)
+Chain 3: Iteration:    1 / 3000 [  0%]  (Warmup)
+Chain 1: Iteration:  300 / 3000 [ 10%]  (Warmup)
+Chain 2: Iteration:  300 / 3000 [ 10%]  (Warmup)
+Chain 1: Iteration:  600 / 3000 [ 20%]  (Warmup)
+Chain 2: Iteration:  600 / 3000 [ 20%]  (Warmup)
+Chain 1: Iteration:  900 / 3000 [ 30%]  (Warmup)
+Chain 3: Iteration:  300 / 3000 [ 10%]  (Warmup)
+Chain 1: Iteration: 1001 / 3000 [ 33%]  (Sampling)
+Chain 2: Iteration:  900 / 3000 [ 30%]  (Warmup)
+Chain 2: Iteration: 1001 / 3000 [ 33%]  (Sampling)
+Chain 1: Iteration: 1300 / 3000 [ 43%]  (Sampling)
+Chain 2: Iteration: 1300 / 3000 [ 43%]  (Sampling)
+Chain 1: Iteration: 1600 / 3000 [ 53%]  (Sampling)
+Chain 3: Iteration:  600 / 3000 [ 20%]  (Warmup)
+Chain 2: Iteration: 1600 / 3000 [ 53%]  (Sampling)
+Chain 1: Iteration: 1900 / 3000 [ 63%]  (Sampling)
+Chain 2: Iteration: 1900 / 3000 [ 63%]  (Sampling)
+Chain 1: Iteration: 2200 / 3000 [ 73%]  (Sampling)
+Chain 2: Iteration: 2200 / 3000 [ 73%]  (Sampling)
+Chain 1: Iteration: 2500 / 3000 [ 83%]  (Sampling)
+Chain 3: Iteration:  900 / 3000 [ 30%]  (Warmup)
+Chain 2: Iteration: 2500 / 3000 [ 83%]  (Sampling)
+Chain 1: Iteration: 2800 / 3000 [ 93%]  (Sampling)
+Chain 2: Iteration: 2800 / 3000 [ 93%]  (Sampling)
+Chain 3: Iteration: 1001 / 3000 [ 33%]  (Sampling)
+Chain 1: Iteration: 3000 / 3000 [100%]  (Sampling)
+Chain 1: 
+Chain 1:  Elapsed Time: 22263.9 seconds (Warm-up)
+Chain 1:                47118.3 seconds (Sampling)
+Chain 1:                69382.2 seconds (Total)
+Chain 1: 
+Chain 2: Iteration: 3000 / 3000 [100%]  (Sampling)
+Chain 2: 
+Chain 2:  Elapsed Time: 25353.4 seconds (Warm-up)
+Chain 2:                47374.3 seconds (Sampling)
+Chain 2:                72727.6 seconds (Total)
+Chain 2: 
+Chain 3: Iteration: 1300 / 3000 [ 43%]  (Sampling)
+Chain 3: Iteration: 1600 / 3000 [ 53%]  (Sampling)
+Chain 3: Iteration: 1900 / 3000 [ 63%]  (Sampling)
+Chain 3: Iteration: 2200 / 3000 [ 73%]  (Sampling)
+Chain 3: Iteration: 2500 / 3000 [ 83%]  (Sampling)
+Chain 3: Iteration: 2800 / 3000 [ 93%]  (Sampling)
+Chain 3: Iteration: 3000 / 3000 [100%]  (Sampling)
+Chain 3: 
+Chain 3:  Elapsed Time: 67706.6 seconds (Warm-up)
+Chain 3:                176222 seconds (Sampling)
+Chain 3:                243929 seconds (Total)
+Chain 3: 
+Messages d'avis :
+1: There were 667 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See
+https://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
+2: Examine the pairs() plot to diagnose sampling problems
+ 
+3: The largest R-hat is 1.15, indicating chains have not mixed.
+Running the chains for more iterations may help. See
+https://mc-stan.org/misc/warnings.html#r-hat 
+4: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+Running the chains for more iterations may help. See
+https://mc-stan.org/misc/warnings.html#bulk-ess 
+5: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+Running the chains for more iterations may help. See
+https://mc-stan.org/misc/warnings.html#tail-ess 
+> Sys.time()
+[1] "2025-03-03 12:50:04 CET"
+> saveRDS(mod_rh98_prec, file = paste("mod_rh98_prec",i,".RDS", sep =""))
+> 
+> proc.time()
+utilisateur     système      écoulé 
+ 386066.840     149.694  244161.898 
