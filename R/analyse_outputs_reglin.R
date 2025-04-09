@@ -9,6 +9,7 @@ library(sf)
 library(ttbary)
 library(biscale)
 library(gridExtra)
+library(ggmosaic)
 
 data <- readRDS(file.path("transformed_data_ilots",
                           "data_point_in_cells_10e4_prec_subsampled.RDS"))
@@ -122,12 +123,12 @@ fig_b <- ggplot(data = df_plot_prec_estim) +
 #   theme_minimal()+
 #   scale_color_viridis_d()
 fig_c <- ggplot(data = df_plot_density) +
-  geom_boxplot(aes(x = class_prec,y = r_unique_id, fill = class_prec))+
+  geom_density(aes(x = r_unique_id, colour = class_prec))+
   facet_grid(.~ term, labeller = labeller(term = var.labs), scales = "free")+
   theme_minimal()+
-  scale_fill_viridis_d()+
+  scale_color_viridis_d()+
   theme(legend.position = "none")+
-  xlab("Precipitation class")+
+  #xlab("Precipitation class")+
   ylab("Median coefficient estimates")+
   ggtitle("(c) Distribution of median values \n of coefficients accross cells")
 
@@ -162,3 +163,39 @@ dev.off()
 pdf(file="fig_d.pdf",width=12, height=6)
 fig_d
 dev.off()
+
+
+## contingency tables
+con_all <- xtabs(~clay_percent_std+fire_freq_std, data=df_color)
+prop.table(ftable(con_all))
+
+plot_con_table <- list()
+for (i in 1:4){
+  con_all2 <- df_color %>%
+    filter(class_prec == i) %>%
+    select(clay_percent_std, fire_freq_std) %>%
+    as_tibble()
+  con_all2 %>% table()
+  
+  plot_con_table[[i]] <- con_all2 %>%
+    ggplot() +  
+    geom_mosaic(aes(x = product(fire_freq_std), fill = clay_percent_std)) +  
+    scale_fill_viridis_d()+
+    theme_mosaic()+
+    theme(legend.position = "none")
+}
+grid.arrange(plot_con_table[[1]], plot_con_table[[2]],
+             plot_con_table[[3]], plot_con_table[[4]], ncol = 2)
+
+con_all2 <- df_color %>%
+  select(clay_percent_std, fire_freq_std) %>%
+  as_tibble()
+con_all2 %>% table()
+
+p1 <- con_all2 %>%
+  ggplot() +  
+  geom_mosaic(aes(x = product(fire_freq_std), fill = clay_percent_std)) +  
+  scale_fill_viridis_d()+
+  theme_mosaic()+
+  theme(legend.position = "none")
+
