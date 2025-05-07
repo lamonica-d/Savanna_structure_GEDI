@@ -20,13 +20,15 @@ Sys.time()
 #30 min, + d'iter et maybe + de thin
 saveRDS(mod_rh98_prec2, file.path("outputs", "mod_rh98_prec2.RDS"))
 
-model <- readRDS(file.path("outputs", "mod_rh98_prec4.RDS"))
+for (i in 1:4){
+model <- readRDS(file.path("outputs", paste0("mod_cc_prec",i,".RDS", sep = "")))
 
 coeff <- model %>%
   spread_draws(r_unique_id[unique_id,term]) %>%
   median_qi()
-saveRDS(coeff, file.path("outputs", "coeff_mod_rh98_prec4.RDS"))
-
+saveRDS(coeff, file.path("outputs", paste0("coeff_mod_cc_prec",i,".RDS", sep = "")))
+                         
+}
 
 # mod_cc <- brm(
 #   cc ~ fire_freq_std + prec_std + clay_percent_std,

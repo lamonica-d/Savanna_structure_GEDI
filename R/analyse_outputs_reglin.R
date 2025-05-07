@@ -16,8 +16,8 @@ data <- readRDS(file.path("transformed_data_ilots",
 
 for (j in 1:4){
 
-model <- readRDS(file.path("outputs", paste0("mod_rh98_prec",j,".RDS")))
-coeff <- readRDS(file.path("outputs", paste0("coeff_mod_rh98_prec",j,".RDS")))
+model <- readRDS(file.path("outputs", paste0("mod_cc_prec",j,".RDS")))
+coeff <- readRDS(file.path("outputs", paste0("coeff_mod_cc_prec",j,".RDS")))
 data_prec <- data[[j]]
 
 ## get prec coefficient
@@ -48,7 +48,7 @@ df_plot <- coeff[,1:5] %>%
                             .lower > 0 ~ 1,
                             .upper < 0 ~ -1))
 saveRDS(df_plot, 
-        file = file.path("outputs", paste0("df_mapping_rh98_prec",j,".RDS")))
+        file = file.path("outputs", paste0("df_mapping_cc_prec",j,".RDS")))
 }
 
 
@@ -56,7 +56,7 @@ df_plot <- tibble()
 class_prec <- as.numeric()
 for (j in 1:4){
   temp <- readRDS(file.path("outputs", 
-                    paste0("df_mapping_rh98_prec",j,".RDS")))
+                    paste0("df_mapping_cc_prec",j,".RDS")))
   class_prec <- c(class_prec, rep(j, nrow(temp)))
   df_plot <- rbind(df_plot,temp)
 }
