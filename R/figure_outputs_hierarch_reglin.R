@@ -15,53 +15,22 @@ data <- readRDS(file.path("transformed_data_ilots",
 
 gedi_var <- c("rh98", "cc")
 
+# map background
+world <- ne_countries()
+africa <- world %>% filter(continent == "Africa")
+
+# load data
+df_plot_list <- list()
+df_color_list <- list()
+
 for (v in 1:2){
-  var_int <- gedi_var[v]
-
-for (j in 1:4){
-
-model <- readRDS(file.path("outputs", paste0("mod_", var_int, "_prec",j,".RDS")))
-coeff <- readRDS(file.path("outputs", paste0("coeff_mod_", var_int, "_prec",j,".RDS")))
-data_prec <- data[[j]]
-
-## get prec coefficient
-coeff_prec <- summarise_draws(model)[2,c(3,6:7)]
-
-## coord cells
-coord_cell <- tibble(.rows = length(unique(data_prec$unique_id)))
-for (i in 1:length(unique(data_prec$unique_id))){
-temp <- data_prec %>%
-  filter(unique_id == unique(data_prec$unique_id)[i])
   
-coord_cell <- rbind(coord_cell,
-                    as.vector(drezner(temp$coordxTRUE, temp$coordyTRUE, penalty = 2)[1:2]))
-}
-coord_cell <- cbind(unique_id = unique(data_prec$unique_id), coord_cell)
-colnames(coord_cell) <- c("unique_id", "coordx", "coordy") 
-
-rm(data_prec)
-
-## table for plotting
-df_plot <- coeff[,1:5] %>%
-  mutate(term = replace(term, term == "Intercept", "prec_std")) %>%
-  mutate(r_unique_id = replace(r_unique_id, term == "prec_std", coeff_prec$median)) %>%
-  mutate(.lower = replace(.lower, term == "prec_std", coeff_prec$q5)) %>%
-  mutate(.upper = replace(.upper, term == "prec_std", coeff_prec$q95)) %>%
-  full_join(coord_cell, by = "unique_id") %>%
-  mutate(effect = case_when(.lower < 0 & .upper > 0 ~ 0,
-                            .lower > 0 ~ 1,
-                            .upper < 0 ~ -1))
-saveRDS(df_plot, 
-        file = file.path("outputs", paste0("df_mapping_cc_prec",j,".RDS")))
-}
-}
-
-
 df_plot <- tibble()
 class_prec <- as.numeric()
+
 for (j in 1:4){
   temp <- readRDS(file.path("outputs", 
-                    paste0("df_mapping_cc_prec",j,".RDS")))
+                            paste0("df_mapping_",gedi_var[v],"_prec",j,".RDS")))
   class_prec <- c(class_prec, rep(j, nrow(temp)))
   df_plot <- rbind(df_plot,temp)
 }
@@ -77,8 +46,33 @@ df_color <- tibble(df_plot[df_plot$term == "prec_std",]$unique_id,
 )
 
 colnames(df_color) <- c("unique_id", "coordx", "coordy",
-  "prec_std", "fire_freq_std", "clay_percent_std", "class_prec")
+                        "prec_std", "fire_freq_std", "clay_percent_std", "class_prec")
 
+df_plot_list[[v]] <- df_plot
+df_color_list[[v]] <- df_color
+}
+
+# Figure 1 points per class precip
+
+fig1 <- ggplot(data=africa) +
+  geom_sf(color="black") + 
+  geom_point(data=df_color[[1]], mapping = aes(x= coordx, y = coordy,
+                                          colour = class_prec), shape = 1)+
+  coord_sf(xlim=c(-20, 37), ylim=c(-15, 20), expand=FALSE)+
+  scale_colour_viridis_d() +
+  labs(colour = "Precipitation classes")+
+  theme(panel.background=element_rect(fill="slategray1"), legend.position = "bottom",
+        legend.key = element_rect(fill = "white"))+
+  ggtitle("(1) Map of cells according to precipitation classes")+
+  xlab("long")+
+  ylab("lat")
+
+   
+# Figure 2 plot coeff precip
+
+# plot estimates
+
+for (v in 1:2){
 
 df_plot_density <- df_plot %>%
   subset(term != "prec_std")
@@ -87,27 +81,6 @@ names(var.labs) <- c("clay_percent_std","fire_freq_std")
 
 df_plot_prec_estim <- df_plot %>%
   subset(term == "prec_std")
-
-## plot
-# map background
-world <- ne_countries()
-africa <- world %>% filter(continent == "Africa")
-
-# map precipitation class
-fig_a <- ggplot(data=africa) +
-  geom_sf(color="black") + 
-  geom_point(data=df_color, mapping = aes(x= coordx, y = coordy,
-                                          colour = class_prec), shape = 1)+
-  coord_sf(xlim=c(-20, 37), ylim=c(-15, 20), expand=FALSE)+
-  scale_colour_viridis_d() +
-  labs(colour = "Precipitation classes")+
-  theme(panel.background=element_rect(fill="slategray1"), legend.position = "bottom",
-        legend.key = element_rect(fill = "white"))+
-  ggtitle("(a) Map of cells according to precipitation classes")+
-  xlab("long")+
-  ylab("lat")
- 
-# plot estimates
 fig_b <- ggplot(data = df_plot_prec_estim) +
   geom_segment(aes(x = class_prec, y = .lower, xend = class_prec, yend = .upper,
                    colour = class_prec))+
@@ -134,26 +107,28 @@ fig_c <- ggplot(data = df_plot_density) +
   ylab("Median coefficient estimates")+
   ggtitle("(c) Distribution of median values \n of coefficients accross cells")
 
+}
+
 # map of effects clay percent & fire freq
- fig_d_list <- list()
- for (i in 1:4){
-fig_d_list[[i]] <- ggplot(data=africa) +
-  geom_sf(color="black") + 
-  geom_point(data=df_color[df_color$class_prec == i,], mapping = aes(x= coordx, y = coordy,
-                                          colour = fire_freq_std,
-                                          shape = clay_percent_std), size=2)+
-                    #bi_class)) +
-  coord_sf(xlim=c(-20, 37), ylim=c(-15, 20), expand=FALSE)+
-  #bi_scale_color(pal = custom_pal, dim = 3) +
+fig_d_list <- list()
+for (i in 1:4){
+  fig_d_list[[i]] <- ggplot(data=africa) +
+    geom_sf(color="black") + 
+    geom_point(data=df_color[df_color$class_prec == i,], mapping = aes(x= coordx, y = coordy,
+                                                                       colour = fire_freq_std,
+                                                                       shape = clay_percent_std), size=2)+
+    #bi_class)) +
+    coord_sf(xlim=c(-20, 37), ylim=c(-15, 20), expand=FALSE)+
+    #bi_scale_color(pal = custom_pal, dim = 3) +
     scale_color_manual(values = c("#440154", "grey","#51C56A" ))+
     scale_shape_manual(values=c(0,1,2))+ #+15)+
-  #facet_wrap(vars(class_prec))+
-  labs(colour = "Fire frequency effect", shape = "Clay percentage effect")+
-  theme(panel.background=element_rect(fill="slategray1"), 
-        legend.position = "right")+
-  ggtitle("(d) Combination of clay percent and fire frequence effects")+
-  xlab("long")+
-  ylab("lat")
+    #facet_wrap(vars(class_prec))+
+    labs(colour = "Fire frequency effect", shape = "Clay percentage effect")+
+    theme(panel.background=element_rect(fill="slategray1"), 
+          legend.position = "right")+
+    ggtitle("(d) Combination of clay percent and fire frequence effects")+
+    xlab("long")+
+    ylab("lat")
 }
 
 #gather subfigures
