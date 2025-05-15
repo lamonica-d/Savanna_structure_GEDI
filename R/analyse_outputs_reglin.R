@@ -14,10 +14,15 @@ library(ggmosaic)
 data <- readRDS(file.path("transformed_data_ilots",
                           "data_point_in_cells_10e4_prec_subsampled.RDS"))
 
+gedi_var <- c("rh98", "cc")
+
+for (v in 1:2){
+  var_int <- gedi_var[v]
+
 for (j in 1:4){
 
-model <- readRDS(file.path("outputs", paste0("mod_cc_prec",j,".RDS")))
-coeff <- readRDS(file.path("outputs", paste0("coeff_mod_cc_prec",j,".RDS")))
+model <- readRDS(file.path("outputs", paste0("mod_", var_int, "_prec",j,".RDS")))
+coeff <- readRDS(file.path("outputs", paste0("coeff_mod_", var_int, "_prec",j,".RDS")))
 data_prec <- data[[j]]
 
 ## get prec coefficient
@@ -75,8 +80,23 @@ df_color <- tibble(df_plot[df_plot$term == "prec_std",]$unique_id,
 colnames(df_color) <- c("unique_id", "coordx", "coordy",
   "prec_std", "fire_freq_std", "clay_percent_std", "class_prec")
 
-df_color <- bi_class(df_color, x = "fire_freq_std", y = "clay_percent_std", 
-                      dim = 3)
+# df_color <- bi_class(df_color, x = "fire_freq_std", y = "clay_percent_std", 
+#                       dim = 3)
+# 
+# (truc <- viridis_pal()(12))
+# custom_pal <- c(
+#   "1-1" = "#440154", # negative fire, negative clay
+#   "2-1" = "#38598C", # no effect fire, negative clay
+#   "3-1" = "#85D54A", # positive fire, negative clay
+#  
+#    "1-2" = "#482173" , # negative fire, no effect clay
+#   "2-2" = "#808080", # no effect fire, no effect clay
+#   "3-2" = "#C2DF23", # positive fire, no effect clay
+#  
+#    "1-3" = "#433E85", # negative fire, positive clay
+#   "2-3" = "#51C56A", # no effect fire, positive clay
+#   "3-3" = "#FDE725"  # positive fire, positive clay
+# )
 
 df_plot_density <- df_plot %>%
   subset(term != "prec_std")
@@ -133,18 +153,26 @@ fig_c <- ggplot(data = df_plot_density) +
   ggtitle("(c) Distribution of median values \n of coefficients accross cells")
 
 # map of effects clay percent & fire freq
-fig_d <- ggplot(data=africa) +
+ fig_d_list <- list()
+ for (i in 1:4){
+fig_d_list[[i]] <- ggplot(data=africa) +
   geom_sf(color="black") + 
-  geom_point(data=df_color, mapping = aes(x= coordx, y = coordy,
-                                          colour = bi_class)) +
+  geom_point(data=df_color[df_color$class_prec == i,], mapping = aes(x= coordx, y = coordy,
+                                          colour = fire_freq_std,
+                                          shape = clay_percent_std), size=2)+
+                    #bi_class)) +
   coord_sf(xlim=c(-20, 37), ylim=c(-15, 20), expand=FALSE)+
-  bi_scale_color(pal = "BlueYl", dim = 3) +
-  labs(colour = "Variable effect combinations")+
+  #bi_scale_color(pal = custom_pal, dim = 3) +
+    scale_color_manual(values = c("#440154", "grey","#51C56A" ))+
+    scale_shape_manual(values=c(0,1,2))+ #+15)+
+  #facet_wrap(vars(class_prec))+
+  labs(colour = "Fire frequency effect", shape = "Clay percentage effect")+
   theme(panel.background=element_rect(fill="slategray1"), 
         legend.position = "right")+
   ggtitle("(d) Combination of clay percent and fire frequence effects")+
   xlab("long")+
   ylab("lat")
+}
 
 #gather subfigures
 # plots <- list(fig_a, fig_b, fig_c) #, fig_d)
@@ -179,8 +207,8 @@ for (i in 1:4){
   
   plot_con_table[[i]] <- con_all2 %>%
     ggplot() +  
-    geom_mosaic(aes(x = product(fire_freq_std), fill = clay_percent_std)) +  
-    scale_fill_viridis_d()+
+    geom_mosaic(aes(x = product(clay_percent_std), fill = fire_freq_std)) +  
+    scale_fill_manual(values = c("#440154", "grey","#51C56A" ))+
     theme_mosaic()+
     theme(legend.position = "none")
 }
@@ -194,8 +222,9 @@ con_all2 %>% table()
 
 p1 <- con_all2 %>%
   ggplot() +  
-  geom_mosaic(aes(x = product(fire_freq_std), fill = clay_percent_std)) +  
-  scale_fill_viridis_d()+
+  geom_mosaic(aes(x = product(clay_percent_std), fill = fire_freq_std)) +  
+  scale_fill_manual(values = c("#440154", "grey","#51C56A" ))+
   theme_mosaic()+
   theme(legend.position = "none")
 
+}
