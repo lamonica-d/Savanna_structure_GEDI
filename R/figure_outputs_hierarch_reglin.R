@@ -14,6 +14,7 @@ data <- readRDS(file.path("transformed_data_ilots",
                           "data_point_in_cells_10e4_prec_subsampled.RDS"))
 
 gedi_var <- c("rh98", "cc")
+gedi_var_names <- c("Tree height", "Canopy cover")
 
 # map background
 world <- ne_countries()
@@ -51,12 +52,14 @@ colnames(df_color) <- c("unique_id", "coordx", "coordy",
 df_plot_list[[v]] <- df_plot
 df_color_list[[v]] <- df_color
 }
+rm(df_plot)
+rm(df_color)
 
 # Figure 1 points per class precip
 
 fig1 <- ggplot(data=africa) +
   geom_sf(color="black") + 
-  geom_point(data=df_color[[1]], mapping = aes(x= coordx, y = coordy,
+  geom_point(data=df_color_list[[1]], mapping = aes(x= coordx, y = coordy,
                                           colour = class_prec), shape = 1)+
   coord_sf(xlim=c(-20, 37), ylim=c(-15, 20), expand=FALSE)+
   scale_colour_viridis_d() +
@@ -67,12 +70,17 @@ fig1 <- ggplot(data=africa) +
   xlab("long")+
   ylab("lat")
 
+pdf(file=file.path("figures","fig_1.pdf"),width=12, height=6)
+fig1
+dev.off()
    
-# Figure 2 plot coeff precip
+# Figure 2 plot coeff precip & fire + clay
 
 # plot estimates
 
 for (v in 1:2){
+  
+df_plot <- df_plot_list[[v]]
 
 df_plot_density <- df_plot %>%
   subset(term != "prec_std")
@@ -81,31 +89,31 @@ names(var.labs) <- c("clay_percent_std","fire_freq_std")
 
 df_plot_prec_estim <- df_plot %>%
   subset(term == "prec_std")
+
 fig_b <- ggplot(data = df_plot_prec_estim) +
   geom_segment(aes(x = class_prec, y = .lower, xend = class_prec, yend = .upper,
                    colour = class_prec))+
   geom_point(aes(x = class_prec, y = r_unique_id, colour = class_prec))+
   theme_minimal()+
   scale_color_viridis_d()+
-  ggtitle("(b) Median and 95%CI of precipitation effect")+
+  ggtitle("(2b) Median and 95%CI of precipitation effect")+
   xlab("Precipitation class")+
   ylab("Coefficient estimates")+
   theme(legend.position = "none")
 
-# ggplot(data = df_plot_density) +
-#   geom_density(aes(x = r_unique_id, colour = class_prec))+
-#   facet_grid(.~ term)+
-#   theme_minimal()+
-#   scale_color_viridis_d()
 fig_c <- ggplot(data = df_plot_density) +
   geom_density(aes(x = r_unique_id, colour = class_prec))+
   facet_grid(.~ term, labeller = labeller(term = var.labs), scales = "free")+
   theme_minimal()+
   scale_color_viridis_d()+
   theme(legend.position = "none")+
-  #xlab("Precipitation class")+
+  xlab("")+
   ylab("Median coefficient estimates")+
-  ggtitle("(c) Distribution of median values \n of coefficients accross cells")
+  ggtitle("(2c) Distribution of median values \n of coefficients accross cells")
+
+pdf(file=file.path("figures",paste0("fig_bc_", gedi_var[v],".pdf")),width=8, height=4)
+grid.arrange(fig_b, fig_c, ncol = 2)
+dev.off()
 
 }
 
@@ -137,13 +145,8 @@ for (i in 1:4){
 #grid.arrange(grobs = plots, layout_matrix = lay)
 #grid.arrange(fig_a, fig_b, fig_c, ncol = 1)
 
-pdf(file="fig_a.pdf",width=12, height=6)
-fig_a
-dev.off()
 
-pdf(file="fig_bc.pdf",width=8, height=4)
-grid.arrange(fig_b, fig_c, ncol = 2)
-dev.off()
+
 
 pdf(file="fig_d.pdf",width=12, height=6)
 fig_d
