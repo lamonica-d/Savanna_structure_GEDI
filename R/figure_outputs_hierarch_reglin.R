@@ -76,8 +76,6 @@ dev.off()
    
 # Figure 2 plot coeff precip & fire + clay
 
-# plot estimates
-
 for (v in 1:2){
   
 df_plot <- df_plot_list[[v]]
@@ -96,7 +94,7 @@ fig_b <- ggplot(data = df_plot_prec_estim) +
   geom_point(aes(x = class_prec, y = r_unique_id, colour = class_prec))+
   theme_minimal()+
   scale_color_viridis_d()+
-  ggtitle("(2b) Median and 95%CI of precipitation effect")+
+  ggtitle(paste0(gedi_var_names[v]," (2a) Median and 95%CI \n of precipitation effect"))+
   xlab("Precipitation class")+
   ylab("Coefficient estimates")+
   theme(legend.position = "none")
@@ -109,20 +107,26 @@ fig_c <- ggplot(data = df_plot_density) +
   theme(legend.position = "none")+
   xlab("")+
   ylab("Median coefficient estimates")+
-  ggtitle("(2c) Distribution of median values \n of coefficients accross cells")
+  ggtitle("(2b) Distribution of median values \n of coefficients accross cells")
 
-pdf(file=file.path("figures",paste0("fig_bc_", gedi_var[v],".pdf")),width=8, height=4)
+pdf(file=file.path("figures",paste0("fig_2_", gedi_var[v],".pdf")),width=8, height=4)
 grid.arrange(fig_b, fig_c, ncol = 2)
 dev.off()
 
 }
 
-# map of effects clay percent & fire freq
-fig_d_list <- list()
-for (i in 1:4){
-  fig_d_list[[i]] <- ggplot(data=africa) +
+# Figure 3 map of fire & clay effect combined
+
+for (v in 1:2){
+  
+  df_color <- df_color_list[[v]]
+
+  # fig_d_list <- list()
+# for (i in 1:4){
+#  fig_d_list[[i]] [df_color$class_prec == i,]
+  fig_d <- ggplot(data=africa) +
     geom_sf(color="black") + 
-    geom_point(data=df_color[df_color$class_prec == i,], mapping = aes(x= coordx, y = coordy,
+    geom_point(data=df_color, mapping = aes(x= coordx, y = coordy,
                                                                        colour = fire_freq_std,
                                                                        shape = clay_percent_std), size=2)+
     #bi_class)) +
@@ -130,61 +134,119 @@ for (i in 1:4){
     #bi_scale_color(pal = custom_pal, dim = 3) +
     scale_color_manual(values = c("#440154", "grey","#51C56A" ))+
     scale_shape_manual(values=c(0,1,2))+ #+15)+
-    #facet_wrap(vars(class_prec))+
+    facet_wrap(vars(class_prec))+
     labs(colour = "Fire frequency effect", shape = "Clay percentage effect")+
     theme(panel.background=element_rect(fill="slategray1"), 
           legend.position = "right")+
-    ggtitle("(d) Combination of clay percent and fire frequence effects")+
+    ggtitle(paste0(gedi_var_names[v], " (3) Combination of clay percent and fire frequence effects per precipitation class"))+
     xlab("long")+
     ylab("lat")
-}
 
-#gather subfigures
-# plots <- list(fig_a, fig_b, fig_c) #, fig_d)
-# lay <- rbind(c(1,1), c(2,3)) #, c(4,4))
-#grid.arrange(grobs = plots, layout_matrix = lay)
-#grid.arrange(fig_a, fig_b, fig_c, ncol = 1)
-
-
-
-
-pdf(file="fig_d.pdf",width=12, height=6)
-fig_d
+pdf(file=file.path("figures",paste0("fig_3_", gedi_var[v],".pdf")),width=12, height=6)
+print(fig_d)
 dev.off()
 
+}
 
-## contingency tables
-con_all <- xtabs(~clay_percent_std+fire_freq_std, data=df_color)
-prop.table(ftable(con_all))
+# Figure 4 contingency tables
 
-plot_con_table <- list()
-for (i in 1:4){
-  con_all2 <- df_color %>%
-    filter(class_prec == i) %>%
+for (v in 1:2){
+  
+  df_color <- df_color_list[[v]]
+
+#con_all <- xtabs(~clay_percent_std+fire_freq_std, data=df_color)
+
+con_all <- df_color %>%
     select(clay_percent_std, fire_freq_std) %>%
     as_tibble()
-  con_all2 %>% table()
+
+con_all_prop <- round(prop.table(ftable(con_all))*100, digits = 1)
   
-  plot_con_table[[i]] <- con_all2 %>%
+ fig4 <-   con_all %>%
     ggplot() +  
     geom_mosaic(aes(x = product(clay_percent_std), fill = fire_freq_std)) +  
     scale_fill_manual(values = c("#440154", "grey","#51C56A" ))+
     theme_mosaic()+
-    theme(legend.position = "none")
+    theme(legend.position = "none")+
+    xlab("Clay percentage effect")+
+    ylab("Fire frequency effect")+ 
+    annotate(geom = "text", x = rep(c(0.05, 0.5, 0.93),3), y = rep(c( 0.05, 0.5, 0.96),each = 3),
+                  label = as.vector(con_all_prop))+
+    ggtitle(paste0(gedi_var_names[v], " (4) Percentages of effect combinations"))
+    #scale_x_continuous(labels = c("Negative", "No effect", "Positive"))
+
+    pdf(file=file.path("figures",paste0("fig_4_", gedi_var[v],".pdf")),width=6, height=6)
+    print(fig4)
+    dev.off()
 }
+    
+for (v in 1:2){
+  
+plot_con_table <- list()
+for (i in 1:4){
+  con_class_prec <- df_color %>%
+    filter(class_prec == i) %>%
+    select(clay_percent_std, fire_freq_std) %>%
+    as_tibble()
+  
+  con_class_prec_prop <- round(prop.table(ftable(con_class_prec))*100, digits = 1)
+  
+  if (i == 1) {plot_con_table[[i]] <- con_class_prec %>%
+    ggplot() +  
+    geom_mosaic(aes(x = product(clay_percent_std), fill = fire_freq_std)) +  
+    scale_fill_manual(values = c("#440154", "grey","#51C56A" ))+
+    theme_mosaic()+
+    theme(legend.position = "none")+
+    xlab("")+
+    ylab("Fire frequency effect")+ 
+    annotate(geom = "text", x = rep(c(0.05, 0.5, 0.93),3), y = rep(c( 0.05, 0.5, 0.96),each = 3),
+             label = as.vector( con_class_prec_prop))+
+    ggtitle(paste0(gedi_var_names[v], " Precipitation class ",i, sep = ""))
+  }
+  
+  if (i == 2) {plot_con_table[[i]] <- con_class_prec %>%
+    ggplot() +  
+    geom_mosaic(aes(x = product(clay_percent_std), fill = fire_freq_std)) +  
+    scale_fill_manual(values = c("#440154", "grey","#51C56A" ))+
+    theme_mosaic()+
+    theme(legend.position = "none")+
+    xlab("")+
+    ylab("")+ 
+    annotate(geom = "text", x = rep(c(0.05, 0.5, 0.93),3), y = rep(c( 0.05, 0.5, 0.96),each = 3),
+             label = as.vector( con_class_prec_prop))+
+    ggtitle(paste0("Precipitation class ",i, sep = ""))
+  }
+  
+  if (i == 3) {plot_con_table[[i]] <- con_class_prec %>%
+    ggplot() +  
+    geom_mosaic(aes(x = product(clay_percent_std), fill = fire_freq_std)) +  
+    scale_fill_manual(values = c("#440154", "grey","#51C56A" ))+
+    theme_mosaic()+
+    theme(legend.position = "none")+
+    xlab("Clay percentage effect")+
+    ylab("Fire frequency effect")+ 
+    annotate(geom = "text", x = rep(c(0.05, 0.5, 0.93),3), y = rep(c( 0.05, 0.5, 0.96),each = 3),
+             label = as.vector( con_class_prec_prop))+
+    ggtitle(paste0("Precipitation class ",i, sep = ""))
+  }
+  
+  if (i == 4) {plot_con_table[[i]] <- con_class_prec %>%
+    ggplot() +  
+    geom_mosaic(aes(x = product(clay_percent_std), fill = fire_freq_std)) +  
+    scale_fill_manual(values = c("#440154", "grey","#51C56A" ))+
+    theme_mosaic()+
+    theme(legend.position = "none")+
+    xlab("Clay percentage effect")+
+    ylab("")+ 
+    annotate(geom = "text", x = rep(c(0.05, 0.5, 0.93),3), y = rep(c( 0.05, 0.5, 0.96),each = 3),
+             label = as.vector( con_class_prec_prop))+
+    ggtitle(paste0("Precipitation class ",i, sep = ""))
+  }
+  
+}
+
+pdf(file=file.path("figures",paste0("fig_4bis_", gedi_var[v],".pdf")),width=10, height=10)
 grid.arrange(plot_con_table[[1]], plot_con_table[[2]],
              plot_con_table[[3]], plot_con_table[[4]], ncol = 2)
-
-con_all2 <- df_color %>%
-  select(clay_percent_std, fire_freq_std) %>%
-  as_tibble()
-con_all2 %>% table()
-
-p1 <- con_all2 %>%
-  ggplot() +  
-  geom_mosaic(aes(x = product(clay_percent_std), fill = fire_freq_std)) +  
-  scale_fill_manual(values = c("#440154", "grey","#51C56A" ))+
-  theme_mosaic()+
-  theme(legend.position = "none")
-
+dev.off()
 }
