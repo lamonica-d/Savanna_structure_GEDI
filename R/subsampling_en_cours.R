@@ -35,20 +35,37 @@ library(terra)
 ######sous échantillonnage tous les x m
 cell <- 10**3
 
-specific_table <- readRDS(
+specific_table_all <- readRDS(
   file.path( "transformed_data", paste0("data_pre_subsampling.RDS"))
 ) 
 
 ## remove cc =0
-specific_table <- specific_table %>%
+specific_table_all <- specific_table_all %>%
   filter(canopy_cover != 0)
 
 # #precipitation class
-# classes_prec <- c(793, 1020, 1235)
+classes_prec <- c(793, 1020, 1235)
 # classes_prec_std <- c(0.5376, 0.9949, 1.428)
 
 
-#for (i in 1:4){
+for (i in 3:4){
+  
+  #select class prec
+if (i == 1)  {specific_table <- specific_table_all %>%
+    filter(mean_precip <= classes_prec[1] )
+}
+  if (i == 2)  {specific_table <- specific_table_all %>%
+    filter(mean_precip > classes_prec[1] & mean_precip <=  classes_prec[2] )
+  }
+  if (i == 3)  {specific_table <- specific_table_all %>%
+    filter(mean_precip > classes_prec[2] & mean_precip <=  classes_prec[3] )
+  }
+  if (i == 4)  {specific_table <- specific_table_all %>%
+    filter(mean_precip > classes_prec[3] )
+  }
+  
+  print(i)
+  print(summary(specific_table$mean_precip))
   
 table_new <- data.frame(
   index_point = specific_table$index,
@@ -133,19 +150,21 @@ conserved_sub_table <- subset(conserved_sub_table, select = -c(index_point,keep)
 # rm(trsf_data)
 #rm(dist_cc_TRUE)
 
-#add precipitation squared
-conserved_sub_table <- cbind(conserved_sub_table,
-                             mean_precip_carre = (conserved_sub_table$precip_mean)^2)
+##add precipitation squared
+#conserved_sub_table <- cbind(conserved_sub_table,
+#                             mean_precip_carre = (conserved_sub_table$precip_mean)^2)
 
 #remove row with NA
-conserved_sub_table <- conserved_sub_table[-which(is.na(conserved_sub_table$clay_percent)),]
+conserved_sub_table <- conserved_sub_table %>%
+  filter(!is.na(clay_percent))
 
 #save
 saveRDS(
   object = conserved_sub_table,
   file = file.path(
     "transformed_data",
-    paste0("subsampled_cell_10e3_for_one_reglin.RDS")
+    paste0("subsampled_cell_10e3_for_one_reglin_prec",i,".RDS")
   )
 )    
 
+}

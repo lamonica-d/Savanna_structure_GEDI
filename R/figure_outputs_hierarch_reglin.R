@@ -106,7 +106,7 @@ fig_c <- ggplot(data = df_plot_density) +
   scale_color_viridis_d()+
   theme(legend.position = "none")+
   xlab("")+
-  ylab("Median coefficient estimates")+
+  ylab("")+
   ggtitle("(2b) Distribution of median values \n of coefficients accross cells")
 
 pdf(file=file.path("figures",paste0("fig_2_", gedi_var[v],".pdf")),width=8, height=4)
@@ -250,3 +250,49 @@ grid.arrange(plot_con_table[[1]], plot_con_table[[2]],
              plot_con_table[[3]], plot_con_table[[4]], ncol = 2)
 dev.off()
 }
+
+
+# Figure 5 map of fire & clay effect sizes
+
+for (v in 1:2){
+  
+  df_color <- df_color_list[[v]]
+  
+  fig_5a <- ggplot(data=africa) +
+    geom_sf(color="black") + 
+    geom_point(data=df_color, mapping = aes(x= coordx, y = coordy,
+                                            colour = fire_freq_std), shape=1, size=2)+
+    #bi_class)) +
+    coord_sf(xlim=c(-20, 37), ylim=c(-15, 20), expand=FALSE)+
+    #bi_scale_color(pal = custom_pal, dim = 3) +
+    scale_color_manual(values = c("#440154", "grey","#51C56A" ))+
+    facet_wrap(vars(class_prec))+
+    labs(colour = "Fire frequency effect")+
+    theme(panel.background=element_rect(fill="slategray1"), 
+          legend.position = "bottom")+
+    ggtitle(paste0(gedi_var_names[v], " (5a) Fire frequence effect per precipitation class"))+
+    xlab("long")+
+    ylab("lat")
+  
+  fig_5b <- ggplot(data=africa) +
+    geom_sf(color="black") + 
+    geom_point(data=df_color, mapping = aes(x= coordx, y = coordy,
+                                            colour = clay_percent_std), shape=1, size=2)+
+    #bi_class)) +
+    coord_sf(xlim=c(-20, 37), ylim=c(-15, 20), expand=FALSE)+
+    #bi_scale_color(pal = custom_pal, dim = 3) +
+    scale_color_manual(values = c("#440154", "grey","#51C56A" ))+
+    facet_wrap(vars(class_prec))+
+    labs(colour = "Clay percentage effect")+
+    theme(panel.background=element_rect(fill="slategray1"), 
+          legend.position = "bottom")+
+    ggtitle(paste0(gedi_var_names[v], " (5b) Clay percentage effect per precipitation class"))+
+    xlab("long")+
+    ylab("lat")
+  
+  pdf(file=file.path("figures",paste0("fig_5_", gedi_var[v],".pdf")),width=12, height=6)
+  grid.arrange(fig_5a, fig_5b, ncol = 2)
+  dev.off()
+  
+}
+

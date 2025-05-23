@@ -5,6 +5,7 @@ library(brms)
 library(viridis)
 library(rnaturalearth)
 library(sf)
+library(gridExtra)
 
 #load data
 table_region <- readRDS(file.path(
@@ -16,12 +17,11 @@ africa <- world %>% filter(continent == "Africa")
 
 
 #load brms fits
-mod_rh98 <- readRDS(file = "outputs/brms_regression_rh98q90_07_05_2.RDS")
+mod_rh98 <- readRDS(file = "outputs/brms_regression_rh98q90_22_05.RDS")
 
 table_post_rh98 <- gather_draws(mod_rh98, 
                                 c(b_fire_freq_mean,
                                   b_precip_mean,
-                                  b_mean_precip_carre,
                                   b_clay_percent_mean
                                   )
 )
@@ -39,16 +39,27 @@ dev.off()
 table_pred_rh98 <- data.frame(predict(mod_rh98, ndraws = 50, summary = T, probs = 0.5))
 predictions_rh98 <- cbind(table_region, table_pred_rh98$"Q50")
 
-pdf(file.path("figures","one_reg_obs_vs_pred_rh98.pdf"), height = 8, width = 8)
-ggplot(data = predictions_rh98, aes(x = rh98_q90, y = table_pred_rh98$Q50)) +
+p1 <- ggplot(data = predictions_rh98, aes(x = rh98_q90, y = table_pred_rh98$Q50)) +
+  geom_point(aes(color = fire_freq))+
+  scale_color_viridis()+
+  geom_abline(intercept = 0, slope = 1, color="red", linetype="dashed")+
+  lims(x = c(0,30), y = c(0,30))+
+  xlab("Observed q90 rh98")+
+  ylab("Median predicted q90 rh98")
+
+p2 <- ggplot(data = predictions_rh98, aes(x = rh98_q90, y = table_pred_rh98$Q50)) +
   geom_point(aes(color = mean_precip))+
   scale_color_viridis()+
   geom_abline(intercept = 0, slope = 1, color="red", linetype="dashed")+
   lims(x = c(0,30), y = c(0,30))+
   xlab("Observed q90 rh98")+
   ylab("Median predicted q90 rh98")
+
+pdf(file.path("figures","one_reg_obs_vs_pred_rh98.pdf"), height = 8, width = 12)
+grid.arrange(p1,p2, ncol = 2)
 dev.off()
 
+## a refaire
 pe_rh98 <- predictive_error(mod_rh98, ndraws = 50)
 mean_error_rh98 <- apply(X = sqrt(pe_rh98^2), FUN = mean, MARGIN = 2)
 #signe de l'erreur
@@ -75,13 +86,12 @@ theme(panel.background=element_rect(fill="slategray1"))
 dev.off()
 
 ##canopy cover
-mod_canopy_cover <- readRDS(file = "outputs/brms_regression_ccq90_16_05_2.RDS")
+mod_canopy_cover <- readRDS(file = "outputs/brms_regression_ccq90_22_05.RDS")
 ##coeff
 table_post_cc <- gather_draws(mod_canopy_cover, 
                               c(b_fire_freq_mean,
                                 b_precip_mean,
-                                b_clay_percent_mean,
-                                b_mean_precip_carre
+                                b_clay_percent_mean
                               )
 )
 
@@ -98,17 +108,27 @@ dev.off()
 table_pred_cc <- data.frame(predict(mod_canopy_cover, ndraws = 50, summary = T, probs = 0.5))
 predictions_cc <- cbind(table_region, table_pred_cc$"Q50")
 
-pdf(file.path("figures","one_reg_obs_vs_pred_cc.pdf"), height = 8, width = 8)
-ggplot(data = predictions_cc, aes(x = cc_q90, y = table_pred_cc$Q50)) +
-  geom_point(aes(color = mean_precip))+
+p1 <- ggplot(data = predictions_cc, aes(x = cc_q90, y = table_pred_cc$Q50)) +
+  geom_point(aes(color = fire_freq))+
   scale_color_viridis()+
-  geom_abline(intercept = 0, slope = 1, color="red", 
-              linetype="dashed")+
+  geom_abline(intercept = 0, slope = 1, color="red", linetype="dashed")+
   lims(x = c(0,1), y = c(0,1))+
   xlab("Observed q90 canopy cover")+
   ylab("Median predicted q90 canopy cover")
+
+p2 <- ggplot(data = predictions_cc, aes(x = cc_q90, y = table_pred_cc$Q50)) +
+  geom_point(aes(color = mean_precip))+
+  scale_color_viridis()+
+  geom_abline(intercept = 0, slope = 1, color="red", linetype="dashed")+
+  lims(x = c(0,1), y = c(0,1))+
+  xlab("Observed q90 canopy cover")+
+  ylab("Median predicted q90 canopy cover")
+
+pdf(file.path("figures","one_reg_obs_vs_pred_cc.pdf"), height = 8, width = 12)
+grid.arrange(p1,p2, ncol = 2)
 dev.off()
 
+##a refaire
 #mean error
 pe_cc <- predictive_error(mod_canopy_cover, ndraws = 50)
 mean_error_cc <- apply(X = sqrt(pe_cc^2), FUN = mean, MARGIN = 2)
@@ -119,8 +139,9 @@ pred_error_cc <- cbind(predictions_cc, mean_error_cc, signe_error_cc,
                        percent_error = mean_error_cc/predictions_cc$cc_q90*100)
 
 # #que les erreurs < 100%
-# pred_error_cc_red <- subset(pred_error_cc, percent_error < 100)
-pred_error_sf <- st_as_sf(pred_error_cc, 
+
+ pred_error_cc_red <- subset(pred_error_cc, median_error_cc>0.5 | median_error_cc < -0.5)
+pred_error_sf <- st_as_sf(pred_error_cc_red, 
                           coords = c("x_TRUE", "y_TRUE"), crs = "+proj=longlat +datum=WGS84")
 
 pdf(file.path("figures","one_reg_map_error_cc.pdf"), height = 12, width = 12)
@@ -135,6 +156,16 @@ ggplot(data=africa) +
   theme(panel.background=element_rect(fill="slategray1"))
 dev.off()
 
+#plot data
+cc_sf <- st_as_sf(predictions_cc, 
+                          coords = c("x_TRUE", "y_TRUE"), crs = "+proj=longlat +datum=WGS84")
+ggplot(data=africa) +
+  geom_sf(color="black") + 
+  geom_sf(data=cc_sf, aes(color = cc_q90))+
+  scale_color_viridis()+
+  coord_sf(xlim=c(-20, 40), ylim=c(-12, 20), expand=FALSE)+
+  ggtitle("Q90 canopy cover")+
+  theme(panel.background=element_rect(fill="slategray1"))
 
 ############# PAS REFAIT ###################
 #cc ~ rh98
