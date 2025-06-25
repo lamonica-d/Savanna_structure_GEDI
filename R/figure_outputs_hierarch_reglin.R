@@ -296,3 +296,60 @@ for (v in 1:2){
   
 }
 
+# Figure 6 obs vs pred
+
+for (v in 1:2){
+  var_int <- gedi_var[v]
+  print(var_int)
+  
+  table_pred_all <- data.frame()
+  for (j in 1:4){
+    
+    model <- readRDS(file.path("outputs", paste0("mod_", var_int, "_prec",j,".RDS")))
+    data_prec <- data[[j]]
+    
+    pred <- data.frame(predict(model, ndraws = 50, summary = T, probs = 0.5))
+    table_pred <- cbind(data_prec, pred$"Q50")
+    table_pred_all <- rbind(table_pred_all, table_pred)
+  }
+  
+  colnames(table_pred_all)[15] <- "pred_median"
+  
+  if (v ==1){
+  
+  fig_6 <- ggplot(data = table_pred_all) +
+    geom_point(aes(x = rh98, y = pred_median, color = fire_freq_std))+
+    scale_color_viridis()+
+    facet_wrap(.~class_prec)+
+    geom_abline(intercept = 0, slope = 1, color="red", linetype="dashed")+
+    labs(colour = "Standardized fire frequency")+
+    theme(panel.background=element_rect(fill="slategray1"), 
+          legend.position = "bottom")+
+    ggtitle(paste0(gedi_var_names[v], " (6) Observed vs. predicted"))+
+    xlab("Observed")+
+    ylab("Median predicted")
+  }else{
+    
+    fig_6 <- ggplot(data = table_pred_all) +
+      geom_point(aes(x = cc, y = pred_median, color = fire_freq_std))+
+      scale_color_viridis()+
+      facet_wrap(.~class_prec)+
+      geom_abline(intercept = 0, slope = 1, color="red", linetype="dashed")+
+      labs(colour = "Standardized fire frequency")+
+      theme(panel.background=element_rect(fill="slategray1"), 
+            legend.position = "bottom")+
+      ggtitle(paste0(gedi_var_names[v], " (6) Observed vs. predicted"))+
+      xlab("Observed")+
+      ylab("Median predicted")
+    
+  }
+ 
+  pdf(file=file.path("figures",paste0("fig_6_", gedi_var[v],".pdf")),width=8, height=8)
+  print(fig_6)
+  dev.off()
+  
+  rm(table_pred)
+  rm(table_pred_all)
+}
+
+

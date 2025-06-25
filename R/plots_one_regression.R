@@ -59,7 +59,7 @@ pdf(file.path("figures","one_reg_obs_vs_pred_rh98.pdf"), height = 8, width = 12)
 grid.arrange(p1,p2, ncol = 2)
 dev.off()
 
-## a refaire
+## 
 pe_rh98 <- predictive_error(mod_rh98, ndraws = 50)
 mean_error_rh98 <- apply(X = sqrt(pe_rh98^2), FUN = mean, MARGIN = 2)
 #signe de l'erreur
